@@ -71,7 +71,6 @@ update msg model =
             )
 
 
-
 view : Model -> Html Msg
 view model =
     p []
@@ -80,5 +79,5 @@ view model =
 
 fetchApi : Cmd Msg
 fetchApi =
-  Prismic.fetchApi "https://lesbonneschoses.prismic.io/api"
-    |> Task.perform FetchApiError SetApi
+    Prismic.fetchApi "https://lesbonneschoses.prismic.io/api"
+        |> Task.perform FetchApiError SetApi

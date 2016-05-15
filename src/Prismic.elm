@@ -9,7 +9,7 @@ import Task exposing (Task)
 
 urlToString : Url -> String
 urlToString (Url str) =
-  str
+    str
 
 
 fetchApi : String -> Task Http.Error Api
@@ -29,7 +29,7 @@ formToUrl form ref =
                     ( name, defaultValue ) :: params
     in
         Http.url (urlToString form.action)
-            (("ref", ref.ref) :: (Dict.foldl f [] form.fields))
+            (( "ref", ref.ref ) :: (Dict.foldl f [] form.fields))
 
 
 fetchForm : Api -> String -> String -> Task FetchFormError Response
@@ -37,17 +37,17 @@ fetchForm api refId formName =
     let
         mForm =
             Dict.get formName api.forms
+
         mRef =
-          List.head
-            (List.filter (\ref -> ref.id == refId) api.refs)
+            List.head (List.filter (\ref -> ref.id == refId) api.refs)
     in
-        case (mRef, mForm) of
-            (Just ref, Just form) ->
+        case ( mRef, mForm ) of
+            ( Just ref, Just form ) ->
                 Http.get decodeResponse (formToUrl form ref)
                     `Task.onError` (Task.fail << HttpError)
 
-            (Nothing, _) ->
+            ( Nothing, _ ) ->
                 Task.fail RefDoesNotExist
 
-            (_, Nothing) ->
+            ( _, Nothing ) ->
                 Task.fail FormDoesNotExist
