@@ -1,10 +1,29 @@
 module Prismic.View exposing (..)
 
+import Dict exposing (Dict)
 import Json.Encode as Json
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Prismic.Types exposing (..)
 import String
+
+
+asHtmlWithDefault : Html msg -> String -> String -> Dict String (Dict String (List DocumentField)) -> Html msg
+asHtmlWithDefault default documentType fieldName data =
+    Maybe.withDefault default
+        (Dict.get documentType data
+            `Maybe.andThen` Dict.get fieldName
+            `Maybe.andThen` (\docs ->
+                                Just
+                                    (case docs of
+                                        [ doc ] ->
+                                            asHtml doc
+
+                                        _ ->
+                                            div [] (List.map asHtml docs)
+                                    )
+                            )
+        )
 
 
 asHtml : DocumentField -> Html msg
@@ -20,7 +39,7 @@ asHtml field =
             span [] [ text (toString n) ]
 
         Select t ->
-            span [] [ text ("<Select> " ++ t) ]
+            span [] [ text t ]
 
         Color t ->
             span [] [ text ("<Color> " ++ t) ]
@@ -125,7 +144,7 @@ linkAsHtml : LinkField -> Html msg
 linkAsHtml link =
     case link of
         DocumentLink linkedDoc isBroken ->
-            pre [] [ text (toString linkedDoc) ]
+            a [ href "#" ] [ text (toString linkedDoc.slug) ]
 
         WebLink (Url url) ->
             a [ href url ] [ text url ]
