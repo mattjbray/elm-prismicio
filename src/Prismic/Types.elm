@@ -4,18 +4,6 @@ import Dict exposing (Dict)
 import Http
 
 
-type alias Model =
-    { api : Maybe Api
-    }
-
-
-type Msg
-    = NoOp
-    | SetApi Api
-    | FetchApiError Http.Error
-
-
-
 -- API
 
 
@@ -67,11 +55,8 @@ type FieldType
     | Integer
 
 
-
--- TODO: Experiments are not Strings.  Fill out this type.
-
-
 type alias Experiments =
+    -- TODO: Experiments are not Strings.  Fill out this type.
     { draft : List String
     , running : List String
     }
@@ -81,9 +66,13 @@ type alias Experiments =
 -- QUERY
 
 
-type alias Query =
-    { action : Url
-    , ref : Ref
+type alias Query r =
+    {- The `r` type starts as `()` and gets filled out with a `Ref` after
+       `withRef`
+    -}
+    { api : Api
+    , action : Url
+    , ref : r
     }
 
 
@@ -91,10 +80,11 @@ type alias Query =
 -- ERRORS
 
 
-type FetchFormError
-    = FormDoesNotExist
-    | RefDoesNotExist
-    | HttpError Http.Error
+type PrismicError
+    = FormDoesNotExist String
+    | RefDoesNotExist String
+    | FetchApiError Http.Error
+    | SubmitQueryError Http.Error
 
 
 
@@ -216,10 +206,14 @@ type alias EmbedProperties =
     , thumbnailUrl : Url
     , thumbnailWidth : Int
     , title : String
-    , embedType : String
+    , embedType : EmbedType
     , version : String
     , width : Int
     }
+
+
+type EmbedType
+    = EmbedVideo
 
 
 type LinkField

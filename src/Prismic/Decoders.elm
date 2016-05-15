@@ -269,7 +269,7 @@ decodeSpanType =
                             object1 Hyperlink ("data" := decodeLinkField)
 
                         _ ->
-                            fail ("Unkown span type: " ++ typeStr)
+                            fail ("Unknown span type: " ++ typeStr)
                   )
 
 
@@ -287,9 +287,22 @@ decodeEmbedProperties =
         |: ("thumbnail_url" := decodeUrl)
         |: ("thumbnail_width" := int)
         |: ("title" := string)
-        |: ("type" := string)
+        |: ("type" := decodeEmbedType)
         |: ("version" := string)
         |: ("width" := int)
+
+
+decodeEmbedType : Decoder EmbedType
+decodeEmbedType =
+    string
+        `andThen` (\typeStr ->
+                    case typeStr of
+                        "video" ->
+                            succeed EmbedVideo
+
+                        _ ->
+                            fail ("Unknown embed type: " ++ typeStr)
+                  )
 
 
 decodeLinkField : Decoder LinkField
