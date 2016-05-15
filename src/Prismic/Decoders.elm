@@ -119,22 +119,21 @@ decodeResponse decodeDocType =
 
 decodeDefaultDocType : Decoder DefaultDocType
 decodeDefaultDocType =
-    dict
-        (dict
-            (oneOf
-                [ object1 (\x -> [ x ]) decodeDocumentField
-                , list decodeDocumentField
-                ]
+    "data"
+        := dict
+            (dict
+                (oneOf
+                    [ object1 (\x -> [ x ]) decodeDocumentField
+                    , list decodeDocumentField
+                    ]
+                )
             )
-        )
 
 
 decodeSearchResult : Decoder docType -> Decoder (SearchResult docType)
 decodeSearchResult decodeDocType =
     succeed SearchResult
-        |: ("data"
-                := decodeDocType
-           )
+        |: decodeDocType
         |: ("href" := decodeUrl)
         |: ("id" := string)
         |: ("linked_documents" := list decodeLinkedDocument)
@@ -174,25 +173,30 @@ decodeDocumentField =
                             object1 Date ("value" := string)
 
                         "Image" ->
-                            object1 Image ("value" := decodeImageValue)
+                            object1 Image ("value" := decodeImageField)
 
                         "StructuredText" ->
-                            object1 StructuredText ("value" := list decodeStructuredTextField)
+                            object1 StructuredText ("value" := decodeStructuredText)
 
                         "Link.document" ->
-                            object1 Link decodeLinkField
+                            object1 Link decodeLink
 
                         "Link.web" ->
-                            object1 Link decodeLinkField
+                            object1 Link decodeLink
 
                         _ ->
                             fail ("Unknown document field type: " ++ typeStr)
                   )
 
 
-decodeImageValue : Decoder ImageValue
-decodeImageValue =
-    succeed ImageValue
+decodeStructuredText : Decoder StructuredText
+decodeStructuredText =
+    list decodeStructuredTextField
+
+
+decodeImageField : Decoder ImageField
+decodeImageField =
+    succeed ImageField
         |: ("main" := decodeImageProperties)
         |: ("views" := (dict decodeImageProperties))
 
@@ -271,7 +275,7 @@ decodeSpanType =
                             succeed Strong
 
                         "hyperlink" ->
-                            object1 Hyperlink ("data" := decodeLinkField)
+                            object1 Hyperlink ("data" := decodeLink)
 
                         _ ->
                             fail ("Unknown span type: " ++ typeStr)
@@ -329,8 +333,8 @@ decodeEmbedRichProperties =
         |: ("width" := int)
 
 
-decodeLinkField : Decoder LinkField
-decodeLinkField =
+decodeLink : Decoder Link
+decodeLink =
     ("type" := string)
         `andThen` (\typeStr ->
                     case typeStr of

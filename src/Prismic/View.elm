@@ -54,6 +54,12 @@ asHtml field =
             div [] (List.map structuredTextFieldAsHtml fields)
 
 
+structuredTextAsHtml : StructuredText -> Html msg
+structuredTextAsHtml fields =
+    div []
+        (List.map structuredTextFieldAsHtml fields)
+
+
 structuredTextFieldAsHtml : StructuredTextField -> Html msg
 structuredTextFieldAsHtml field =
     case field of
@@ -140,7 +146,7 @@ embedAsHtml embed =
             div [ property "innerHTML" (Json.string props.html) ] []
 
 
-linkAsHtml : LinkField -> Html msg
+linkAsHtml : Link -> Html msg
 linkAsHtml link =
     case link of
         DocumentLink linkedDoc isBroken ->
@@ -150,7 +156,7 @@ linkAsHtml link =
             a [ href url ] [ text url ]
 
 
-linkAsHtmlWith : LinkField -> List (Html msg) -> Html msg
+linkAsHtmlWith : Link -> List (Html msg) -> Html msg
 linkAsHtmlWith link childs =
     case link of
         DocumentLink linkedDoc isBroken ->

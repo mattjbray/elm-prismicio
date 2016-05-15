@@ -136,13 +136,16 @@ type alias LinkedDocument =
 
 type DocumentField
     = Text String
-    | StructuredText (List StructuredTextField)
+    | StructuredText StructuredText
     | Select String
     | Color String
-    | Image ImageValue
+    | Image ImageField
     | Number Float
     | Date String
-    | Link LinkField
+    | Link Link
+
+
+type alias StructuredText = List StructuredTextField
 
 
 type StructuredTextField
@@ -176,10 +179,10 @@ type alias Span =
 type SpanType
     = Em
     | Strong
-    | Hyperlink LinkField
+    | Hyperlink Link
 
 
-type alias ImageValue =
+type alias ImageField =
     { main : ImageProperties
     , views : Dict String ImageProperties
     }
@@ -237,6 +240,6 @@ type alias EmbedRichProperties =
     }
 
 
-type LinkField
+type Link
     = DocumentLink LinkedDocument Bool
     | WebLink Url

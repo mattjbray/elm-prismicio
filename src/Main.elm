@@ -1,19 +1,20 @@
 module Main exposing (main)
 
 import Dict
+import Json.Decode exposing (..)
 import Html.App as Html
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (selected)
 import Html.Events exposing (..)
 import Prismic as P
-import Prismic.Types exposing (Api, Response, Url(Url), PrismicError, SearchResult, DefaultDocType)
-import Prismic.Decoders exposing (decodeDefaultDocType)
-import Prismic.View exposing (asHtml, asHtmlWithDefault)
+import Prismic.Types exposing (..)
+import Prismic.Decoders exposing (..)
+import Prismic.View exposing (..)
 import Task
 
 
 type alias Model =
-    { response : Maybe (Result PrismicError (Response DefaultDocType))
+    { response : Maybe (Result PrismicError (Response MyDocument))
     , api : Maybe (Result PrismicError Api)
     , selectedForm : String
     }
@@ -22,9 +23,119 @@ type alias Model =
 type Msg
     = NoOp
     | SetApi Api
-    | SetResponse (Response DefaultDocType)
+    | SetResponse (Response MyDocument)
     | SetError PrismicError
     | SetSelectedForm String
+
+
+type MyDocument
+    = Default DefaultDocType
+    | JobOfferDoc JobOffer
+    | BlogPostDoc BlogPost
+
+
+type alias BlogPost =
+    { body : StructuredText
+    , author : String
+    , category : String
+    , date : String
+    , shortLede : StructuredText
+    , relatedPosts : List Link
+    , relatedProducts : List Link
+    , allowComments : Bool
+    }
+
+
+type alias JobOffer =
+    { name : StructuredText
+    , contractType : Maybe String
+    , service : Maybe String
+    , jobDescription : StructuredText
+    , profile : StructuredText
+    , locations : List Link
+    }
+
+
+decodeMyDocument : Decoder MyDocument
+decodeMyDocument =
+    ("type" := string)
+        `andThen` (\typeStr ->
+                    case typeStr of
+                        "job-offer" ->
+                            object1 JobOfferDoc decodeJobOffer
+
+                        "blog-post" ->
+                            object1 BlogPostDoc decodeBlogPost
+
+                        _ ->
+                            object1 Default decodeDefaultDocType
+                  )
+
+
+decodeJobOffer : Decoder JobOffer
+decodeJobOffer =
+    succeed JobOffer
+        |: (at [ "data", "job-offer", "name", "value" ]
+                decodeStructuredText
+           )
+        |: maybe
+            (at [ "data", "job-offer", "contract_type", "value" ]
+                string
+            )
+        |: maybe
+            (at [ "data", "job-offer", "service", "value" ]
+                string
+            )
+        |: (at [ "data", "job-offer", "job_description", "value" ]
+                decodeStructuredText
+           )
+        |: (at [ "data", "job-offer", "profile", "value" ]
+                decodeStructuredText
+           )
+        |: (at [ "data", "job-offer", "location" ]
+                (list decodeLink)
+           )
+
+
+decodeBlogPost : Decoder BlogPost
+decodeBlogPost =
+    succeed BlogPost
+        |: (at [ "data", "blog-post", "body", "value" ]
+                decodeStructuredText
+           )
+        |: (at [ "data", "blog-post", "author", "value" ]
+                string
+           )
+        |: (at [ "data", "blog-post", "category", "value" ]
+                string
+           )
+        |: (at [ "data", "blog-post", "date", "value" ]
+                string
+           )
+        |: (at [ "data", "blog-post", "shortlede", "value" ]
+                decodeStructuredText
+           )
+        |: (at [ "data", "blog-post", "relatedpost" ]
+                (list decodeLink)
+           )
+        |: (at [ "data", "blog-post", "relatedproduct" ]
+                (list decodeLink)
+           )
+        |: (at [ "data", "blog-post", "allow_comments", "value" ]
+                (string
+                    `andThen` (\str ->
+                                case str of
+                                    "Yes" ->
+                                        succeed True
+
+                                    "No" ->
+                                        succeed False
+
+                                    _ ->
+                                        fail ("Unknown allow_comments value: " ++ str)
+                              )
+                )
+           )
 
 
 main : Program Never
@@ -59,7 +170,7 @@ update msg model =
             , Task.succeed api
                 |> P.form model.selectedForm
                 |> P.withRef "master"
-                |> P.submit decodeDefaultDocType
+                |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
             )
 
@@ -73,7 +184,7 @@ update msg model =
                     Task.succeed api
                         |> P.form formName
                         |> P.withRef "master"
-                        |> P.submit decodeDefaultDocType
+                        |> P.submit decodeMyDocument
                         |> Task.perform SetError SetResponse
 
                 _ ->
@@ -136,7 +247,7 @@ viewResponse model =
                 ]
 
 
-viewResponseOk : (Response DefaultDocType) -> Html msg
+viewResponseOk : Response MyDocument -> Html msg
 viewResponseOk response =
     div []
         (List.intersperse (hr [] [])
@@ -146,23 +257,26 @@ viewResponseOk response =
         )
 
 
-viewDocument : (SearchResult DefaultDocType) -> Html msg
+viewDocument : SearchResult MyDocument -> Html msg
 viewDocument result =
-    case result.resultType of
-        "job-offer" ->
-            viewDocumentJobOffer result
+    case result.data of
+        Default doc ->
+            viewDocumentGeneric doc
 
-        _ ->
-            viewDocumentGeneric result
+        JobOfferDoc doc ->
+            viewDocumentJobOffer doc
+
+        BlogPostDoc doc ->
+            viewDocumentBlogPost doc
 
 
-viewDocumentGeneric : (SearchResult DefaultDocType) -> Html msg
-viewDocumentGeneric result =
+viewDocumentGeneric : DefaultDocType -> Html msg
+viewDocumentGeneric doc =
     let
         allDocFields =
             let
                 fieldsPerType =
-                    Dict.values result.data
+                    Dict.values doc
 
                 fieldsPerField =
                     List.concatMap Dict.values fieldsPerType
@@ -170,35 +284,35 @@ viewDocumentGeneric result =
                 List.concat fieldsPerField
     in
         div []
-            (List.map asHtml allDocFields)
+            (h2 [] (List.map text (Dict.keys doc)) :: (List.map asHtml allDocFields))
 
 
-viewDocumentJobOffer : (SearchResult DefaultDocType) -> Html msg
-viewDocumentJobOffer result =
-    let
-        renderField fieldName =
-            asHtmlWithDefault (text ("job-offer." ++ fieldName ++ " missing"))
-                "job-offer"
-                fieldName
-                result.data
-    in
-        div []
-            [ renderField "name"
-            , p []
-                [ span []
-                    [ strong [] [ text "Contract Type" ]
-                    , text ": "
-                    , renderField "contract_type"
-                    ]
-                , text " "
-                , span []
-                    [ strong [] [ text "Service" ]
-                    , text ": "
-                    , renderField "service"
-                    ]
-                ]
-            , strong [] [ text "Location: " ]
-            , renderField "location"
-            , renderField "job_description"
-            , renderField "profile"
-            ]
+viewDocumentJobOffer : JobOffer -> Html msg
+viewDocumentJobOffer jobOffer =
+    div []
+        [ structuredTextAsHtml jobOffer.name
+        , text
+            (jobOffer.contractType
+                |> Maybe.map (\ct -> ct ++ " position")
+                |> Maybe.withDefault ""
+            )
+        , br [] []
+        , text
+            (jobOffer.service
+                |> Maybe.map (\service -> service ++ " role")
+                |> Maybe.withDefault ""
+            )
+        , structuredTextAsHtml jobOffer.jobDescription
+        , structuredTextAsHtml jobOffer.profile
+        ]
+
+
+viewDocumentBlogPost : BlogPost -> Html msg
+viewDocumentBlogPost blogPost =
+    div []
+        [ p [] [ text "BlogPost" ]
+        , structuredTextAsHtml blogPost.body
+        , em [] [ text ("Posted on " ++ blogPost.date ++ " by " ++ blogPost.author ++ " in " ++ blogPost.category) ]
+        , p []
+            [ text ("Comments are " ++ (if blogPost.allowComments then "enabled" else "disabled") ++ ".")]
+        ]
