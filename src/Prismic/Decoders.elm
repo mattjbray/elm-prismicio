@@ -102,14 +102,14 @@ nullOr decoder =
         ]
 
 
-decodeResponse : Decoder Response
-decodeResponse =
+decodeResponse : Decoder docType -> Decoder (Response docType)
+decodeResponse decodeDocType =
     succeed Response
         |: ("license" := string)
         |: ("next_page" := nullOr decodeUrl)
         |: ("page" := int)
         |: ("prev_page" := nullOr decodeUrl)
-        |: ("results" := list decodeSearchResult)
+        |: ("results" := list (decodeSearchResult decodeDocType))
         |: ("results_per_page" := int)
         |: ("results_size" := int)
         |: ("total_pages" := int)
@@ -117,18 +117,23 @@ decodeResponse =
         |: ("version" := string)
 
 
-decodeSearchResult : Decoder SearchResult
-decodeSearchResult =
+decodeDefaultDocType : Decoder DefaultDocType
+decodeDefaultDocType =
+    dict
+        (dict
+            (oneOf
+                [ object1 (\x -> [ x ]) decodeDocumentField
+                , list decodeDocumentField
+                ]
+            )
+        )
+
+
+decodeSearchResult : Decoder docType -> Decoder (SearchResult docType)
+decodeSearchResult decodeDocType =
     succeed SearchResult
         |: ("data"
-                := dict
-                    (dict
-                        (oneOf
-                            [ object1 (\x -> [ x ]) decodeDocumentField
-                            , list decodeDocumentField
-                            ]
-                        )
-                    )
+                := decodeDocType
            )
         |: ("href" := decodeUrl)
         |: ("id" := string)

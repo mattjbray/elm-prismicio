@@ -1,6 +1,7 @@
 module Prismic exposing (init, form, withRef, submit)
 
 import Dict
+import Json.Decode exposing (Decoder)
 import Http
 import Task exposing (Task)
 import Prismic.Types exposing (..)
@@ -64,8 +65,8 @@ withRef refId queryTask =
         queryTask `Task.andThen` addRef
 
 
-submit : Task PrismicError (Query Ref) -> Task PrismicError Response
-submit queryTask =
+submit : Decoder docType -> Task PrismicError (Query Ref) -> Task PrismicError (Response docType)
+submit decodeDocType queryTask =
     let
         doSubmit query =
             let
@@ -73,7 +74,7 @@ submit queryTask =
                     queryToUrl query
             in
                 Task.mapError SubmitQueryError
-                    (Http.get decodeResponse url)
+                    (Http.get (decodeResponse decodeDocType) url)
     in
         queryTask `Task.andThen` doSubmit
 

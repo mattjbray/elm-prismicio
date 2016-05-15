@@ -6,13 +6,14 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Prismic as P
-import Prismic.Types exposing (Api, Response, Url(Url), PrismicError, SearchResult)
+import Prismic.Types exposing (Api, Response, Url(Url), PrismicError, SearchResult, DefaultDocType)
+import Prismic.Decoders exposing (decodeDefaultDocType)
 import Prismic.View exposing (asHtml, asHtmlWithDefault)
 import Task
 
 
 type alias Model =
-    { response : Maybe (Result PrismicError Response)
+    { response : Maybe (Result PrismicError (Response DefaultDocType))
     , api : Maybe (Result PrismicError Api)
     , selectedForm : String
     }
@@ -21,7 +22,7 @@ type alias Model =
 type Msg
     = NoOp
     | SetApi Api
-    | SetResponse Response
+    | SetResponse (Response DefaultDocType)
     | SetError PrismicError
     | SetSelectedForm String
 
@@ -58,7 +59,7 @@ update msg model =
             , Task.succeed api
                 |> P.form model.selectedForm
                 |> P.withRef "master"
-                |> P.submit
+                |> P.submit decodeDefaultDocType
                 |> Task.perform SetError SetResponse
             )
 
@@ -72,7 +73,7 @@ update msg model =
                     Task.succeed api
                         |> P.form formName
                         |> P.withRef "master"
-                        |> P.submit
+                        |> P.submit decodeDefaultDocType
                         |> Task.perform SetError SetResponse
 
                 _ ->
@@ -135,7 +136,7 @@ viewResponse model =
                 ]
 
 
-viewResponseOk : Response -> Html msg
+viewResponseOk : (Response DefaultDocType) -> Html msg
 viewResponseOk response =
     div []
         (List.intersperse (hr [] [])
@@ -145,7 +146,7 @@ viewResponseOk response =
         )
 
 
-viewDocument : SearchResult -> Html msg
+viewDocument : (SearchResult DefaultDocType) -> Html msg
 viewDocument result =
     case result.resultType of
         "job-offer" ->
@@ -155,7 +156,7 @@ viewDocument result =
             viewDocumentGeneric result
 
 
-viewDocumentGeneric : SearchResult -> Html msg
+viewDocumentGeneric : (SearchResult DefaultDocType) -> Html msg
 viewDocumentGeneric result =
     let
         allDocFields =
@@ -172,7 +173,7 @@ viewDocumentGeneric result =
             (List.map asHtml allDocFields)
 
 
-viewDocumentJobOffer : SearchResult -> Html msg
+viewDocumentJobOffer : (SearchResult DefaultDocType) -> Html msg
 viewDocumentJobOffer result =
     let
         renderField fieldName =

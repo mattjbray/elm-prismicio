@@ -96,12 +96,12 @@ type Url
     = Url String
 
 
-type alias Response =
+type alias Response docType =
     { license : String
     , nextPage : Maybe Url
     , page : Int
     , prevPage : Maybe Url
-    , results : List SearchResult
+    , results : List (SearchResult docType)
     , resultsPerPage : Int
     , resultsSize : Int
     , totalPages : Int
@@ -110,8 +110,12 @@ type alias Response =
     }
 
 
-type alias SearchResult =
-    { data : Dict String (Dict String (List DocumentField))
+type alias DefaultDocType =
+    Dict String (Dict String (List DocumentField))
+
+
+type alias SearchResult docType =
+    { data : docType
     , href : Url
     , id : String
     , linkedDocuments : List LinkedDocument
