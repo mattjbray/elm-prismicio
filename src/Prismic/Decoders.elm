@@ -4,9 +4,39 @@ import Json.Decode exposing (..)
 import Prismic.Types exposing (..)
 
 
+-- HELPERS
+
+
 (|:) : Decoder (a -> b) -> Decoder a -> Decoder b
 (|:) =
     object2 (<|)
+
+
+maybeWithDefault : a -> Decoder a -> Decoder a
+maybeWithDefault default decoder =
+    maybe decoder `andThen` (succeed << (Maybe.withDefault default))
+
+
+nullOr : Decoder a -> Decoder (Maybe a)
+nullOr decoder =
+    oneOf
+        [ null Nothing
+        , map Just decoder
+        ]
+
+
+decodeRef : Decoder Ref
+decodeRef =
+    object1 Ref string
+
+
+decodeUrl : Decoder Url
+decodeUrl =
+    object1 Url string
+
+
+
+-- DECODERS
 
 
 decodeApi : Decoder Api
@@ -24,11 +54,6 @@ decodeApi =
         |: ("experiments" := decodeExperiments)
 
 
-maybeWithDefault : a -> Decoder a -> Decoder a
-maybeWithDefault default decoder =
-    maybe decoder `andThen` (succeed << (Maybe.withDefault default))
-
-
 decodeRefProperties : Decoder RefProperties
 decodeRefProperties =
     succeed RefProperties
@@ -36,16 +61,6 @@ decodeRefProperties =
         |: ("ref" := decodeRef)
         |: ("label" := string)
         |: (maybeWithDefault False ("isMasterRef" := bool))
-
-
-decodeRef : Decoder Ref
-decodeRef =
-    object1 Ref string
-
-
-decodeUrl : Decoder Url
-decodeUrl =
-    object1 Url string
 
 
 decodeForm : Decoder Form
@@ -89,14 +104,6 @@ decodeExperiments =
     succeed Experiments
         |: ("draft" := list string)
         |: ("running" := list string)
-
-
-nullOr : Decoder a -> Decoder (Maybe a)
-nullOr decoder =
-    oneOf
-        [ null Nothing
-        , map Just decoder
-        ]
 
 
 decodeResponse : Decoder docType -> Decoder (Response docType)
