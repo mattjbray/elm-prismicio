@@ -18,7 +18,7 @@ fetchApi url =
 
 
 formToUrl : Form -> Ref -> String
-formToUrl form ref =
+formToUrl form (Ref ref) =
     let
         f name field params =
             case field.default of
@@ -29,7 +29,7 @@ formToUrl form ref =
                     ( name, defaultValue ) :: params
     in
         Http.url (urlToString form.action)
-            (( "ref", ref.ref ) :: (Dict.foldl f [] form.fields))
+            (( "ref", ref ) :: (Dict.foldl f [] form.fields))
 
 
 fetchForm : Api -> String -> String -> Task FetchFormError Response
@@ -43,7 +43,7 @@ fetchForm api refId formName =
     in
         case ( mRef, mForm ) of
             ( Just ref, Just form ) ->
-                Http.get decodeResponse (formToUrl form ref)
+                Http.get decodeResponse (formToUrl form ref.ref)
                     `Task.onError` (Task.fail << HttpError)
 
             ( Nothing, _ ) ->

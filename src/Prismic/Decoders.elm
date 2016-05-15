@@ -13,7 +13,7 @@ import Prismic.Types exposing (..)
 decodeApi : Decoder Api
 decodeApi =
     succeed Api
-        |: ("refs" := list decodeRef)
+        |: ("refs" := list decodeRefProperties)
         |: ("bookmarks" := dict string)
         |: ("types" := dict string)
         |: ("tags" := list string)
@@ -25,11 +25,11 @@ decodeApi =
         |: ("experiments" := decodeExperiments)
 
 
-decodeRef : Decoder Ref
-decodeRef =
-    object4 Ref
+decodeRefProperties : Decoder RefProperties
+decodeRefProperties =
+    object4 RefProperties
         ("id" := string)
-        ("ref" := string)
+        ("ref" := decodeRef)
         ("label" := string)
         (maybe ("isMasterRef" := bool)
             `andThen` (\val ->
@@ -41,6 +41,11 @@ decodeRef =
                                 succeed x
                       )
         )
+
+
+decodeRef : Decoder Ref
+decodeRef =
+    object1 Ref string
 
 
 decodeUrl : Decoder Url

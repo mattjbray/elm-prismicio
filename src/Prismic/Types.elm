@@ -5,7 +5,7 @@ import Http
 
 
 type alias Api =
-    { refs : List Ref
+    { refs : List RefProperties
     , bookmarks : Dict String String
     , types : Dict String String
     , tags : List String
@@ -18,12 +18,15 @@ type alias Api =
     }
 
 
-type alias Ref =
+type alias RefProperties =
     { id : String
-    , ref : String
+    , ref : Ref
     , label : String
     , isMasterRef : Bool
     }
+
+
+type Ref = Ref String
 
 
 type alias Form =
