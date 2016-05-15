@@ -1,6 +1,5 @@
 module Main exposing (main)
 
-import Array
 import Dict
 import Html.App as Html
 import Html exposing (..)
@@ -11,8 +10,7 @@ import Task
 
 
 type alias Model =
-    { response : Maybe Response
-    , error : Maybe PrismicError
+    { response : Maybe (Result PrismicError Response)
     }
 
 
@@ -34,7 +32,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { response = Nothing, error = Nothing }
+    ( { response = Nothing }
     , P.init (Url "https://lesbonneschoses.prismic.io/api")
         |> P.form "everything"
         |> P.withRef "master"
@@ -50,47 +48,55 @@ update msg model =
             ( model, Cmd.none )
 
         SetResponse response ->
-            ( { model | response = Just response }
+            ( { model | response = Just (Ok response) }
             , Cmd.none
             )
 
         SetError err ->
-            ( { model | error = Just err }
+            ( { model | response = Just (Err err) }
             , Cmd.none
             )
 
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ h1 [] [ text "Response" ]
-        , viewResponse model.response
-        , h1 [] [ text "Error" ]
-        , p [] [ text (toString model.error) ]
-        ]
-
-
-viewResponse : Maybe Response -> Html msg
-viewResponse mResponse =
-    case mResponse of
+    case model.response of
         Nothing ->
-            p [] [ text "No response" ]
+            p [] [ text "Loading..." ]
 
-        Just response ->
+        Just (Ok response) ->
+            div []
+                [ h1 [] [ text "Response" ]
+                , viewResponse response
+                ]
+
+        Just (Err error) ->
+            div []
+                [ h1 [] [ text "Error" ]
+                , p [] [ text (toString error) ]
+                ]
+
+
+viewResponse : Response -> Html msg
+viewResponse response =
+    let
+        docFields result =
             let
-                docFields result =
-                  let
-                    fieldsPerType = Dict.values result.data
-                    fieldsPerField = List.concatMap Dict.values fieldsPerType
-                  in
-                    List.concat fieldsPerField
+                fieldsPerType =
+                    Dict.values result.data
+
+                fieldsPerField =
+                    List.concatMap Dict.values fieldsPerType
             in
-                div []
-                    (List.intersperse (hr [] [])
-                    (List.map
-                        (\result ->
-                            div []
-                                (List.map asHtml (docFields result))
-                        )
-                        response.results
-                    ))
+                List.concat fieldsPerField
+    in
+        div []
+            (List.intersperse (hr [] [])
+                (List.map
+                    (\result ->
+                        div []
+                            (List.map asHtml (docFields result))
+                    )
+                    response.results
+                )
+            )
