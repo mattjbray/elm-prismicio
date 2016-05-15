@@ -58,84 +58,59 @@ type alias JobOffer =
 
 decodeMyDocument : Decoder MyDocument
 decodeMyDocument =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "job-offer" ->
-                            object1 JobOfferDoc decodeJobOffer
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "job-offer" ->
+                    object1 JobOfferDoc decodeJobOffer
 
-                        "blog-post" ->
-                            object1 BlogPostDoc decodeBlogPost
+                "blog-post" ->
+                    object1 BlogPostDoc decodeBlogPost
 
-                        _ ->
-                            object1 Default decodeDefaultDocType
-                  )
+                _ ->
+                    object1 Default decodeDefaultDocType
+    in
+        ("type" := string) `andThen` decodeOnType
 
 
 decodeJobOffer : Decoder JobOffer
 decodeJobOffer =
-    succeed JobOffer
-        |: (at [ "data", "job-offer", "name", "value" ]
-                decodeStructuredText
-           )
-        |: maybe
-            (at [ "data", "job-offer", "contract_type", "value" ]
-                string
-            )
-        |: maybe
-            (at [ "data", "job-offer", "service", "value" ]
-                string
-            )
-        |: (at [ "data", "job-offer", "job_description", "value" ]
-                decodeStructuredText
-           )
-        |: (at [ "data", "job-offer", "profile", "value" ]
-                decodeStructuredText
-           )
-        |: (at [ "data", "job-offer", "location" ]
-                (list decodeLink)
-           )
+    at [ "data", "job-offer" ]
+        (succeed JobOffer
+            |: at [ "name", "value" ] decodeStructuredText
+            |: maybe (at [ "contract_type", "value" ] string)
+            |: maybe (at [ "service", "value" ] string)
+            |: at [ "job_description", "value" ] decodeStructuredText
+            |: at [ "profile", "value" ] decodeStructuredText
+            |: at [ "location" ] (list decodeLink)
+        )
 
 
 decodeBlogPost : Decoder BlogPost
 decodeBlogPost =
-    succeed BlogPost
-        |: (at [ "data", "blog-post", "body", "value" ]
-                decodeStructuredText
-           )
-        |: (at [ "data", "blog-post", "author", "value" ]
-                string
-           )
-        |: (at [ "data", "blog-post", "category", "value" ]
-                string
-           )
-        |: (at [ "data", "blog-post", "date", "value" ]
-                string
-           )
-        |: (at [ "data", "blog-post", "shortlede", "value" ]
-                decodeStructuredText
-           )
-        |: (at [ "data", "blog-post", "relatedpost" ]
-                (list decodeLink)
-           )
-        |: (at [ "data", "blog-post", "relatedproduct" ]
-                (list decodeLink)
-           )
-        |: (at [ "data", "blog-post", "allow_comments", "value" ]
-                (string
-                    `andThen` (\str ->
-                                case str of
-                                    "Yes" ->
-                                        succeed True
+    let
+        decodeAllowComments str =
+            case str of
+                "Yes" ->
+                    succeed True
 
-                                    "No" ->
-                                        succeed False
+                "No" ->
+                    succeed False
 
-                                    _ ->
-                                        fail ("Unknown allow_comments value: " ++ str)
-                              )
-                )
-           )
+                _ ->
+                    fail ("Unknown allow_comments value: " ++ str)
+    in
+        at [ "data", "blog-post" ]
+            (succeed BlogPost
+                |: at [ "body", "value" ] decodeStructuredText
+                |: at [ "author", "value" ] string
+                |: at [ "category", "value" ] string
+                |: at [ "date", "value" ] string
+                |: at [ "shortlede", "value" ] decodeStructuredText
+                |: at [ "relatedpost" ] (list decodeLink)
+                |: at [ "relatedproduct" ] (list decodeLink)
+                |: at [ "allow_comments", "value" ] (string `andThen` decodeAllowComments)
+            )
 
 
 main : Program Never
@@ -314,5 +289,14 @@ viewDocumentBlogPost blogPost =
         , structuredTextAsHtml blogPost.body
         , em [] [ text ("Posted on " ++ blogPost.date ++ " by " ++ blogPost.author ++ " in " ++ blogPost.category) ]
         , p []
-            [ text ("Comments are " ++ (if blogPost.allowComments then "enabled" else "disabled") ++ ".")]
+            [ text
+                ("Comments are "
+                    ++ (if blogPost.allowComments then
+                            "enabled"
+                        else
+                            "disabled"
+                       )
+                    ++ "."
+                )
+            ]
         ]

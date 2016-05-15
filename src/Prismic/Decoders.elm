@@ -24,22 +24,18 @@ decodeApi =
         |: ("experiments" := decodeExperiments)
 
 
+maybeWithDefault : a -> Decoder a -> Decoder a
+maybeWithDefault default decoder =
+    maybe decoder `andThen` (succeed << (Maybe.withDefault default))
+
+
 decodeRefProperties : Decoder RefProperties
 decodeRefProperties =
-    object4 RefProperties
-        ("id" := string)
-        ("ref" := decodeRef)
-        ("label" := string)
-        (maybe ("isMasterRef" := bool)
-            `andThen` (\val ->
-                        case val of
-                            Nothing ->
-                                succeed False
-
-                            Just x ->
-                                succeed x
-                      )
-        )
+    succeed RefProperties
+        |: ("id" := string)
+        |: ("ref" := decodeRef)
+        |: ("label" := string)
+        |: (maybeWithDefault False ("isMasterRef" := bool))
 
 
 decodeRef : Decoder Ref
@@ -54,37 +50,38 @@ decodeUrl =
 
 decodeForm : Decoder Form
 decodeForm =
-    object6 Form
-        ("method" := string)
-        ("enctype" := string)
-        ("action" := decodeUrl)
-        ("fields" := dict decodeFormField)
-        (maybe ("rel" := string))
-        (maybe ("name" := string))
+    succeed Form
+        |: ("method" := string)
+        |: ("enctype" := string)
+        |: ("action" := decodeUrl)
+        |: ("fields" := dict decodeFormField)
+        |: (maybe ("rel" := string))
+        |: (maybe ("name" := string))
 
 
 decodeFormField : Decoder FormField
 decodeFormField =
-    object3 FormField
-        ("type" := decodeFieldType)
-        ("multiple" := bool)
-        (maybe ("default" := string))
+    succeed FormField
+        |: ("type" := decodeFieldType)
+        |: ("multiple" := bool)
+        |: (maybe ("default" := string))
 
 
 decodeFieldType : Decoder FieldType
 decodeFieldType =
-    customDecoder string
-        (\str ->
+    let
+        decodeOnType str =
             case str of
                 "String" ->
-                    Ok String
+                    succeed String
 
                 "Integer" ->
-                    Ok Integer
+                    succeed Integer
 
                 _ ->
-                    Err ("Unknown field type: " ++ str)
-        )
+                    fail ("Unknown field type: " ++ str)
+    in
+        string `andThen` decodeOnType
 
 
 decodeExperiments : Decoder Experiments
@@ -154,39 +151,40 @@ decodeLinkedDocument =
 
 decodeDocumentField : Decoder DocumentField
 decodeDocumentField =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "Text" ->
-                            object1 Text ("value" := string)
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "Text" ->
+                    object1 Text ("value" := string)
 
-                        "Select" ->
-                            object1 Select ("value" := string)
+                "Select" ->
+                    object1 Select ("value" := string)
 
-                        "Color" ->
-                            object1 Color ("value" := string)
+                "Color" ->
+                    object1 Color ("value" := string)
 
-                        "Number" ->
-                            object1 Number ("value" := float)
+                "Number" ->
+                    object1 Number ("value" := float)
 
-                        "Date" ->
-                            object1 Date ("value" := string)
+                "Date" ->
+                    object1 Date ("value" := string)
 
-                        "Image" ->
-                            object1 Image ("value" := decodeImageField)
+                "Image" ->
+                    object1 Image ("value" := decodeImageField)
 
-                        "StructuredText" ->
-                            object1 StructuredText ("value" := decodeStructuredText)
+                "StructuredText" ->
+                    object1 StructuredText ("value" := decodeStructuredText)
 
-                        "Link.document" ->
-                            object1 Link decodeLink
+                "Link.document" ->
+                    object1 Link decodeLink
 
-                        "Link.web" ->
-                            object1 Link decodeLink
+                "Link.web" ->
+                    object1 Link decodeLink
 
-                        _ ->
-                            fail ("Unknown document field type: " ++ typeStr)
-                  )
+                _ ->
+                    fail ("Unknown document field type: " ++ typeStr)
+    in
+        ("type" := string) `andThen` decodeOnType
 
 
 decodeStructuredText : Decoder StructuredText
@@ -219,33 +217,34 @@ decodeImageDimensions =
 
 decodeStructuredTextField : Decoder StructuredTextField
 decodeStructuredTextField =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "heading1" ->
-                            object1 SSimple (decodeSimpleStructuredTextField Heading1)
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "heading1" ->
+                    object1 SSimple (decodeSimpleStructuredTextField Heading1)
 
-                        "heading2" ->
-                            object1 SSimple (decodeSimpleStructuredTextField Heading2)
+                "heading2" ->
+                    object1 SSimple (decodeSimpleStructuredTextField Heading2)
 
-                        "heading3" ->
-                            object1 SSimple (decodeSimpleStructuredTextField Heading3)
+                "heading3" ->
+                    object1 SSimple (decodeSimpleStructuredTextField Heading3)
 
-                        "paragraph" ->
-                            object1 SSimple (decodeSimpleStructuredTextField Paragraph)
+                "paragraph" ->
+                    object1 SSimple (decodeSimpleStructuredTextField Paragraph)
 
-                        "list-item" ->
-                            object1 SSimple (decodeSimpleStructuredTextField ListItem)
+                "list-item" ->
+                    object1 SSimple (decodeSimpleStructuredTextField ListItem)
 
-                        "image" ->
-                            object1 SImage (decodeImageProperties)
+                "image" ->
+                    object1 SImage (decodeImageProperties)
 
-                        "embed" ->
-                            object1 SEmbed ("oembed" := decodeEmbedProperties)
+                "embed" ->
+                    object1 SEmbed ("oembed" := decodeEmbedProperties)
 
-                        _ ->
-                            fail ("Unknown structured field type: " ++ toString typeStr)
-                  )
+                _ ->
+                    fail ("Unknown structured field type: " ++ toString typeStr)
+    in
+        ("type" := string) `andThen` decodeOnType
 
 
 decodeSimpleStructuredTextField : SimpleStructuredTextType -> Decoder SimpleStructuredTextField
@@ -265,37 +264,39 @@ decodeSpan =
 
 decodeSpanType : Decoder SpanType
 decodeSpanType =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "em" ->
-                            succeed Em
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "em" ->
+                    succeed Em
 
-                        "strong" ->
-                            succeed Strong
+                "strong" ->
+                    succeed Strong
 
-                        "hyperlink" ->
-                            object1 Hyperlink ("data" := decodeLink)
+                "hyperlink" ->
+                    object1 Hyperlink ("data" := decodeLink)
 
-                        _ ->
-                            fail ("Unknown span type: " ++ typeStr)
-                  )
+                _ ->
+                    fail ("Unknown span type: " ++ typeStr)
+    in
+        ("type" := string) `andThen` decodeOnType
 
 
 decodeEmbedProperties : Decoder EmbedProperties
 decodeEmbedProperties =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "video" ->
-                            object1 EmbedVideo decodeEmbedVideoProperties
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "video" ->
+                    object1 EmbedVideo decodeEmbedVideoProperties
 
-                        "rich" ->
-                            object1 EmbedRich decodeEmbedRichProperties
+                "rich" ->
+                    object1 EmbedRich decodeEmbedRichProperties
 
-                        _ ->
-                            fail ("Unknown embed type: " ++ typeStr)
-                  )
+                _ ->
+                    fail ("Unknown embed type: " ++ typeStr)
+    in
+        ("type" := string) `andThen` decodeOnType
 
 
 decodeEmbedVideoProperties : Decoder EmbedVideoProperties
@@ -335,18 +336,19 @@ decodeEmbedRichProperties =
 
 decodeLink : Decoder Link
 decodeLink =
-    ("type" := string)
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "Link.document" ->
-                            succeed DocumentLink
-                                |: (at [ "value", "document" ] decodeLinkedDocument)
-                                |: (at [ "value", "isBroken" ] bool)
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "Link.document" ->
+                    succeed DocumentLink
+                        |: (at [ "value", "document" ] decodeLinkedDocument)
+                        |: (at [ "value", "isBroken" ] bool)
 
-                        "Link.web" ->
-                            succeed WebLink
-                                |: (at [ "value", "url" ] decodeUrl)
+                "Link.web" ->
+                    succeed WebLink
+                        |: (at [ "value", "url" ] decodeUrl)
 
-                        _ ->
-                            fail ("Unknown link type: " ++ typeStr)
-                  )
+                _ ->
+                    fail ("Unknown link type: " ++ typeStr)
+    in
+        ("type" := string) `andThen` decodeOnType
