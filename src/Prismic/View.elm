@@ -4,6 +4,7 @@ import Json.Encode as Json
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Prismic.Types exposing (..)
+import String
 
 
 asHtml : DocumentField -> Html msg
@@ -69,8 +70,36 @@ simpleFieldAsHtml field =
                     (\attrs childs ->
                         ul [] [ li attrs childs ]
                     )
+
+        spanEl span =
+            case span.spanType of
+                Em ->
+                    em []
+
+                Strong ->
+                    strong []
+
+                Hyperlink link ->
+                    linkAsHtmlWith link
+
+        foldFn span ( childs, index ) =
+            let
+                beginning =
+                    String.slice index span.start field.text
+
+                middle =
+                    String.slice span.start span.end field.text
+            in
+                ( childs ++ [ text beginning, (spanEl span) [ text middle ] ]
+                , span.end
+                )
     in
-        el [] [ text field.text ]
+        el []
+            (field.spans
+                |> List.sortBy .start
+                |> List.foldl foldFn ( [], 0 )
+                |> (\( childs, index ) -> childs ++ [ text (String.dropLeft index field.text) ])
+            )
 
 
 imageAsHtml : ImageProperties -> Html msg
@@ -95,7 +124,18 @@ embedAsHtml embed =
 linkAsHtml : LinkField -> Html msg
 linkAsHtml link =
     case link of
-      DocumentLink linkedDoc isBroken ->
-        pre [] [text (toString linkedDoc)]
-      WebLink (Url url) ->
-        a [href url] [text url]
+        DocumentLink linkedDoc isBroken ->
+            pre [] [ text (toString linkedDoc) ]
+
+        WebLink (Url url) ->
+            a [ href url ] [ text url ]
+
+
+linkAsHtmlWith : LinkField -> List (Html msg) -> Html msg
+linkAsHtmlWith link childs =
+    case link of
+        DocumentLink linkedDoc isBroken ->
+            a [] childs
+
+        WebLink (Url url) ->
+            a [ href url ] childs
