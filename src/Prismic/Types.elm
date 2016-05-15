@@ -4,6 +4,21 @@ import Dict exposing (Dict)
 import Http
 
 
+type alias Model =
+    { api : Maybe Api
+    }
+
+
+type Msg
+    = NoOp
+    | SetApi Api
+    | FetchApiError Http.Error
+
+
+
+-- API
+
+
 type alias Api =
     { refs : List RefProperties
     , bookmarks : Dict String String
@@ -26,20 +41,21 @@ type alias RefProperties =
     }
 
 
-type Ref = Ref String
+type Ref
+    = Ref String
 
 
 type alias Form =
     { method : String
     , enctype : String
     , action : Url
-    , fields : Dict String Field
+    , fields : Dict String FormField
     , rel : Maybe String
     , name : Maybe String
     }
 
 
-type alias Field =
+type alias FormField =
     { fieldType : FieldType
     , multiple : Bool
     , default : Maybe String
@@ -61,10 +77,28 @@ type alias Experiments =
     }
 
 
+
+-- QUERY
+
+
+type alias Query =
+    { action : Url
+    , ref : Ref
+    }
+
+
+
+-- ERRORS
+
+
 type FetchFormError
     = FormDoesNotExist
     | RefDoesNotExist
     | HttpError Http.Error
+
+
+
+-- RESPONSE
 
 
 type Url

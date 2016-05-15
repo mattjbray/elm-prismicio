@@ -1,7 +1,6 @@
 module Prismic.Decoders exposing (..)
 
 import Json.Decode exposing (..)
-import List
 import Prismic.Types exposing (..)
 
 
@@ -59,14 +58,14 @@ decodeForm =
         ("method" := string)
         ("enctype" := string)
         ("action" := decodeUrl)
-        ("fields" := dict decodeField)
+        ("fields" := dict decodeFormField)
         (maybe ("rel" := string))
         (maybe ("name" := string))
 
 
-decodeField : Decoder Field
-decodeField =
-    object3 Field
+decodeFormField : Decoder FormField
+decodeFormField =
+    object3 FormField
         ("type" := decodeFieldType)
         ("multiple" := bool)
         (maybe ("default" := string))

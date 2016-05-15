@@ -2,25 +2,18 @@ module Main exposing (main)
 
 import Html.App as Html
 import Html exposing (..)
-import Http
 import Prismic
-import Prismic.Types as Prismic
-import Task
+import Prismic.Types exposing (Url(Url), Msg(FetchApiError))
 
 
 type alias Model =
-    { api : Maybe (Result Http.Error Prismic.Api)
-    , results : Maybe Prismic.Response
-    , error : String
+    { prismic : Prismic.Model
     }
 
 
 type Msg
     = NoOp
-    | SetApi Prismic.Api
-    | FetchApiError Http.Error
-    | FetchFormError Prismic.FetchFormError
-    | SetResults Prismic.Response
+    | PrismicMsg Prismic.Msg
 
 
 main : Program Never
@@ -35,12 +28,14 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { api = Nothing
-      , results = Nothing
-      , error = ""
-      }
-    , fetchApi
-    )
+    let
+        ( prismicModel, prismicCmd ) =
+            Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
+    in
+        ( { prismic = prismicModel
+          }
+        , Cmd.map PrismicMsg prismicCmd
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -49,35 +44,17 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        SetApi api ->
-            ( { model | api = Just (Ok api) }
-            , Prismic.fetchForm api "master" "everything"
-                |> Task.perform FetchFormError SetResults
-            )
-
-        FetchApiError err ->
-            ( { model | api = Just (Err err) }
-            , Cmd.none
-            )
-
-        FetchFormError err ->
-            ( { model | error = toString err }
-            , Cmd.none
-            )
-
-        SetResults results ->
-            ( { model | results = Just results }
-            , Cmd.none
-            )
+        PrismicMsg pMsg ->
+            let
+                ( prismicModel, prismicCmd ) =
+                    Prismic.update pMsg model.prismic
+            in
+                ( { model | prismic = prismicModel }
+                , Cmd.map PrismicMsg prismicCmd
+                )
 
 
 view : Model -> Html Msg
 view model =
     p []
-        [ text (toString model.results ++ toString model.error) ]
-
-
-fetchApi : Cmd Msg
-fetchApi =
-    Prismic.fetchApi "https://lesbonneschoses.prismic.io/api"
-        |> Task.perform FetchApiError SetApi
+        [ text (toString model.prismic) ]

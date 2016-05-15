@@ -1,20 +1,28 @@
-module Prismic exposing (..)
+module Prismic exposing (Model, Msg, init, update)
 
 import Dict
 import Http
+import Prismic.State
 import Prismic.Types exposing (..)
 import Prismic.Decoders exposing (..)
 import Task exposing (Task)
 
 
+type alias Model = Prismic.Types.Model
+type alias Msg = Prismic.Types.Msg
+
+
+init : Url -> ( Model, Cmd Msg )
+init = Prismic.State.init
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update = Prismic.State.update
+
+
 urlToString : Url -> String
 urlToString (Url str) =
     str
-
-
-fetchApi : String -> Task Http.Error Api
-fetchApi url =
-    Http.get decodeApi url
 
 
 formToUrl : Form -> Ref -> String
@@ -51,3 +59,12 @@ fetchForm api refId formName =
 
             ( _, Nothing ) ->
                 Task.fail FormDoesNotExist
+
+
+getRefByLabel : String -> Api -> Maybe RefProperties
+getRefByLabel label api =
+    List.head (List.filter (\ref -> ref.label == label) api.refs)
+
+
+
+--form : String -> Model -> Result PrismicError Query
