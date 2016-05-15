@@ -5,6 +5,7 @@ import Http
 import Task exposing (Task)
 import Prismic.Types exposing (..)
 import Prismic.Decoders exposing (..)
+import String
 
 
 init : Url -> Task PrismicError Api
@@ -26,11 +27,19 @@ form formId apiTask =
                         Task.fail (FormDoesNotExist formId)
 
                     Just form ->
-                        Task.succeed
-                            { api = api
-                            , action = form.action
-                            , ref = ()
-                            }
+                        let
+                            query =
+                                Maybe.withDefault ""
+                                    (Dict.get "q" form.fields
+                                        `Maybe.andThen` .default
+                                    )
+                        in
+                            Task.succeed
+                                { api = api
+                                , action = form.action
+                                , ref = ()
+                                , query = query
+                                }
     in
         apiTask `Task.andThen` addForm
 
@@ -80,5 +89,10 @@ queryToUrl query =
     in
         Url
             (Http.url urlStr
-                [ ( "ref", refStr ) ]
+                (( "ref", refStr )
+                    :: if String.isEmpty query.query then
+                        []
+                       else
+                        [ ( "q", query.query ) ]
+                )
             )

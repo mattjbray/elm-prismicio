@@ -73,6 +73,7 @@ type alias Query r =
     { api : Api
     , action : Url
     , ref : r
+    , query : String
     }
 
 
