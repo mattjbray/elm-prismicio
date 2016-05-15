@@ -84,9 +84,12 @@ imageAsHtml image =
 
 embedAsHtml : EmbedProperties -> Html msg
 embedAsHtml embed =
-    case embed.embedType of
-        EmbedVideo ->
-            div [ property "innerHTML" (Json.string embed.html) ] []
+    case embed of
+        EmbedVideo props ->
+            div [ property "innerHTML" (Json.string props.html) ] []
+
+        EmbedRich props ->
+            div [ property "innerHTML" (Json.string props.html) ] []
 
 
 linkAsHtml : LinkField -> Html msg

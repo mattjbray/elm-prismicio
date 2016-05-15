@@ -275,7 +275,23 @@ decodeSpanType =
 
 decodeEmbedProperties : Decoder EmbedProperties
 decodeEmbedProperties =
-    succeed EmbedProperties
+    ("type" := string)
+        `andThen` (\typeStr ->
+                    case typeStr of
+                        "video" ->
+                            object1 EmbedVideo decodeEmbedVideoProperties
+
+                        "rich" ->
+                            object1 EmbedRich decodeEmbedRichProperties
+
+                        _ ->
+                            fail ("Unknown embed type: " ++ typeStr)
+                  )
+
+
+decodeEmbedVideoProperties : Decoder EmbedVideoProperties
+decodeEmbedVideoProperties =
+    succeed EmbedVideoProperties
         |: ("author_name" := string)
         |: ("author_url" := decodeUrl)
         |: ("embed_url" := decodeUrl)
@@ -287,22 +303,25 @@ decodeEmbedProperties =
         |: ("thumbnail_url" := decodeUrl)
         |: ("thumbnail_width" := int)
         |: ("title" := string)
-        |: ("type" := decodeEmbedType)
         |: ("version" := string)
         |: ("width" := int)
 
 
-decodeEmbedType : Decoder EmbedType
-decodeEmbedType =
-    string
-        `andThen` (\typeStr ->
-                    case typeStr of
-                        "video" ->
-                            succeed EmbedVideo
-
-                        _ ->
-                            fail ("Unknown embed type: " ++ typeStr)
-                  )
+decodeEmbedRichProperties : Decoder EmbedRichProperties
+decodeEmbedRichProperties =
+    succeed EmbedRichProperties
+        |: ("author_name" := string)
+        |: ("author_url" := decodeUrl)
+        |: ("cache_age" := string)
+        |: ("embed_url" := decodeUrl)
+        |: ("height" := maybe int)
+        |: ("html" := string)
+        |: ("provider_name" := string)
+        |: ("provider_url" := decodeUrl)
+        |: ("title" := string)
+        |: ("url" := decodeUrl)
+        |: ("version" := string)
+        |: ("width" := int)
 
 
 decodeLinkField : Decoder LinkField

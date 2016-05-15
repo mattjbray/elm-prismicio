@@ -195,7 +195,12 @@ type alias ImageDimensions =
     }
 
 
-type alias EmbedProperties =
+type EmbedProperties
+  = EmbedVideo EmbedVideoProperties
+  | EmbedRich EmbedRichProperties
+
+
+type alias EmbedVideoProperties =
     { authorName : String
     , authorUrl : Url
     , embedUrl : Url
@@ -207,14 +212,25 @@ type alias EmbedProperties =
     , thumbnailUrl : Url
     , thumbnailWidth : Int
     , title : String
-    , embedType : EmbedType
     , version : String
     , width : Int
     }
 
 
-type EmbedType
-    = EmbedVideo
+type alias EmbedRichProperties =
+    { authorName : String
+    , authorUrl : Url
+    , cacheAge : String
+    , embedUrl : Url
+    , height : Maybe Int
+    , html : String
+    , providerName : String
+    , providerUrl : Url
+    , title : String
+    , url : Url
+    , version : String
+    , width : Int
+    }
 
 
 type LinkField
