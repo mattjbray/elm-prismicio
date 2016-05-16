@@ -24,6 +24,7 @@ init =
       , model.prismic
           |> P.fetchApi
           |> P.form model.selectedForm
+          |> P.query "[[:d = at(document.id, \"UlfoxUnM0wkXYXbf\")]]"
           |> P.submit decodeMyDocument
           |> Task.perform SetError SetResponse
       )

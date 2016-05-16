@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, submit)
+module Prismic exposing (fetchApi, form, ref, query, submit)
 
 import Dict
 import Json.Decode exposing (Decoder)
@@ -92,6 +92,21 @@ getRefById refId api =
     api.refs
         |> List.filter (\r -> r.id == refId)
         |> List.head
+
+
+query :
+    String
+    -> Task PrismicError ( Query, CacheWithApi docType )
+    -> Task PrismicError ( Query, CacheWithApi docType )
+query queryStr queryTask =
+    let
+        addQuery ( query, cache ) =
+            Task.succeed
+                ( { query | query = queryStr }
+                , cache
+                )
+    in
+        queryTask `Task.andThen` addQuery
 
 
 submit :
