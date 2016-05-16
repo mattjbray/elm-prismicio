@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, withRef, submit)
+module Prismic exposing (fetchApi, form, ref, submit)
 
 import Dict
 import Json.Decode exposing (Decoder)
@@ -60,26 +60,26 @@ form formId apiTask =
         apiTask `Task.andThen` addForm
 
 
-withRef :
+ref :
     String
     -> Task PrismicError ( Query (), CacheWithApi docType )
     -> Task PrismicError ( Query Ref, CacheWithApi docType )
-withRef refId queryTask =
+ref refId queryTask =
     let
         addRef ( query, cache ) =
             let
                 mRef =
                     cache.api.refs
-                        |> List.filter (\ref -> ref.id == refId)
+                        |> List.filter (\r -> r.id == refId)
                         |> List.head
             in
                 case mRef of
                     Nothing ->
                         Task.fail (RefDoesNotExist refId)
 
-                    Just ref ->
+                    Just r ->
                         Task.succeed
-                            ( { query | ref = ref.ref }
+                            ( { query | ref = r.ref }
                             , cache
                             )
     in
