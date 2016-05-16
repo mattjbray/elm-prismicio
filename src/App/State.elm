@@ -42,6 +42,21 @@ fetchSelection model =
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
 
+        Document docId ->
+            model.prismic
+                |> P.fetchApi
+                |> P.form "everything"
+                |> P.query ("[[:d = at(document.id, \"" ++ docId ++ "\")]]")
+                |> P.submit decodeMyDocument
+                |> Task.perform SetError SetResponse
+
+        Blog ->
+            model.prismic
+                |> P.fetchApi
+                |> P.form "blog"
+                |> P.submit decodeMyDocument
+                |> Task.perform SetError SetResponse
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =

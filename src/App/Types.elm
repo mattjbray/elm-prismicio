@@ -13,6 +13,8 @@ type alias Model =
 type Selection
   = Form String
   | Bookmark String
+  | Blog
+  | Document String
 
 
 type Msg

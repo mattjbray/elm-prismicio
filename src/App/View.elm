@@ -3,7 +3,7 @@ module App.View exposing (..)
 import App.Types exposing (..)
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (disabled, selected)
+import Html.Attributes exposing (disabled, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Prismic.Types exposing (Response, SearchResult, DefaultDocType)
 import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml, viewDefaultDocType)
@@ -34,6 +34,12 @@ viewControls model =
             (case model.prismic.api of
                 Just api ->
                     List.map viewBookmark (Dict.keys api.bookmarks)
+                        ++ [ button
+                                [ onClick (SetSelected Blog)
+                                , disabled (model.selected == Blog)
+                                ]
+                                [ text "blog" ]
+                           ]
                         ++ [ case model.selected of
                                 Form _ ->
                                     select [ onInput (SetSelected << Form) ]
@@ -59,10 +65,7 @@ viewResponse model =
             p [] [ text "Loading..." ]
 
         Just (Ok response) ->
-            div []
-                [ h1 [] [ text "Response" ]
-                , viewResponseOk response
-                ]
+            viewResponseOk response model.selected
 
         Just (Err error) ->
             div []
@@ -71,18 +74,18 @@ viewResponse model =
                 ]
 
 
-viewResponseOk : Response MyDocument -> Html msg
-viewResponseOk response =
+viewResponseOk : Response MyDocument -> Selection -> Html Msg
+viewResponseOk response selected =
     div []
         (List.intersperse (hr [] [])
-            (List.map viewDocument
+            (List.map (viewDocument selected)
                 response.results
             )
         )
 
 
-viewDocument : SearchResult MyDocument -> Html msg
-viewDocument result =
+viewDocument : Selection -> SearchResult MyDocument -> Html Msg
+viewDocument selected result =
     case result.data of
         Default doc ->
             viewDefaultDocType doc
@@ -94,10 +97,10 @@ viewDocument result =
             viewDocumentJobOffer doc
 
         BlogPostDoc doc ->
-            viewDocumentBlogPost doc
+            viewDocumentBlogPost selected doc result.id
 
 
-viewDocumentArticle : Article -> Html msg
+viewDocumentArticle : Article -> Html Msg
 viewDocumentArticle article =
     div []
         [ structuredTextAsHtml article.title
@@ -106,7 +109,7 @@ viewDocumentArticle article =
         ]
 
 
-viewDocumentJobOffer : JobOffer -> Html msg
+viewDocumentJobOffer : JobOffer -> Html Msg
 viewDocumentJobOffer jobOffer =
     div []
         [ structuredTextAsHtml jobOffer.name
@@ -126,8 +129,31 @@ viewDocumentJobOffer jobOffer =
         ]
 
 
-viewDocumentBlogPost : BlogPost -> Html msg
-viewDocumentBlogPost blogPost =
+viewDocumentBlogPost : Selection -> BlogPost -> String -> Html Msg
+viewDocumentBlogPost selected blogPost docId =
+    case selected of
+        Blog ->
+            viewDocumentBlogPostShort blogPost docId
+
+        _ ->
+            viewDocumentBlogPostFull blogPost
+
+
+viewDocumentBlogPostShort : BlogPost -> String -> Html Msg
+viewDocumentBlogPostShort blogPost docId =
+    div []
+        [ a
+            [ onClick (SetSelected (Document docId))
+            , href "#"
+            ]
+            [ structuredTextAsHtml blogPost.shortLede ]
+        , em []
+            [ text ("Posted on " ++ blogPost.date ++ " by " ++ blogPost.author ++ " in " ++ blogPost.category) ]
+        ]
+
+
+viewDocumentBlogPostFull : BlogPost -> Html Msg
+viewDocumentBlogPostFull blogPost =
     div []
         [ p [] [ text "BlogPost" ]
         , structuredTextAsHtml blogPost.body
