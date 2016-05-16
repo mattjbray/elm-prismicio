@@ -164,3 +164,20 @@ linkAsHtmlWith link childs =
 
         WebLink (Url url) ->
             a [ href url ] childs
+
+
+viewDefaultDocType : DefaultDocType -> Html msg
+viewDefaultDocType doc =
+    let
+        allDocFields =
+            let
+                fieldsPerType =
+                    Dict.values doc
+
+                fieldsPerField =
+                    List.concatMap Dict.values fieldsPerType
+            in
+                List.concat fieldsPerField
+    in
+        div []
+            (h2 [] (List.map text (Dict.keys doc)) :: (List.map asHtml allDocFields))
