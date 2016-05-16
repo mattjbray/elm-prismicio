@@ -11,7 +11,7 @@ type alias Cache' api docType =
     { api : api
     , url : Url
     , nextRequestId : Int
-    , requests : Dict Int Query
+    , requests : Dict Int Request
     , responses : Dict Int (Response docType)
     }
 
@@ -75,13 +75,13 @@ type alias Experiments =
 
 
 
--- QUERY
+-- REQUEST
 
 
-type alias Query =
+type alias Request =
     { action : Url
     , ref : Ref
-    , query : String
+    , q : String
     }
 
 
@@ -93,7 +93,7 @@ type PrismicError
     = FormDoesNotExist String
     | RefDoesNotExist String
     | FetchApiError Http.Error
-    | SubmitQueryError Http.Error
+    | SubmitRequestError Http.Error
 
 
 

@@ -29,7 +29,7 @@ fetchApi cache =
 form :
     String
     -> Task PrismicError (CacheWithApi docType)
-    -> Task PrismicError ( Query, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi docType )
 form formId apiTask =
     let
         addForm cache =
@@ -50,7 +50,7 @@ form formId apiTask =
 
                     (Just form, Just masterRef) ->
                         let
-                            query =
+                            q =
                                 Maybe.withDefault ""
                                     (Dict.get "q" form.fields
                                         `Maybe.andThen` .default
@@ -59,7 +59,7 @@ form formId apiTask =
                             Task.succeed
                                 ( { action = form.action
                                   , ref = masterRef.ref
-                                  , query = query
+                                  , q = q
                                   }
                                 , cache
                                 )
@@ -69,22 +69,22 @@ form formId apiTask =
 
 ref :
     String
-    -> Task PrismicError ( Query, CacheWithApi docType )
-    -> Task PrismicError ( Query, CacheWithApi docType )
-ref refId queryTask =
+    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi docType )
+ref refId requestTask =
     let
-        addRef ( query, cache ) =
+        addRef ( request, cache ) =
             case getRefById refId cache.api of
                 Nothing ->
                     Task.fail (RefDoesNotExist refId)
 
                 Just r ->
                     Task.succeed
-                        ( { query | ref = r.ref }
+                        ( { request | ref = r.ref }
                         , cache
                         )
     in
-        queryTask `Task.andThen` addRef
+        requestTask `Task.andThen` addRef
 
 
 getRefById : String -> Api -> Maybe RefProperties
@@ -96,31 +96,31 @@ getRefById refId api =
 
 query :
     String
-    -> Task PrismicError ( Query, CacheWithApi docType )
-    -> Task PrismicError ( Query, CacheWithApi docType )
-query queryStr queryTask =
+    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi docType )
+query queryStr requestTask =
     let
-        addQuery ( query, cache ) =
+        addQuery ( request, cache ) =
             Task.succeed
-                ( { query | query = queryStr }
+                ( { request | q = queryStr }
                 , cache
                 )
     in
-        queryTask `Task.andThen` addQuery
+        requestTask `Task.andThen` addQuery
 
 
 submit :
     Decoder docType
-    -> Task PrismicError ( Query, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi docType )
     -> Task PrismicError ( Response docType, Cache docType )
-submit decodeDocType queryTask =
+submit decodeDocType requestTask =
     let
-        doSubmit ( query, cache ) =
+        doSubmit ( request, cache ) =
             let
                 (Url url) =
-                    queryToUrl query
+                    requestToUrl request
             in
-                case getFromCache query cache of
+                case getFromCache request cache of
                     Just response ->
                         Task.succeed ( response, { cache | api = Just cache.api } )
 
@@ -130,44 +130,44 @@ submit decodeDocType queryTask =
                                 { cache | api = Just cache.api }
 
                             mkResponse response =
-                                ( response, setInCache query response cacheWithApi )
+                                ( response, setInCache request response cacheWithApi )
                         in
                             Http.get (decodeResponse decodeDocType) url
                                 |> Task.map mkResponse
-                                |> Task.mapError SubmitQueryError
+                                |> Task.mapError SubmitRequestError
     in
-        queryTask `Task.andThen` doSubmit
+        requestTask `Task.andThen` doSubmit
 
 
-queryToUrl : Query -> Url
-queryToUrl query =
+requestToUrl : Request -> Url
+requestToUrl request =
     let
         (Ref refStr) =
-            query.ref
+            request.ref
 
         (Url urlStr) =
-            query.action
+            request.action
     in
         Url
             (Http.url urlStr
                 (( "ref", refStr )
-                    :: if String.isEmpty query.query then
+                    :: if String.isEmpty request.q then
                         []
                        else
-                        [ ( "q", query.query ) ]
+                        [ ( "q", request.q ) ]
                 )
             )
 
 
 getFromCache :
-    Query
+    Request
     -> Cache' api docType
     -> Maybe (Response docType)
-getFromCache query cache =
+getFromCache request cache =
     let
         mRequestId =
             Dict.toList cache.requests
-                |> List.filter (\( id, cachedQuery ) -> cachedQuery == query)
+                |> List.filter (\( id, cachedRequest ) -> cachedRequest == request)
                 |> List.map fst
                 |> List.head
 
@@ -181,17 +181,17 @@ getFromCache query cache =
 
 
 setInCache :
-    Query
+    Request
     -> Response docType
     -> Cache' api docType
     -> Cache' api docType
-setInCache query response cache =
+setInCache request response cache =
     let
         id =
             cache.nextRequestId
     in
         { cache
             | nextRequestId = id + 1
-            , requests = Dict.insert id query cache.requests
+            , requests = Dict.insert id request cache.requests
             , responses = Dict.insert id response cache.responses
         }
