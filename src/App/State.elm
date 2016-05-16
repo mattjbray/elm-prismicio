@@ -4,18 +4,30 @@ import App.Decoders exposing (decodeMyDocument)
 import App.Types exposing (..)
 import Prismic as P
 import Prismic.Types exposing (Url(Url))
+import Prismic.State
 import Task
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { response = Nothing
-      , api = Nothing
-      , selectedForm = "everything"
-      }
-    , P.init (Url "https://lesbonneschoses.prismic.io/api")
-        |> Task.perform SetError SetApi
-    )
+    let
+      model =
+        { response =
+            Nothing
+        , prismic =
+            Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
+        , selectedForm =
+            "everything"
+        }
+    in
+      ( model
+      , model.prismic
+          |> P.fetchApi
+          |> P.form model.selectedForm
+          |> P.withRef "master"
+          |> P.submit decodeMyDocument
+          |> Task.perform SetError SetResponse
+      )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -24,34 +36,24 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        SetApi api ->
-            ( { model | api = Just (Ok api) }
-            , Task.succeed api
-                |> P.form model.selectedForm
-                |> P.withRef "master"
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
-            )
-
         SetSelectedForm formName ->
             ( { model
                 | selectedForm = formName
                 , response = Nothing
               }
-            , case model.api of
-                Just (Ok api) ->
-                    Task.succeed api
-                        |> P.form formName
-                        |> P.withRef "master"
-                        |> P.submit decodeMyDocument
-                        |> Task.perform SetError SetResponse
-
-                _ ->
-                    Cmd.none
+            , model.prismic
+                |> P.fetchApi
+                |> P.form formName
+                |> P.withRef "master"
+                |> P.submit decodeMyDocument
+                |> Task.perform SetError SetResponse
             )
 
-        SetResponse response ->
-            ( { model | response = Just (Ok response) }
+        SetResponse (response, cache) ->
+            ( { model
+                | response = Just (Ok response)
+                , prismic = cache
+              }
             , Cmd.none
             )
 

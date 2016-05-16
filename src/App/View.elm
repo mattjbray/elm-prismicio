@@ -24,8 +24,8 @@ viewControls model =
             option [ selected (formName == model.selectedForm) ] [ text formName ]
     in
         div []
-            (case model.api of
-                Just (Ok api) ->
+              (case model.prismic.api of
+                Just api ->
                     [ select [ onInput SetSelectedForm ]
                         (List.map viewOption (Dict.keys api.forms))
                     ]

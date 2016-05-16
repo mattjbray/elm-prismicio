@@ -3,6 +3,18 @@ module Prismic.Types exposing (..)
 import Dict exposing (Dict)
 import Http
 
+type alias Cache docType = Cache' (Maybe Api) docType
+
+type alias CacheWithApi docType = Cache' Api docType
+
+type alias Cache' api docType =
+    { api : api
+    , url : Url
+    , nextRequestId : Int
+    , requests : Dict Int (Query Ref)
+    , responses : Dict Int (Response docType)
+    }
+
 
 -- API
 
@@ -70,8 +82,7 @@ type alias Query r =
     {- The `r` type starts as `()` and gets filled out with a `Ref` after
        `withRef`
     -}
-    { api : Api
-    , action : Url
+    { action : Url
     , ref : r
     , query : String
     }

@@ -5,15 +5,14 @@ import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link
 
 type alias Model =
     { response : Maybe (Result PrismicError (Response MyDocument))
-    , api : Maybe (Result PrismicError Api)
+    , prismic : Prismic.Types.Cache MyDocument
     , selectedForm : String
     }
 
 
 type Msg
     = NoOp
-    | SetApi Api
-    | SetResponse (Response MyDocument)
+    | SetResponse (Response MyDocument, Prismic.Types.Cache MyDocument)
     | SetError PrismicError
     | SetSelectedForm String
 
