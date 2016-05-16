@@ -24,7 +24,6 @@ init =
       , model.prismic
           |> P.fetchApi
           |> P.form model.selectedForm
-          |> P.ref "master"
           |> P.submit decodeMyDocument
           |> Task.perform SetError SetResponse
       )
@@ -44,7 +43,6 @@ update msg model =
             , model.prismic
                 |> P.fetchApi
                 |> P.form formName
-                |> P.ref "master"
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
             )

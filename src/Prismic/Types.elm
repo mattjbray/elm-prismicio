@@ -11,7 +11,7 @@ type alias Cache' api docType =
     { api : api
     , url : Url
     , nextRequestId : Int
-    , requests : Dict Int (Query Ref)
+    , requests : Dict Int Query
     , responses : Dict Int (Response docType)
     }
 
@@ -78,12 +78,9 @@ type alias Experiments =
 -- QUERY
 
 
-type alias Query r =
-    {- The `r` type starts as `()` and gets filled out with a `Ref` after
-       `withRef`
-    -}
+type alias Query =
     { action : Url
-    , ref : r
+    , ref : Ref
     , query : String
     }
 

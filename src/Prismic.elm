@@ -29,19 +29,26 @@ fetchApi cache =
 form :
     String
     -> Task PrismicError (CacheWithApi docType)
-    -> Task PrismicError ( Query (), CacheWithApi docType )
+    -> Task PrismicError ( Query, CacheWithApi docType )
 form formId apiTask =
     let
         addForm cache =
             let
                 mForm =
                     Dict.get formId cache.api.forms
+                defaultRefId =
+                    "master"
+                mRef =
+                    getRefById defaultRefId cache.api
             in
-                case mForm of
-                    Nothing ->
+                case (mForm, mRef) of
+                    (Nothing, _) ->
                         Task.fail (FormDoesNotExist formId)
 
-                    Just form ->
+                    (_, Nothing) ->
+                        Task.fail (RefDoesNotExist defaultRefId)
+
+                    (Just form, Just masterRef) ->
                         let
                             query =
                                 Maybe.withDefault ""
@@ -51,7 +58,7 @@ form formId apiTask =
                         in
                             Task.succeed
                                 ( { action = form.action
-                                  , ref = ()
+                                  , ref = masterRef.ref
                                   , query = query
                                   }
                                 , cache
@@ -62,33 +69,34 @@ form formId apiTask =
 
 ref :
     String
-    -> Task PrismicError ( Query (), CacheWithApi docType )
-    -> Task PrismicError ( Query Ref, CacheWithApi docType )
+    -> Task PrismicError ( Query, CacheWithApi docType )
+    -> Task PrismicError ( Query, CacheWithApi docType )
 ref refId queryTask =
     let
         addRef ( query, cache ) =
-            let
-                mRef =
-                    cache.api.refs
-                        |> List.filter (\r -> r.id == refId)
-                        |> List.head
-            in
-                case mRef of
-                    Nothing ->
-                        Task.fail (RefDoesNotExist refId)
+            case getRefById refId cache.api of
+                Nothing ->
+                    Task.fail (RefDoesNotExist refId)
 
-                    Just r ->
-                        Task.succeed
-                            ( { query | ref = r.ref }
-                            , cache
-                            )
+                Just r ->
+                    Task.succeed
+                        ( { query | ref = r.ref }
+                        , cache
+                        )
     in
         queryTask `Task.andThen` addRef
 
 
+getRefById : String -> Api -> Maybe RefProperties
+getRefById refId api =
+    api.refs
+        |> List.filter (\r -> r.id == refId)
+        |> List.head
+
+
 submit :
     Decoder docType
-    -> Task PrismicError ( Query Ref, CacheWithApi docType )
+    -> Task PrismicError ( Query, CacheWithApi docType )
     -> Task PrismicError ( Response docType, Cache docType )
 submit decodeDocType queryTask =
     let
@@ -116,7 +124,7 @@ submit decodeDocType queryTask =
         queryTask `Task.andThen` doSubmit
 
 
-queryToUrl : Query Ref -> Url
+queryToUrl : Query -> Url
 queryToUrl query =
     let
         (Ref refStr) =
@@ -137,7 +145,7 @@ queryToUrl query =
 
 
 getFromCache :
-    Query Ref
+    Query
     -> Cache' api docType
     -> Maybe (Response docType)
 getFromCache query cache =
@@ -158,7 +166,7 @@ getFromCache query cache =
 
 
 setInCache :
-    Query Ref
+    Query
     -> Response docType
     -> Cache' api docType
     -> Cache' api docType
