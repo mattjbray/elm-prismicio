@@ -3,8 +3,8 @@ module App.View exposing (..)
 import App.Types exposing (..)
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (selected)
-import Html.Events exposing (onInput)
+import Html.Attributes exposing (disabled, selected)
+import Html.Events exposing (onClick, onInput)
 import Prismic.Types exposing (Response, SearchResult, DefaultDocType)
 import Prismic.View exposing (structuredTextAsHtml, asHtml)
 
@@ -21,14 +21,31 @@ viewControls : Model -> Html Msg
 viewControls model =
     let
         viewOption formName =
-            option [ selected (formName == model.selectedForm) ] [ text formName ]
+            option [ selected (Form formName == model.selected) ] [ text formName ]
+
+        viewBookmark bookmarkId =
+            button
+                [ onClick (SetSelected (Bookmark bookmarkId))
+                , disabled (Bookmark bookmarkId == model.selected)
+                ]
+                [ text bookmarkId ]
     in
         div []
-              (case model.prismic.api of
+            (case model.prismic.api of
                 Just api ->
-                    [ select [ onInput SetSelectedForm ]
-                        (List.map viewOption (Dict.keys api.forms))
-                    ]
+                    List.map viewBookmark (Dict.keys api.bookmarks)
+                        ++ [ case model.selected of
+                                Form _ ->
+                                    select [ onInput (SetSelected << Form) ]
+                                        (List.map viewOption (Dict.keys api.forms))
+
+                                _ ->
+                                    button
+                                        [ onClick (SetSelected (Form "everything"))
+                                        , disabled (Form "everything" == model.selected)
+                                        ]
+                                        [ text "everything" ]
+                           ]
 
                 _ ->
                     []

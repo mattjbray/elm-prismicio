@@ -11,23 +11,36 @@ import Task
 init : ( Model, Cmd Msg )
 init =
     let
-      model =
-        { response =
-            Nothing
-        , prismic =
-            Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
-        , selectedForm =
-            "everything"
-        }
+        model =
+            { response =
+                Nothing
+            , prismic =
+                Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
+            , selected =
+                Bookmark "about"
+            }
     in
-      ( model
-      , model.prismic
-          |> P.fetchApi
-          |> P.form model.selectedForm
-          |> P.query "[[:d = at(document.id, \"UlfoxUnM0wkXYXbf\")]]"
-          |> P.submit decodeMyDocument
-          |> Task.perform SetError SetResponse
-      )
+        ( model
+        , fetchSelection model
+        )
+
+
+fetchSelection : Model -> Cmd Msg
+fetchSelection model =
+    case model.selected of
+        Bookmark bookmark ->
+            model.prismic
+                |> P.fetchApi
+                |> P.bookmark bookmark
+                |> P.submit decodeMyDocument
+                |> Task.perform SetError SetResponse
+
+        Form form ->
+            model.prismic
+                |> P.fetchApi
+                |> P.form form
+                |> P.submit decodeMyDocument
+                |> Task.perform SetError SetResponse
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -36,19 +49,19 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        SetSelectedForm formName ->
-            ( { model
-                | selectedForm = formName
-                , response = Nothing
-              }
-            , model.prismic
-                |> P.fetchApi
-                |> P.form formName
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
-            )
+        SetSelected selection ->
+            let
+                newModel =
+                    { model
+                        | selected = selection
+                        , response = Nothing
+                    }
+            in
+                ( newModel
+                , fetchSelection newModel
+                )
 
-        SetResponse (response, cache) ->
+        SetResponse ( response, cache ) ->
             ( { model
                 | response = Just (Ok response)
                 , prismic = cache
