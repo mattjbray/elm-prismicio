@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, submit)
+module Prismic exposing (fetchApi, form, ref, query, bookmark, submit)
 
 import Dict
 import Json.Decode exposing (Decoder)
@@ -36,19 +36,21 @@ form formId apiTask =
             let
                 mForm =
                     Dict.get formId cache.api.forms
+
                 defaultRefId =
                     "master"
+
                 mRef =
                     getRefById defaultRefId cache.api
             in
-                case (mForm, mRef) of
-                    (Nothing, _) ->
+                case ( mForm, mRef ) of
+                    ( Nothing, _ ) ->
                         Task.fail (FormDoesNotExist formId)
 
-                    (_, Nothing) ->
+                    ( _, Nothing ) ->
                         Task.fail (RefDoesNotExist defaultRefId)
 
-                    (Just form, Just masterRef) ->
+                    ( Just form, Just masterRef ) ->
                         let
                             q =
                                 Maybe.withDefault ""
@@ -107,6 +109,28 @@ query queryStr requestTask =
                 )
     in
         requestTask `Task.andThen` addQuery
+
+
+bookmark :
+    String
+    -> Task PrismicError (CacheWithApi docType)
+    -> Task PrismicError ( Request, CacheWithApi docType )
+bookmark bookmarkId cacheTask =
+    cacheTask
+        `Task.andThen` (\cacheWithApi ->
+                            let
+                                mDocId =
+                                    Dict.get bookmarkId cacheWithApi.api.bookmarks
+                            in
+                                case mDocId of
+                                    Nothing ->
+                                        Task.fail (BookmarkDoesNotExist bookmarkId)
+
+                                    Just docId ->
+                                        Task.succeed cacheWithApi
+                                            |> form "everything"
+                                            |> query ("[[:d = at(document.id, \"" ++ docId ++ "\")]]")
+                       )
 
 
 submit :

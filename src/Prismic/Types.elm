@@ -92,6 +92,7 @@ type alias Request =
 type PrismicError
     = FormDoesNotExist String
     | RefDoesNotExist String
+    | BookmarkDoesNotExist String
     | FetchApiError Http.Error
     | SubmitRequestError Http.Error
 
