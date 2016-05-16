@@ -6,7 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (disabled, selected)
 import Html.Events exposing (onClick, onInput)
 import Prismic.Types exposing (Response, SearchResult, DefaultDocType)
-import Prismic.View exposing (structuredTextAsHtml, asHtml)
+import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml)
 
 
 view : Model -> Html Msg
@@ -87,6 +87,9 @@ viewDocument result =
         Default doc ->
             viewDocumentGeneric doc
 
+        ArticleDoc doc ->
+            viewDocumentArticle doc
+
         JobOfferDoc doc ->
             viewDocumentJobOffer doc
 
@@ -109,6 +112,14 @@ viewDocumentGeneric doc =
     in
         div []
             (h2 [] (List.map text (Dict.keys doc)) :: (List.map asHtml allDocFields))
+
+viewDocumentArticle : Article -> Html msg
+viewDocumentArticle article =
+    div []
+        [ structuredTextAsHtml article.title
+        , imageAsHtml article.image.main
+        , structuredTextAsHtml article.content
+        ]
 
 
 viewDocumentJobOffer : JobOffer -> Html msg

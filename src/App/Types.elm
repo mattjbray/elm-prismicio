@@ -1,6 +1,6 @@
 module App.Types exposing (..)
 
-import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link, DefaultDocType)
+import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link, DefaultDocType, ImageField)
 
 
 type alias Model =
@@ -26,6 +26,15 @@ type MyDocument
     = Default DefaultDocType
     | JobOfferDoc JobOffer
     | BlogPostDoc BlogPost
+    | ArticleDoc Article
+
+
+type alias Article =
+    { content : StructuredText
+    , image : ImageField
+    , shortLede : StructuredText
+    , title: StructuredText
+    }
 
 
 type alias BlogPost =

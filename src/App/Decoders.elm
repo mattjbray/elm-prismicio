@@ -9,6 +9,9 @@ decodeMyDocument =
     let
         decodeOnType typeStr =
             case typeStr of
+                "article" ->
+                    object1 ArticleDoc decodeArticle
+
                 "job-offer" ->
                     object1 JobOfferDoc decodeJobOffer
 
@@ -19,6 +22,17 @@ decodeMyDocument =
                     object1 Default decodeDefaultDocType
     in
         ("type" := string) `andThen` decodeOnType
+
+
+decodeArticle : Decoder Article
+decodeArticle =
+    at [ "data", "article" ]
+        (succeed Article
+            |: at [ "content", "value" ] decodeStructuredText
+            |: at [ "image", "value" ] decodeImageField
+            |: at [ "short_lede", "value" ] decodeStructuredText
+            |: at [ "title", "value" ] decodeStructuredText
+        )
 
 
 decodeJobOffer : Decoder JobOffer
