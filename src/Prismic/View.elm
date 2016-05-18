@@ -51,13 +51,12 @@ asHtml field =
             imageAsHtml i.main
 
         StructuredText fields ->
-            div [] (List.map structuredTextFieldAsHtml fields)
+            div [] (structuredTextAsHtml fields)
 
 
-structuredTextAsHtml : StructuredText -> Html msg
-structuredTextAsHtml fields =
-    div []
-        (List.map structuredTextFieldAsHtml fields)
+structuredTextAsHtml : StructuredText -> List (Html msg)
+structuredTextAsHtml =
+  List.map structuredTextFieldAsHtml
 
 
 structuredTextFieldAsHtml : StructuredTextField -> Html msg
