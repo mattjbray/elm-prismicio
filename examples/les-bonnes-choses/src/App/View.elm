@@ -43,7 +43,7 @@ viewHeader model =
                     , a [ href (toHash BlogP), onClick (NavigateTo BlogP) ] [ text "Blog" ]
                     ]
                 ]
-            , a [ href (toHash (FormP "everything")), onClick (NavigateTo (FormP "everything")) ] [ span [] [ text "Search" ] ]
+            , a [ href (toHash (SearchP "everything")), onClick (NavigateTo (SearchP "everything")) ] [ span [] [ text "Search" ] ]
             ]
         ]
 

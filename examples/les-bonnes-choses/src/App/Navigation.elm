@@ -14,8 +14,8 @@ toHash page =
     BlogPostP docId ->
       "#blog/" ++ docId
 
-    FormP formName ->
-      "#forms/" ++ formName
+    SearchP formName ->
+      "#search/" ++ formName
 
     AboutP ->
       "#about"
@@ -37,7 +37,7 @@ pageParser =
   oneOf
     [ format BlogPostP (s "blog" </> string)
     , format BlogP (s "blog")
-    , format FormP (s "forms" </> string)
+    , format SearchP (s "search" </> string)
     , format AboutP (s "about")
     , format JobsP (s "jobs")
     , format StoresP (s "stores")

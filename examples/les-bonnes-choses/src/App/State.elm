@@ -69,7 +69,7 @@ fetchPageFor model =
         StoresP ->
           fetchBookmark model "stores"
 
-        FormP form ->
+        SearchP form ->
             model.prismic
                 |> P.fetchApi
                 |> P.form form

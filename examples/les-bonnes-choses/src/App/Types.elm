@@ -11,7 +11,7 @@ type alias Model =
 
 
 type Page
-  = FormP String
+  = SearchP String
   | BlogP
   | BlogPostP String
   | AboutP
