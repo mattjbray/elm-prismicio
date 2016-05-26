@@ -6,11 +6,11 @@ import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link
 type alias Model =
     { response : Maybe (Result PrismicError (Response MyDocument))
     , prismic : Prismic.Types.Cache MyDocument
-    , selected : Selection
+    , page : Page
     }
 
 
-type Selection
+type Page
   = Form String
   | Bookmark String
   | Blog
@@ -21,7 +21,7 @@ type Msg
     = NoOp
     | SetResponse (Response MyDocument, Prismic.Types.Cache MyDocument)
     | SetError PrismicError
-    | SetSelected Selection
+    | NavigateTo Page
 
 
 type MyDocument

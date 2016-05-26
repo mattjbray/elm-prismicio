@@ -28,17 +28,17 @@ viewHeader model =
                 [ a [ href "#" ] [ text "Les bonnes choses" ] ]
             , ul []
                 [ li []
-                    [ a [ href "#", onClick (SetSelected (Bookmark "about")) ] [ text "About" ]
-                    , a [ href "#", onClick (SetSelected (Bookmark "stores")) ] [ text "Stores" ]
+                    [ a [ href "#", onClick (NavigateTo (Bookmark "about")) ] [ text "About" ]
+                    , a [ href "#", onClick (NavigateTo (Bookmark "stores")) ] [ text "Stores" ]
                     ]
                 ]
             , ul []
                 [ li []
-                    [ a [ href "#", onClick (SetSelected (Bookmark "jobs")) ] [ text "Jobs" ]
-                    , a [ href "#", onClick (SetSelected Blog) ] [ text "Blog" ]
+                    [ a [ href "#", onClick (NavigateTo (Bookmark "jobs")) ] [ text "Jobs" ]
+                    , a [ href "#", onClick (NavigateTo Blog) ] [ text "Blog" ]
                     ]
                 ]
-            , a [ href "#", onClick (SetSelected (Form "everything")) ] [ span [] [ text "Search" ] ]
+            , a [ href "#", onClick (NavigateTo (Form "everything")) ] [ span [] [ text "Search" ] ]
             ]
         ]
 
@@ -50,7 +50,7 @@ viewResponse model =
             p [] [ text "Loading..." ]
 
         Just (Ok response) ->
-            viewResponseOk response model.selected
+            viewResponseOk response model.page
 
         Just (Err error) ->
             div []
@@ -59,18 +59,18 @@ viewResponse model =
                 ]
 
 
-viewResponseOk : Response MyDocument -> Selection -> Html Msg
-viewResponseOk response selected =
+viewResponseOk : Response MyDocument -> Page -> Html Msg
+viewResponseOk response page =
     div []
         (List.intersperse (hr [] [])
-            (List.map (viewDocument selected)
+            (List.map (viewDocument page)
                 response.results
             )
         )
 
 
-viewDocument : Selection -> SearchResult MyDocument -> Html Msg
-viewDocument selected result =
+viewDocument : Page -> SearchResult MyDocument -> Html Msg
+viewDocument page result =
     case result.data of
         Default doc ->
             viewDefaultDocType doc
@@ -82,7 +82,7 @@ viewDocument selected result =
             viewDocumentJobOffer doc
 
         BlogPostDoc doc ->
-            viewDocumentBlogPost selected doc result.id
+            viewDocumentBlogPost page doc result.id
 
 
 viewDocumentArticle : Article -> Html Msg
@@ -126,9 +126,9 @@ viewDocumentJobOffer jobOffer =
         )
 
 
-viewDocumentBlogPost : Selection -> BlogPost -> String -> Html Msg
-viewDocumentBlogPost selected blogPost docId =
-    case selected of
+viewDocumentBlogPost : Page -> BlogPost -> String -> Html Msg
+viewDocumentBlogPost page blogPost docId =
+    case page of
         Blog ->
             viewDocumentBlogPostShort blogPost docId
 
@@ -140,7 +140,7 @@ viewDocumentBlogPostShort : BlogPost -> String -> Html Msg
 viewDocumentBlogPostShort blogPost docId =
     div []
         [ a
-            [ onClick (SetSelected (Document docId))
+            [ onClick (NavigateTo (Document docId))
             , href "#"
             ]
             (structuredTextAsHtml blogPost.shortLede)
