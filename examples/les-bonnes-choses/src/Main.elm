@@ -1,6 +1,7 @@
 module Main exposing (main)
 
-import App.State exposing (init, update, hashParser, urlUpdate)
+import App.State exposing (init, update, urlUpdate)
+import App.Navigation exposing (hashParser)
 import App.View exposing (view)
 import Navigation
 

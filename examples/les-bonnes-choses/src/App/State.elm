@@ -2,13 +2,12 @@ module App.State exposing (..)
 
 import App.Decoders exposing (decodeMyDocument)
 import App.Types exposing (..)
+import App.Navigation exposing (toHash)
 import Navigation
 import Prismic as P
 import Prismic.Types exposing (Url(Url))
 import Prismic.State
-import String
 import Task
-import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 
 
 initModel : Model
@@ -18,7 +17,7 @@ initModel =
   , prismic =
       Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
   , page =
-      Bookmark "about"
+      About
   }
 
 
@@ -48,50 +47,6 @@ update msg model =
             )
 
 
-
-toHash : Page -> String
-toHash page =
-  case page of
-    Blog ->
-      "#blog"
-
-    Form formName ->
-      "#forms/" ++ formName
-
-    Bookmark "about" ->
-      "#about"
-
-    Bookmark "jobs" ->
-      "#jobs"
-
-    Bookmark "stores" ->
-      "#stores"
-
-    Bookmark bookmarkName ->
-      "#bookmarks/" ++ bookmarkName
-
-    Document docId ->
-      "#documents/" ++ docId
-
-
-hashParser : Navigation.Location -> Result String Page
-hashParser location =
-  UrlParser.parse identity pageParser (String.dropLeft 1 location.hash)
-
-
-pageParser : Parser (Page -> a) a
-pageParser =
-  oneOf
-    [ format Blog (s "blog")
-    , format Form (s "forms" </> string)
-    , format (Bookmark "about") (s "about")
-    , format (Bookmark "jobs") (s "jobs")
-    , format (Bookmark "stores") (s "stores")
-    , format Bookmark (s "bookmarks" </> string)
-    , format Document (s "documents" </> string)
-    ]
-
-
 init : Result String Page -> (Model, Cmd Msg)
 init result =
   urlUpdate result initModel
@@ -112,12 +67,12 @@ urlUpdate result model =
 fetchPage : Model -> Cmd Msg
 fetchPage model =
     case model.page of
-        Bookmark bookmark ->
-            model.prismic
-                |> P.fetchApi
-                |> P.bookmark bookmark
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
+        About ->
+          fetchBookmark model "about"
+        Jobs ->
+          fetchBookmark model "jobs"
+        Stores ->
+          fetchBookmark model "stores"
 
         Form form ->
             model.prismic
@@ -140,3 +95,12 @@ fetchPage model =
                 |> P.form "blog"
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
+
+
+fetchBookmark : Model -> String -> Cmd Msg
+fetchBookmark model bookmarkName  =
+  model.prismic
+      |> P.fetchApi
+      |> P.bookmark bookmarkName
+      |> P.submit decodeMyDocument
+      |> Task.perform SetError SetResponse

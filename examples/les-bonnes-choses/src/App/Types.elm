@@ -12,9 +12,11 @@ type alias Model =
 
 type Page
   = Form String
-  | Bookmark String
   | Blog
   | Document String
+  | About
+  | Jobs
+  | Stores
 
 
 type Msg
