@@ -107,23 +107,32 @@ viewDocumentArticle article =
 
 viewDocumentJobOffer : JobOffer -> Html Msg
 viewDocumentJobOffer jobOffer =
-    div []
-        ((structuredTextAsHtml jobOffer.name)
-            ++ [ text
-                    (jobOffer.contractType
-                        |> Maybe.map (\ct -> ct ++ " position")
-                        |> Maybe.withDefault ""
-                    )
-               , br [] []
-               , text
-                    (jobOffer.service
-                        |> Maybe.map (\service -> service ++ " role")
-                        |> Maybe.withDefault ""
-                    )
-               ]
-            ++ (structuredTextAsHtml jobOffer.jobDescription)
-            ++ (structuredTextAsHtml jobOffer.profile)
-        )
+    div [ class "main", id "job" ]
+        [ section [ id "page-header" ]
+            [ div []
+                [ div []
+                    (structuredTextAsHtml jobOffer.name)
+                ]
+            ]
+        , section [ id "page-body" ]
+            ([ h2 [] [ text "About you" ] ]
+                ++ (structuredTextAsHtml jobOffer.profile)
+                ++ [ h2 [] [ text "Your responsibilities" ] ]
+                ++ (structuredTextAsHtml jobOffer.jobDescription)
+                ++ [ text
+                        (jobOffer.contractType
+                            |> Maybe.map (\ct -> ct ++ " position")
+                            |> Maybe.withDefault ""
+                        )
+                   , br [] []
+                   , text
+                        (jobOffer.service
+                            |> Maybe.map (\service -> service ++ " role")
+                            |> Maybe.withDefault ""
+                        )
+                   ]
+            )
+        ]
 
 
 viewDocumentBlogPost : Page -> BlogPost -> String -> Html Msg
