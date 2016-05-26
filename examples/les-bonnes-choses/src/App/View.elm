@@ -11,7 +11,8 @@ import Prismic.Types exposing (Response, SearchResult, DefaultDocType, Url(Url))
 import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml, viewDefaultDocType)
 
 
-onClick msg = onWithOptions "click" {defaultOptions | preventDefault = True} (Json.succeed msg)
+onClick msg =
+    onWithOptions "click" { defaultOptions | preventDefault = True } (Json.succeed msg)
 
 
 view : Model -> Html Msg

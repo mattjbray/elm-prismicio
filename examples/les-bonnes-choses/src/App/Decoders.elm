@@ -4,6 +4,7 @@ import App.Types exposing (..)
 import Json.Decode exposing (..)
 import Prismic.Decoders exposing (..)
 
+
 decodeMyDocument : Decoder MyDocument
 decodeMyDocument =
     let

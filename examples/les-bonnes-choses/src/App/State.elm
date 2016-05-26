@@ -12,13 +12,13 @@ import Task
 
 initModel : Model
 initModel =
-  { response =
-      Nothing
-  , prismic =
-      Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
-  , page =
-      AboutP
-  }
+    { response =
+        Nothing
+    , prismic =
+        Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
+    , page =
+        AboutP
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,30 +48,36 @@ update msg model =
             )
 
 
-init : Result String Page -> (Model, Cmd Msg)
+init : Result String Page -> ( Model, Cmd Msg )
 init result =
-  urlUpdate result initModel
+    urlUpdate result initModel
 
 
-urlUpdate : Result String Page -> Model -> (Model, Cmd Msg)
+urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
 urlUpdate result model =
-  case Debug.log "result" result of
-    Err _ ->
-      (model, Navigation.modifyUrl (toHash model.page))
-    Ok page ->
-      let newModel = { model | page = page, response = Nothing }
-      in newModel ! [ fetchPageFor newModel]
+    case Debug.log "result" result of
+        Err _ ->
+            ( model, Navigation.modifyUrl (toHash model.page) )
+
+        Ok page ->
+            let
+                newModel =
+                    { model | page = page, response = Nothing }
+            in
+                newModel ! [ fetchPageFor newModel ]
 
 
 fetchPageFor : Model -> Cmd Msg
 fetchPageFor model =
     case model.page of
         AboutP ->
-          fetchBookmark model "about"
+            fetchBookmark model "about"
+
         JobsP ->
-          fetchBookmark model "jobs"
+            fetchBookmark model "jobs"
+
         StoresP ->
-          fetchBookmark model "stores"
+            fetchBookmark model "stores"
 
         SearchP form ->
             model.prismic
@@ -97,9 +103,9 @@ fetchPageFor model =
 
 
 fetchBookmark : Model -> String -> Cmd Msg
-fetchBookmark model bookmarkName  =
-  model.prismic
-      |> P.fetchApi
-      |> P.bookmark bookmarkName
-      |> P.submit decodeMyDocument
-      |> Task.perform SetError SetResponse
+fetchBookmark model bookmarkName =
+    model.prismic
+        |> P.fetchApi
+        |> P.bookmark bookmarkName
+        |> P.submit decodeMyDocument
+        |> Task.perform SetError SetResponse

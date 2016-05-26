@@ -11,17 +11,17 @@ type alias Model =
 
 
 type Page
-  = SearchP String
-  | BlogP
-  | BlogPostP String
-  | AboutP
-  | JobsP
-  | StoresP
+    = SearchP String
+    | BlogP
+    | BlogPostP String
+    | AboutP
+    | JobsP
+    | StoresP
 
 
 type Msg
     = NoOp
-    | SetResponse (Response MyDocument, Prismic.Types.Cache MyDocument)
+    | SetResponse ( Response MyDocument, Prismic.Types.Cache MyDocument )
     | SetError PrismicError
     | NavigateTo Page
 
@@ -37,7 +37,7 @@ type alias Article =
     { content : StructuredText
     , image : ImageField
     , shortLede : StructuredText
-    , title: StructuredText
+    , title : StructuredText
     }
 
 
