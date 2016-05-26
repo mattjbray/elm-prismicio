@@ -76,7 +76,7 @@ fetchPageFor model =
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
 
-        Document docId ->
+        BlogPostP docId ->
             model.prismic
                 |> P.fetchApi
                 |> P.form "everything"

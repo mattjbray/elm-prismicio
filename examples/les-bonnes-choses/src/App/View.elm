@@ -154,8 +154,8 @@ viewDocumentBlogPostShort : BlogPost -> String -> Html Msg
 viewDocumentBlogPostShort blogPost docId =
     div []
         [ a
-            [ onClick (NavigateTo (Document docId))
-            , href (toHash (Document docId))
+            [ onClick (NavigateTo (BlogPostP docId))
+            , href (toHash (BlogPostP docId))
             ]
             (structuredTextAsHtml blogPost.shortLede)
         , em []

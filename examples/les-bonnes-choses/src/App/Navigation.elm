@@ -11,6 +11,9 @@ toHash page =
     Blog ->
       "#blog"
 
+    BlogPostP docId ->
+      "#blog/" ++ docId
+
     Form formName ->
       "#forms/" ++ formName
 
@@ -23,9 +26,6 @@ toHash page =
     Stores ->
       "#stores"
 
-    Document docId ->
-      "#documents/" ++ docId
-
 
 hashParser : Navigation.Location -> Result String Page
 hashParser location =
@@ -35,10 +35,10 @@ hashParser location =
 pageParser : Parser (Page -> a) a
 pageParser =
   oneOf
-    [ format Blog (s "blog")
+    [ format BlogPostP (s "blog" </> string)
+    , format Blog (s "blog")
     , format Form (s "forms" </> string)
     , format About (s "about")
     , format Jobs (s "jobs")
     , format Stores (s "stores")
-    , format Document (s "documents" </> string)
     ]

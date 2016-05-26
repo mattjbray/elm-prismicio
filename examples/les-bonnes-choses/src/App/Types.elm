@@ -13,7 +13,7 @@ type alias Model =
 type Page
   = Form String
   | Blog
-  | Document String
+  | BlogPostP String
   | About
   | Jobs
   | Stores
