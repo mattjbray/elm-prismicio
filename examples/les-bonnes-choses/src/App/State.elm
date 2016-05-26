@@ -28,7 +28,11 @@ update msg model =
             ( model, Cmd.none )
 
         NavigateTo page ->
-          model ! [ Navigation.newUrl (toHash page) ]
+            model
+                ! if model.page == page then
+                    []
+                  else
+                    [ Navigation.newUrl (toHash page) ]
 
         SetResponse ( response, cache ) ->
             ( { model
