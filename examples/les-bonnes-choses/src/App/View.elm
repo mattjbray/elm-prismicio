@@ -30,20 +30,20 @@ viewHeader model =
     header []
         [ nav []
             [ h1 []
-                [ a [ href (toHash About), onClick (NavigateTo About) ] [ text "Les bonnes choses" ] ]
+                [ a [ href (toHash AboutP), onClick (NavigateTo AboutP) ] [ text "Les bonnes choses" ] ]
             , ul []
                 [ li []
-                    [ a [ href (toHash About), onClick (NavigateTo About) ] [ text "About" ]
-                    , a [ href (toHash Stores), onClick (NavigateTo Stores) ] [ text "Stores" ]
+                    [ a [ href (toHash AboutP), onClick (NavigateTo AboutP) ] [ text "About" ]
+                    , a [ href (toHash StoresP), onClick (NavigateTo StoresP) ] [ text "Stores" ]
                     ]
                 ]
             , ul []
                 [ li []
-                    [ a [ href (toHash Jobs), onClick (NavigateTo Jobs) ] [ text "Jobs" ]
-                    , a [ href (toHash Blog), onClick (NavigateTo Blog) ] [ text "Blog" ]
+                    [ a [ href (toHash JobsP), onClick (NavigateTo JobsP) ] [ text "Jobs" ]
+                    , a [ href (toHash BlogP), onClick (NavigateTo BlogP) ] [ text "Blog" ]
                     ]
                 ]
-            , a [ href (toHash (Form "everything")), onClick (NavigateTo (Form "everything")) ] [ span [] [ text "Search" ] ]
+            , a [ href (toHash (FormP "everything")), onClick (NavigateTo (FormP "everything")) ] [ span [] [ text "Search" ] ]
             ]
         ]
 
@@ -143,7 +143,7 @@ viewDocumentJobOffer jobOffer =
 viewDocumentBlogPost : Page -> BlogPost -> String -> Html Msg
 viewDocumentBlogPost page blogPost docId =
     case page of
-        Blog ->
+        BlogP ->
             viewDocumentBlogPostShort blogPost docId
 
         _ ->

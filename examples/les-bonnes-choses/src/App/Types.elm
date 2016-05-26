@@ -11,12 +11,12 @@ type alias Model =
 
 
 type Page
-  = Form String
-  | Blog
+  = FormP String
+  | BlogP
   | BlogPostP String
-  | About
-  | Jobs
-  | Stores
+  | AboutP
+  | JobsP
+  | StoresP
 
 
 type Msg

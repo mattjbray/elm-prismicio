@@ -8,22 +8,22 @@ import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 toHash : Page -> String
 toHash page =
   case page of
-    Blog ->
+    BlogP ->
       "#blog"
 
     BlogPostP docId ->
       "#blog/" ++ docId
 
-    Form formName ->
+    FormP formName ->
       "#forms/" ++ formName
 
-    About ->
+    AboutP ->
       "#about"
 
-    Jobs ->
+    JobsP ->
       "#jobs"
 
-    Stores ->
+    StoresP ->
       "#stores"
 
 
@@ -36,9 +36,9 @@ pageParser : Parser (Page -> a) a
 pageParser =
   oneOf
     [ format BlogPostP (s "blog" </> string)
-    , format Blog (s "blog")
-    , format Form (s "forms" </> string)
-    , format About (s "about")
-    , format Jobs (s "jobs")
-    , format Stores (s "stores")
+    , format BlogP (s "blog")
+    , format FormP (s "forms" </> string)
+    , format AboutP (s "about")
+    , format JobsP (s "jobs")
+    , format StoresP (s "stores")
     ]

@@ -17,7 +17,7 @@ initModel =
   , prismic =
       Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
   , page =
-      About
+      AboutP
   }
 
 
@@ -62,14 +62,14 @@ urlUpdate result model =
 fetchPageFor : Model -> Cmd Msg
 fetchPageFor model =
     case model.page of
-        About ->
+        AboutP ->
           fetchBookmark model "about"
-        Jobs ->
+        JobsP ->
           fetchBookmark model "jobs"
-        Stores ->
+        StoresP ->
           fetchBookmark model "stores"
 
-        Form form ->
+        FormP form ->
             model.prismic
                 |> P.fetchApi
                 |> P.form form
@@ -84,7 +84,7 @@ fetchPageFor model =
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
 
-        Blog ->
+        BlogP ->
             model.prismic
                 |> P.fetchApi
                 |> P.form "blog"
