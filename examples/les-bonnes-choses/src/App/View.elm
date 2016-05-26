@@ -4,7 +4,7 @@ import App.Navigation exposing (toHash)
 import App.Types exposing (..)
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (class, disabled, href, id, rel, selected, style)
+import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
 import Html.Events exposing (onInput, onWithOptions, defaultOptions)
 import Json.Decode as Json
 import Prismic.Types exposing (Response, SearchResult, DefaultDocType, Url(Url))
@@ -28,25 +28,34 @@ view model =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    header []
-        [ nav []
-            [ h1 []
-                [ a [ href (toHash AboutP), onClick (NavigateTo AboutP) ] [ text "Les bonnes choses" ] ]
-            , ul []
-                [ li []
-                    [ a [ href (toHash AboutP), onClick (NavigateTo AboutP) ] [ text "About" ] ]
-                , li []
-                    [ a [ href (toHash StoresP), onClick (NavigateTo StoresP) ] [ text "Stores" ] ]
+    let
+        mkHeaderLink page linkText =
+            a
+                [ href (toHash page)
+                , onClick (NavigateTo page)
+                , classList [ ( "selected", model.page == page ) ]
                 ]
-            , ul []
-                [ li []
-                    [ a [ href (toHash JobsP), onClick (NavigateTo JobsP) ] [ text "Jobs" ] ]
-                , li []
-                    [ a [ href (toHash BlogP), onClick (NavigateTo BlogP) ] [ text "Blog" ] ]
+                [ text linkText ]
+    in
+        header []
+            [ nav []
+                [ h1 []
+                    [ mkHeaderLink AboutP "Les bonnes choses" ]
+                , ul []
+                    [ li [] [ mkHeaderLink AboutP "About" ]
+                    , li [] [ mkHeaderLink StoresP "Stores" ]
+                    ]
+                , ul []
+                    [ li [] [ mkHeaderLink JobsP "Jobs" ]
+                    , li [] [ mkHeaderLink BlogP "Blog" ]
+                    ]
+                , a
+                    [ href (toHash (SearchP "everything"))
+                    , onClick (NavigateTo (SearchP "everything"))
+                    ]
+                    [ span [] [ text "Search" ] ]
                 ]
-            , a [ href (toHash (SearchP "everything")), onClick (NavigateTo (SearchP "everything")) ] [ span [] [ text "Search" ] ]
             ]
-        ]
 
 
 viewResponse : Model -> Html Msg
