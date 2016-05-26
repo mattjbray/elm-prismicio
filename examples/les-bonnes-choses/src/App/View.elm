@@ -1,12 +1,17 @@
 module App.View exposing (..)
 
+import App.Navigation exposing (toHash)
 import App.Types exposing (..)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, disabled, href, id, rel, selected, style)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onInput, onWithOptions, defaultOptions)
+import Json.Decode as Json
 import Prismic.Types exposing (Response, SearchResult, DefaultDocType, Url(Url))
 import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml, viewDefaultDocType)
+
+
+onClick msg = onWithOptions "click" {defaultOptions | preventDefault = True} (Json.succeed msg)
 
 
 view : Model -> Html Msg
@@ -25,20 +30,20 @@ viewHeader model =
     header []
         [ nav []
             [ h1 []
-                [ a [ href "#", onClick (NavigateTo About) ] [ text "Les bonnes choses" ] ]
+                [ a [ href (toHash About), onClick (NavigateTo About) ] [ text "Les bonnes choses" ] ]
             , ul []
                 [ li []
-                    [ a [ href "#", onClick (NavigateTo About) ] [ text "About" ]
-                    , a [ href "#", onClick (NavigateTo Stores) ] [ text "Stores" ]
+                    [ a [ href (toHash About), onClick (NavigateTo About) ] [ text "About" ]
+                    , a [ href (toHash Stores), onClick (NavigateTo Stores) ] [ text "Stores" ]
                     ]
                 ]
             , ul []
                 [ li []
-                    [ a [ href "#", onClick (NavigateTo Jobs) ] [ text "Jobs" ]
-                    , a [ href "#", onClick (NavigateTo Blog) ] [ text "Blog" ]
+                    [ a [ href (toHash Jobs), onClick (NavigateTo Jobs) ] [ text "Jobs" ]
+                    , a [ href (toHash Blog), onClick (NavigateTo Blog) ] [ text "Blog" ]
                     ]
                 ]
-            , a [ href "#", onClick (NavigateTo (Form "everything")) ] [ span [] [ text "Search" ] ]
+            , a [ href (toHash (Form "everything")), onClick (NavigateTo (Form "everything")) ] [ span [] [ text "Search" ] ]
             ]
         ]
 
@@ -150,7 +155,7 @@ viewDocumentBlogPostShort blogPost docId =
     div []
         [ a
             [ onClick (NavigateTo (Document docId))
-            , href "#"
+            , href (toHash (Document docId))
             ]
             (structuredTextAsHtml blogPost.shortLede)
         , em []
