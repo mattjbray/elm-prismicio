@@ -14,52 +14,10 @@ view model =
     div []
         [ node "link" [ rel "stylesheet", href "http://lesbonneschoses.prismic.me/assets/stylesheets/normalize.min.css" ] []
         , node "link" [ rel "stylesheet", href "http://lesbonneschoses.prismic.me/assets/stylesheets/main.css" ] []
-          --, viewControls model
         , viewHeader model
         , viewResponse model
         , viewFooter model
         ]
-
-
-viewControls : Model -> Html Msg
-viewControls model =
-    let
-        viewOption formName =
-            option [ selected (Form formName == model.selected) ] [ text formName ]
-
-        viewBookmark bookmarkId =
-            button
-                [ onClick (SetSelected (Bookmark bookmarkId))
-                , disabled (Bookmark bookmarkId == model.selected)
-                ]
-                [ text bookmarkId ]
-    in
-        div []
-            (case model.prismic.api of
-                Just api ->
-                    List.map viewBookmark (Dict.keys api.bookmarks)
-                        ++ [ button
-                                [ onClick (SetSelected Blog)
-                                , disabled (model.selected == Blog)
-                                ]
-                                [ text "blog" ]
-                           ]
-                        ++ [ case model.selected of
-                                Form _ ->
-                                    select [ onInput (SetSelected << Form) ]
-                                        (List.map viewOption (Dict.keys api.forms))
-
-                                _ ->
-                                    button
-                                        [ onClick (SetSelected (Form "everything"))
-                                        , disabled (Form "everything" == model.selected)
-                                        ]
-                                        [ text "everything" ]
-                           ]
-
-                _ ->
-                    []
-            )
 
 
 viewHeader : Model -> Html Msg
