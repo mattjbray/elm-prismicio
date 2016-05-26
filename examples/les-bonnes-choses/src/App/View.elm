@@ -25,7 +25,7 @@ viewHeader model =
     header []
         [ nav []
             [ h1 []
-                [ a [ href "#" ] [ text "Les bonnes choses" ] ]
+                [ a [ href "#", onClick (NavigateTo (Bookmark "about")) ] [ text "Les bonnes choses" ] ]
             , ul []
                 [ li []
                     [ a [ href "#", onClick (NavigateTo (Bookmark "about")) ] [ text "About" ]
