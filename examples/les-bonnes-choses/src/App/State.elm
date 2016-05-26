@@ -28,10 +28,7 @@ update msg model =
             ( model, Cmd.none )
 
         NavigateTo page ->
-            { model
-                | page = page
-                , response = Nothing
-            } ! [ Navigation.newUrl (toHash page)]
+          model ! [ Navigation.newUrl (toHash page) ]
 
         SetResponse ( response, cache ) ->
             ( { model
@@ -58,14 +55,12 @@ urlUpdate result model =
     Err _ ->
       (model, Navigation.modifyUrl (toHash model.page))
     Ok page ->
-      { model
-          | page = page
-          , response = Nothing
-      } ! [fetchPage model]
+      let newModel = { model | page = page, response = Nothing }
+      in newModel ! [ fetchPageFor newModel]
 
 
-fetchPage : Model -> Cmd Msg
-fetchPage model =
+fetchPageFor : Model -> Cmd Msg
+fetchPageFor model =
     case model.page of
         About ->
           fetchBookmark model "about"
