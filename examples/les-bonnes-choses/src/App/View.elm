@@ -2,13 +2,14 @@ module App.View exposing (..)
 
 import App.Navigation exposing (toHash)
 import App.Types exposing (..)
-import Dict
+import App.Article.View as Article
+import App.Blog.View as Blog
+import App.Blog.Types as Blog
 import Html exposing (..)
+import Html.App exposing (map)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
 import Html.Events exposing (onInput, onWithOptions, defaultOptions)
 import Json.Decode as Json
-import Prismic.Types exposing (Response, SearchResult, DefaultDocType, Url(Url))
-import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml, viewDefaultDocType)
 
 
 onClick msg =
@@ -47,7 +48,7 @@ viewHeader model =
                     ]
                 , ul []
                     [ li [] [ mkHeaderLink JobsP "Jobs" ]
-                    , li [] [ mkHeaderLink BlogP "Blog" ]
+                    , li [] [ mkHeaderLink (BlogP Blog.IndexP) "Blog" ]
                     ]
                 , a
                     [ href (toHash (SearchP "everything"))
@@ -60,138 +61,16 @@ viewHeader model =
 
 viewResponse : Model -> Html Msg
 viewResponse model =
-    case model.response of
-        Nothing ->
-            p [] [ text "Loading..." ]
+    case model.content of
+      ArticleC article ->
+        map ArticleMsg (Article.view article)
 
-        Just (Ok response) ->
-            viewResponseOk response model.page
+      BlogC blog ->
+        map BlogMsg (Blog.view blog)
 
-        Just (Err error) ->
-            div []
-                [ h1 [] [ text "Error" ]
-                , p [] [ text (toString error) ]
-                ]
+      NoContent ->
+        pre [] [ text (toString model.response) ]
 
-
-viewResponseOk : Response MyDocument -> Page -> Html Msg
-viewResponseOk response page =
-    div []
-        (List.intersperse (hr [] [])
-            (List.map (viewDocument page)
-                response.results
-            )
-        )
-
-
-viewDocument : Page -> SearchResult MyDocument -> Html Msg
-viewDocument page result =
-    case result.data of
-        Default doc ->
-            viewDefaultDocType doc
-
-        ArticleDoc doc ->
-            viewDocumentArticle doc
-
-        JobOfferDoc doc ->
-            viewDocumentJobOffer doc
-
-        BlogPostDoc doc ->
-            viewDocumentBlogPost page doc result.id
-
-
-viewDocumentArticle : Article -> Html Msg
-viewDocumentArticle article =
-    let
-        (Url imgUrl) =
-            article.image.main.url
-    in
-        div [ class "main", id "about" ]
-            [ section [ id "page-header" ]
-                [ div [ style [ ( "background-image", "url(" ++ imgUrl ++ ")" ) ] ]
-                    [ div []
-                        (structuredTextAsHtml article.title
-                            ++ structuredTextAsHtml article.shortLede
-                        )
-                    ]
-                ]
-            , section [ id "page-body" ]
-                (structuredTextAsHtml article.content)
-            ]
-
-
-viewDocumentJobOffer : JobOffer -> Html Msg
-viewDocumentJobOffer jobOffer =
-    div [ class "main", id "job" ]
-        [ section [ id "page-header" ]
-            [ div []
-                [ div []
-                    (structuredTextAsHtml jobOffer.name)
-                ]
-            ]
-        , section [ id "page-body" ]
-            ([ h2 [] [ text "About you" ] ]
-                ++ (structuredTextAsHtml jobOffer.profile)
-                ++ [ h2 [] [ text "Your responsibilities" ] ]
-                ++ (structuredTextAsHtml jobOffer.jobDescription)
-                ++ [ text
-                        (jobOffer.contractType
-                            |> Maybe.map (\ct -> ct ++ " position")
-                            |> Maybe.withDefault ""
-                        )
-                   , br [] []
-                   , text
-                        (jobOffer.service
-                            |> Maybe.map (\service -> service ++ " role")
-                            |> Maybe.withDefault ""
-                        )
-                   ]
-            )
-        ]
-
-
-viewDocumentBlogPost : Page -> BlogPost -> String -> Html Msg
-viewDocumentBlogPost page blogPost docId =
-    case page of
-        BlogP ->
-            viewDocumentBlogPostShort blogPost docId
-
-        _ ->
-            viewDocumentBlogPostFull blogPost
-
-
-viewDocumentBlogPostShort : BlogPost -> String -> Html Msg
-viewDocumentBlogPostShort blogPost docId =
-    div []
-        [ a
-            [ onClick (NavigateTo (BlogPostP docId))
-            , href (toHash (BlogPostP docId))
-            ]
-            (structuredTextAsHtml blogPost.shortLede)
-        , em []
-            [ text ("Posted on " ++ blogPost.date ++ " by " ++ blogPost.author ++ " in " ++ blogPost.category) ]
-        ]
-
-
-viewDocumentBlogPostFull : BlogPost -> Html Msg
-viewDocumentBlogPostFull blogPost =
-    div []
-        ([ p [] [ text "BlogPost" ] ]
-            ++ (structuredTextAsHtml blogPost.body)
-            ++ [ em [] [ text ("Posted on " ++ blogPost.date ++ " by " ++ blogPost.author ++ " in " ++ blogPost.category) ]
-               , p []
-                    [ text
-                        ("Comments are "
-                            ++ (if blogPost.allowComments then
-                                    "enabled"
-                                else
-                                    "disabled"
-                               )
-                            ++ "."
-                        )
-                    ]
-               ]
-        )
 
 
 viewFooter : Model -> Html Msg

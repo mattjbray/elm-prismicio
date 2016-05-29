@@ -3,9 +3,11 @@ module App.State exposing (..)
 import App.Decoders exposing (decodeMyDocument)
 import App.Types exposing (..)
 import App.Navigation exposing (toHash)
+import App.Article.State as Article
+import App.Blog.State as Blog
 import Navigation
 import Prismic as P
-import Prismic.Types exposing (Url(Url))
+import Prismic.Types exposing (Url(Url), Cache)
 import Prismic.State
 import Task
 
@@ -18,6 +20,8 @@ initModel =
         Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
     , page =
         AboutP
+    , content =
+        NoContent
     }
 
 
@@ -47,6 +51,34 @@ update msg model =
             , Cmd.none
             )
 
+        ArticleMsg articleMsg ->
+            case model.content of
+                ArticleC article ->
+                    let
+                        ( newArticle, articleCmd ) =
+                            Article.update articleMsg article
+                    in
+                        ( { model | content = ArticleC newArticle }
+                        , Cmd.map ArticleMsg articleCmd
+                        )
+
+                _ ->
+                    model ! []
+
+        BlogMsg blogMsg ->
+            case model.content of
+                BlogC blog ->
+                    let
+                        ( newBlog, blogCmd ) =
+                            Blog.update blogMsg blog
+                    in
+                        ( { model | content = BlogC newBlog }
+                        , Cmd.map BlogMsg blogCmd
+                        )
+
+                _ ->
+                    model ! []
+
 
 init : Result String Page -> ( Model, Cmd Msg )
 init result =
@@ -59,26 +91,60 @@ urlUpdate result model =
         Err _ ->
             ( model, Navigation.modifyUrl (toHash model.page) )
 
+        Ok (AboutP as page) ->
+            initArticle page "about" model
+
+        Ok (JobsP as page) ->
+            initArticle page "jobs" model
+
+        Ok (StoresP as page) ->
+            initArticle page "stores" model
+
+        Ok ((BlogP blogPage) as page) ->
+          let
+              ( blog, blogCmd ) =
+                  Blog.init blogPage
+
+              newModel =
+                  { model
+                      | page = page
+                      , response = Nothing
+                      , content = BlogC blog
+                  }
+          in
+              newModel ! [ Cmd.map BlogMsg blogCmd ]
+
         Ok page ->
             let
                 newModel =
-                    { model | page = page, response = Nothing }
+                    { model
+                        | page = page
+                        , response = Nothing
+                        , content = NoContent
+                    }
             in
-                newModel ! [ fetchPageFor newModel ]
+                newModel ! []
+
+
+initArticle : Page -> String -> Model -> ( Model, Cmd Msg )
+initArticle page bookmarkName model =
+    let
+        ( article, articleCmd ) =
+            Article.init bookmarkName
+
+        newModel =
+            { model
+                | page = page
+                , response = Nothing
+                , content = ArticleC article
+            }
+    in
+        newModel ! [ Cmd.map ArticleMsg articleCmd ]
 
 
 fetchPageFor : Model -> Cmd Msg
 fetchPageFor model =
     case model.page of
-        AboutP ->
-            fetchBookmark model "about"
-
-        JobsP ->
-            fetchBookmark model "jobs"
-
-        StoresP ->
-            fetchBookmark model "stores"
-
         SearchP form ->
             model.prismic
                 |> P.fetchApi
@@ -86,26 +152,5 @@ fetchPageFor model =
                 |> P.submit decodeMyDocument
                 |> Task.perform SetError SetResponse
 
-        BlogPostP docId ->
-            model.prismic
-                |> P.fetchApi
-                |> P.form "everything"
-                |> P.query ("[[:d = at(document.id, \"" ++ docId ++ "\")]]")
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
-
-        BlogP ->
-            model.prismic
-                |> P.fetchApi
-                |> P.form "blog"
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
-
-
-fetchBookmark : Model -> String -> Cmd Msg
-fetchBookmark model bookmarkName =
-    model.prismic
-        |> P.fetchApi
-        |> P.bookmark bookmarkName
-        |> P.submit decodeMyDocument
-        |> Task.perform SetError SetResponse
+        _ ->
+            Cmd.none

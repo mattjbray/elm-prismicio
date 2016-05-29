@@ -1,6 +1,7 @@
 module App.Navigation exposing (..)
 
 import App.Types exposing (..)
+import App.Blog.Navigation as Blog
 import Navigation
 import String
 import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
@@ -9,11 +10,8 @@ import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 toHash : Page -> String
 toHash page =
     case page of
-        BlogP ->
-            "#blog"
-
-        BlogPostP docId ->
-            "#blog/" ++ docId
+        BlogP blogPage ->
+            "#blog/" ++ Blog.toUrl blogPage
 
         SearchP formName ->
             "#search/" ++ formName
@@ -36,8 +34,7 @@ hashParser location =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format BlogPostP (s "blog" </> string)
-        , format BlogP (s "blog")
+        [ format BlogP (s "blog" </> Blog.pageParser)
         , format SearchP (s "search" </> string)
         , format AboutP (s "about")
         , format JobsP (s "jobs")
