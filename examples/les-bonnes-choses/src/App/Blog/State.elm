@@ -7,7 +7,7 @@ import App.Blog.Post.State as Post
 import Navigation
 
 
-init : Page -> (Model, Cmd Msg)
+init : Page -> ( Model, Cmd Msg )
 init page =
     case page of
         IndexP ->
@@ -20,6 +20,7 @@ init page =
                   }
                 , Cmd.map IndexMsg indexCmd
                 )
+
         PostP docId ->
             let
                 ( post, postCmd ) =

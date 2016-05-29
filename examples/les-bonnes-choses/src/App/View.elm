@@ -63,15 +63,14 @@ viewHeader model =
 viewContent : Model -> Html Msg
 viewContent model =
     case model.content of
-      ArticleC article ->
-        map ArticleMsg (Article.view article)
+        ArticleC article ->
+            map ArticleMsg (Article.view article)
 
-      BlogC blog ->
-        map BlogMsg (Blog.view blog)
+        BlogC blog ->
+            map BlogMsg (Blog.view blog)
 
-      NoContent ->
-        p [] [ text "No page loaded." ]
-
+        NoContent ->
+            p [] [ text "No page loaded." ]
 
 
 viewFooter : Model -> Html Msg

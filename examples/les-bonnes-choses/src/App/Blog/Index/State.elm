@@ -37,4 +37,5 @@ update msg model =
             { model
                 | prismic = cache
                 , docs = Just (List.map .data response.results)
-            } ! []
+            }
+                ! []

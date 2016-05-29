@@ -4,6 +4,7 @@ import App.Documents.Types exposing (..)
 import Json.Decode exposing (..)
 import Prismic.Decoders exposing (..)
 
+
 decodeArticle : Decoder Article
 decodeArticle =
     at [ "data", "article" ]
