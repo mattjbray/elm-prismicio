@@ -16,8 +16,7 @@ type Content
 
 
 type Msg
-    = NavigateTo Page
-    | IndexMsg Index.Msg
+    = IndexMsg Index.Msg
     | PostMsg Post.Msg
 
 

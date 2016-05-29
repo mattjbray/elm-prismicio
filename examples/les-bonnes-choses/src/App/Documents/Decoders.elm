@@ -43,14 +43,13 @@ decodeBlogPost =
                 _ ->
                     fail ("Unknown allow_comments value: " ++ str)
     in
-        at [ "data", "blog-post" ]
-            (succeed BlogPost
-                |: at [ "body", "value" ] decodeStructuredText
-                |: at [ "author", "value" ] string
-                |: at [ "category", "value" ] string
-                |: at [ "date", "value" ] string
-                |: at [ "shortlede", "value" ] decodeStructuredText
-                |: at [ "relatedpost" ] (list decodeLink)
-                |: at [ "relatedproduct" ] (list decodeLink)
-                |: at [ "allow_comments", "value" ] (string `andThen` decodeAllowComments)
-            )
+        succeed BlogPost
+            |: at [ "id" ] string
+            |: at [ "data", "blog-post", "body", "value" ] decodeStructuredText
+            |: at [ "data", "blog-post", "author", "value" ] string
+            |: at [ "data", "blog-post", "category", "value" ] string
+            |: at [ "data", "blog-post", "date", "value" ] string
+            |: at [ "data", "blog-post", "shortlede", "value" ] decodeStructuredText
+            |: at [ "data", "blog-post", "relatedpost" ] (list decodeLink)
+            |: at [ "data", "blog-post", "relatedproduct" ] (list decodeLink)
+            |: at [ "data", "blog-post", "allow_comments", "value" ] (string `andThen` decodeAllowComments)

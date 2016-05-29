@@ -12,7 +12,8 @@ type alias Article =
 
 
 type alias BlogPost =
-    { body : StructuredText
+    { id : String
+    , body : StructuredText
     , author : String
     , category : String
     , date : String

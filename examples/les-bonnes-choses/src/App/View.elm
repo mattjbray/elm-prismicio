@@ -8,13 +8,6 @@ import App.Blog.Types as Blog
 import Html exposing (..)
 import Html.App exposing (map)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
-import Html.Events exposing (onInput, onWithOptions, defaultOptions)
-import Json.Decode as Json
-
-
-onClick : a -> Attribute a
-onClick msg =
-    onWithOptions "click" { defaultOptions | preventDefault = True } (Json.succeed msg)
 
 
 view : Model -> Html Msg
@@ -34,7 +27,6 @@ viewHeader model =
         mkHeaderLink page linkText =
             a
                 [ href (toHash page)
-                , onClick (NavigateTo page)
                 , classList [ ( "selected", model.page == page ) ]
                 ]
                 [ text linkText ]
@@ -51,10 +43,7 @@ viewHeader model =
                     [ li [] [ mkHeaderLink JobsP "Jobs" ]
                     , li [] [ mkHeaderLink (BlogP Blog.IndexP) "Blog" ]
                     ]
-                , a
-                    [ href (toHash (SearchP "everything"))
-                    , onClick (NavigateTo (SearchP "everything"))
-                    ]
+                , a [ href (toHash (SearchP "everything")) ]
                     [ span [] [ text "Search" ] ]
                 ]
             ]

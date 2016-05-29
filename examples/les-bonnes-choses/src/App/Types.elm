@@ -25,6 +25,5 @@ type Content
 
 
 type Msg
-    = NavigateTo Page
-    | ArticleMsg Article.Msg
+    = ArticleMsg Article.Msg
     | BlogMsg Blog.Msg

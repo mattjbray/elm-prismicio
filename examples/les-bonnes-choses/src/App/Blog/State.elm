@@ -36,13 +36,6 @@ init page =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NavigateTo page ->
-            model
-                ! if model.page == page then
-                    []
-                  else
-                    [ Navigation.newUrl (toUrl page) ]
-
         IndexMsg indexMsg ->
             case model.content of
                 IndexC index ->

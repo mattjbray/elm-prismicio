@@ -23,13 +23,6 @@ init result =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NavigateTo page ->
-            model
-                ! if model.page == page then
-                    []
-                  else
-                    [ Navigation.newUrl (toHash page) ]
-
         ArticleMsg articleMsg ->
             case model.content of
                 ArticleC article ->
