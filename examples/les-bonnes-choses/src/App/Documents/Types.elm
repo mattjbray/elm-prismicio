@@ -33,3 +33,19 @@ type alias JobOffer =
     , profile : StructuredText
     , locations : List Link
     }
+
+
+type alias Product =
+    { allergens : String
+    , color : String
+    , description : StructuredText
+    , flavour : List String
+    , gallery : List ImageField
+    , image : ImageField
+    , name : StructuredText
+    , price : Float
+    , related : List Link
+    , shortLede : StructuredText
+    , testimonialAuthor : Maybe StructuredText
+    , testimonialQuote : Maybe StructuredText
+    }

@@ -54,3 +54,22 @@ decodeBlogPost =
             |: at [ "data", "blog-post", "relatedpost" ] (list decodeLink)
             |: at [ "data", "blog-post", "relatedproduct" ] (list decodeLink)
             |: at [ "data", "blog-post", "allow_comments", "value" ] (string `andThen` decodeAllowComments)
+
+
+decodeProduct : Decoder Product
+decodeProduct =
+    at [ "data", "product" ]
+        (succeed Product
+            |: at [ "allergens", "value" ] string
+            |: at [ "color", "value" ] string
+            |: at [ "description", "value" ] decodeStructuredText
+            |: at [ "flavour" ] (list ("value" := string))
+            |: maybeWithDefault [] (at [ "gallery" ] (list ("value" := decodeImageField)))
+            |: at [ "image", "value" ] decodeImageField
+            |: at [ "name", "value" ] decodeStructuredText
+            |: at [ "price", "value" ] float
+            |: at [ "related" ] (list decodeLink)
+            |: at [ "short_lede", "value" ] decodeStructuredText
+            |: maybe (at [ "testimonial_author", "value" ] decodeStructuredText)
+            |: maybe (at [ "testimonial_quote", "value" ] decodeStructuredText)
+        )
