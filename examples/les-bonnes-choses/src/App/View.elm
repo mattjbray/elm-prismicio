@@ -12,6 +12,7 @@ import Html.Events exposing (onInput, onWithOptions, defaultOptions)
 import Json.Decode as Json
 
 
+onClick : a -> Attribute a
 onClick msg =
     onWithOptions "click" { defaultOptions | preventDefault = True } (Json.succeed msg)
 
@@ -22,7 +23,7 @@ view model =
         [ node "link" [ rel "stylesheet", href "http://lesbonneschoses.prismic.me/assets/stylesheets/normalize.min.css" ] []
         , node "link" [ rel "stylesheet", href "http://lesbonneschoses.prismic.me/assets/stylesheets/main.css" ] []
         , viewHeader model
-        , viewResponse model
+        , viewContent model
         , viewFooter model
         ]
 
@@ -59,8 +60,8 @@ viewHeader model =
             ]
 
 
-viewResponse : Model -> Html Msg
-viewResponse model =
+viewContent : Model -> Html Msg
+viewContent model =
     case model.content of
       ArticleC article ->
         map ArticleMsg (Article.view article)
@@ -69,7 +70,7 @@ viewResponse model =
         map BlogMsg (Blog.view blog)
 
       NoContent ->
-        pre [] [ text (toString model.response) ]
+        p [] [ text "No page loaded." ]
 
 
 

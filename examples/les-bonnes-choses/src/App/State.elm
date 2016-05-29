@@ -1,55 +1,34 @@
 module App.State exposing (..)
 
-import App.Decoders exposing (decodeMyDocument)
 import App.Types exposing (..)
 import App.Navigation exposing (toHash)
 import App.Article.State as Article
 import App.Blog.State as Blog
 import Navigation
-import Prismic as P
-import Prismic.Types exposing (Url(Url), Cache)
-import Prismic.State
-import Task
 
 
-initModel : Model
-initModel =
-    { response =
-        Nothing
-    , prismic =
-        Prismic.State.initCache (Url "https://lesbonneschoses.prismic.io/api")
-    , page =
-        AboutP
-    , content =
-        NoContent
-    }
+init : Result String Page -> ( Model, Cmd Msg )
+init result =
+    let
+        model =
+            { page =
+                AboutP
+            , content =
+                NoContent
+            }
+    in
+        urlUpdate result model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
         NavigateTo page ->
             model
                 ! if model.page == page then
                     []
                   else
                     [ Navigation.newUrl (toHash page) ]
-
-        SetResponse ( response, cache ) ->
-            ( { model
-                | response = Just (Ok response)
-                , prismic = cache
-              }
-            , Cmd.none
-            )
-
-        SetError err ->
-            ( { model | response = Just (Err err) }
-            , Cmd.none
-            )
 
         ArticleMsg articleMsg ->
             case model.content of
@@ -80,11 +59,6 @@ update msg model =
                     model ! []
 
 
-init : Result String Page -> ( Model, Cmd Msg )
-init result =
-    urlUpdate result initModel
-
-
 urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
 urlUpdate result model =
     case Debug.log "result" result of
@@ -101,25 +75,23 @@ urlUpdate result model =
             initArticle page "stores" model
 
         Ok ((BlogP blogPage) as page) ->
-          let
-              ( blog, blogCmd ) =
-                  Blog.init blogPage
+            let
+                ( blog, blogCmd ) =
+                    Blog.init blogPage
 
-              newModel =
-                  { model
-                      | page = page
-                      , response = Nothing
-                      , content = BlogC blog
-                  }
-          in
-              newModel ! [ Cmd.map BlogMsg blogCmd ]
+                newModel =
+                    { model
+                        | page = page
+                        , content = BlogC blog
+                    }
+            in
+                newModel ! [ Cmd.map BlogMsg blogCmd ]
 
         Ok page ->
             let
                 newModel =
                     { model
                         | page = page
-                        , response = Nothing
                         , content = NoContent
                     }
             in
@@ -135,22 +107,7 @@ initArticle page bookmarkName model =
         newModel =
             { model
                 | page = page
-                , response = Nothing
                 , content = ArticleC article
             }
     in
         newModel ! [ Cmd.map ArticleMsg articleCmd ]
-
-
-fetchPageFor : Model -> Cmd Msg
-fetchPageFor model =
-    case model.page of
-        SearchP form ->
-            model.prismic
-                |> P.fetchApi
-                |> P.form form
-                |> P.submit decodeMyDocument
-                |> Task.perform SetError SetResponse
-
-        _ ->
-            Cmd.none

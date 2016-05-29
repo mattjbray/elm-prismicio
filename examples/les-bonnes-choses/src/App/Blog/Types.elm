@@ -2,8 +2,6 @@ module App.Blog.Types exposing (..)
 
 import App.Blog.Index.Types as Index
 import App.Blog.Post.Types as Post
-import App.Documents.Types as Documents
-import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link, DefaultDocType, ImageField)
 
 type Page
   = IndexP
