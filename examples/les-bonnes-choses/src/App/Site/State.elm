@@ -2,6 +2,7 @@ module App.Site.State exposing (..)
 
 import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
+import App.Site.Products.State as Products
 import Prismic.Types as P
 
 
@@ -28,6 +29,18 @@ init prismic page =
 
             (SearchP _) as page ->
                 initWith "about"
+
+            (ProductsP productsPage) as page ->
+                let
+                  (products, productsCmd) =
+                    Products.init prismic productsPage
+                  newModel =
+                    { model
+                        | page = page
+                        , content = ProductsC products
+                    }
+                in
+                    newModel ! [ Cmd.map ProductsMsg productsCmd ]
 
 
 initArticle : P.Cache -> Page -> String -> Model -> ( Model, Cmd Msg )
@@ -62,6 +75,26 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ArticleMsg articleCmd
+                        , mNewPrismic
+                        )
+
+                _ ->
+                    ( model, Cmd.none, Nothing )
+
+        ProductsMsg productsMsg ->
+            case model.content of
+                ProductsC products ->
+                    let
+                        ( newProducts, productsCmd, mNewPrismic ) =
+                            Products.update productsMsg products
+
+                        newModel =
+                            { model
+                                | content = ProductsC newProducts
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map ProductsMsg productsCmd
                         , mNewPrismic
                         )
 

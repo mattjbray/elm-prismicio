@@ -58,18 +58,18 @@ decodeBlogPost =
 
 decodeProduct : Decoder Product
 decodeProduct =
-    at [ "data", "product" ]
-        (succeed Product
-            |: at [ "allergens", "value" ] string
-            |: at [ "color", "value" ] string
-            |: at [ "description", "value" ] decodeStructuredText
-            |: at [ "flavour" ] (list ("value" := string))
-            |: maybeWithDefault [] (at [ "gallery" ] (list ("value" := decodeImageField)))
-            |: at [ "image", "value" ] decodeImageField
-            |: at [ "name", "value" ] decodeStructuredText
-            |: at [ "price", "value" ] float
-            |: at [ "related" ] (list decodeLink)
-            |: at [ "short_lede", "value" ] decodeStructuredText
-            |: maybe (at [ "testimonial_author", "value" ] decodeStructuredText)
-            |: maybe (at [ "testimonial_quote", "value" ] decodeStructuredText)
-        )
+    (succeed Product
+        |: maybe (at [ "data", "product", "allergens", "value" ] string)
+        |: at [ "data", "product", "color", "value" ] string
+        |: at [ "data", "product", "description", "value" ] decodeStructuredText
+        |: maybe (at [ "data", "product", "flavour" ] (list ("value" := string)))
+        |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := decodeImageField)))
+        |: at [ "data", "product", "image", "value" ] decodeImageField
+        |: at [ "data", "product", "name", "value" ] decodeStructuredText
+        |: at [ "data", "product", "price", "value" ] float
+        |: maybeWithDefault [] (at [ "data", "product", "related" ] (list decodeLink))
+        |: at [ "data", "product", "short_lede", "value" ] decodeStructuredText
+        |: maybe (at [ "data", "product", "testimonial_author", "value" ] decodeStructuredText)
+        |: maybe (at [ "data", "product", "testimonial_quote", "value" ] decodeStructuredText)
+        |: at [ "tags" ] (list string)
+    )

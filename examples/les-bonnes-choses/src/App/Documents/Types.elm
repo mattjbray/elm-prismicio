@@ -36,10 +36,10 @@ type alias JobOffer =
 
 
 type alias Product =
-    { allergens : String
+    { allergens : Maybe String
     , color : String
     , description : StructuredText
-    , flavour : List String
+    , flavour : Maybe (List String)
     , gallery : List ImageField
     , image : ImageField
     , name : StructuredText
@@ -48,4 +48,5 @@ type alias Product =
     , shortLede : StructuredText
     , testimonialAuthor : Maybe StructuredText
     , testimonialQuote : Maybe StructuredText
+    , tags : List String
     }

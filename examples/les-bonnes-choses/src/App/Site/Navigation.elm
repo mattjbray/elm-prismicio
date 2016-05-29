@@ -1,6 +1,7 @@
 module App.Site.Navigation exposing (..)
 
 import App.Site.Types exposing (..)
+import App.Site.Products.Navigation as Products
 import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 
 
@@ -19,6 +20,9 @@ toUrl page =
         StoresP ->
             "stores"
 
+        ProductsP productsPage ->
+            "products/" ++ Products.toUrl productsPage
+
 
 pageParser : Parser (Page -> a) a
 pageParser =
@@ -27,4 +31,5 @@ pageParser =
         , format AboutP (s "about")
         , format JobsP (s "jobs")
         , format StoresP (s "stores")
+        , format ProductsP (s "products" </> Products.pageParser)
         ]

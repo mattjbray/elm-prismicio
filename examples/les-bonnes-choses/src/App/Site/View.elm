@@ -3,6 +3,7 @@ module App.Site.View exposing (..)
 import App.Navigation exposing (toHash)
 import App.Site.Types exposing (..)
 import App.Site.Article.View as Article
+import App.Site.Products.View as Products
 import App.Types as App
 import App.Blog.Types as Blog
 import Html exposing (..)
@@ -54,6 +55,9 @@ viewContent model =
     case model.content of
         ArticleC article ->
             map ArticleMsg (Article.view article)
+
+        ProductsC products ->
+            map ProductsMsg (Products.view products)
 
         NoContent ->
             p [] [ text "No Site page loaded." ]
