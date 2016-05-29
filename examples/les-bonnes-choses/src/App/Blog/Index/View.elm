@@ -2,6 +2,7 @@ module App.Blog.Index.View exposing (..)
 
 import App.Blog.Index.Types exposing (..)
 import App.Blog.Types exposing (Page(PostP))
+import App.Blog.Common.View exposing (viewPostInfo)
 import App.Documents.Types as Documents
 import App.Navigation exposing (toHash)
 import App.Types exposing (Page(BlogP))
@@ -55,9 +56,7 @@ viewDocumentBlogPostShort blogPost =
     in
         article []
             [ a [ href (toHash (BlogP (PostP blogPost.id))) ]
-                [ em [ class "infos" ]
-                    [ text (blogPost.date ++ " by " ++ blogPost.author)
-                    ]
+                [ viewPostInfo blogPost
                 , h2 [] [ text title ]
                 , p [] [ text firstPara ]
                 , div
