@@ -1,4 +1,4 @@
-module App.Article.Types exposing (..)
+module App.Site.Article.Types exposing (..)
 
 import App.Documents.Types as Documents
 import Prismic.Types as Prismic

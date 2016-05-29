@@ -1,6 +1,6 @@
-module App.Article.State exposing (..)
+module App.Site.Article.State exposing (..)
 
-import App.Article.Types exposing (..)
+import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
 import Prismic.Types as P exposing (Url(Url))
 import Prismic.State as P

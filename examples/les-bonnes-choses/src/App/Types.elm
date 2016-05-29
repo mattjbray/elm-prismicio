@@ -1,7 +1,7 @@
 module App.Types exposing (..)
 
-import App.Article.Types as Article
 import App.Blog.Types as Blog
+import App.Site.Types as Site
 
 
 type alias Model =
@@ -11,19 +11,16 @@ type alias Model =
 
 
 type Page
-    = SearchP String
+    = SiteP Site.Page
     | BlogP Blog.Page
-    | AboutP
-    | JobsP
-    | StoresP
 
 
 type Content
     = NoContent
-    | ArticleC Article.Model
     | BlogC Blog.Model
+    | SiteC Site.Model
 
 
 type Msg
-    = ArticleMsg Article.Msg
+    = SiteMsg Site.Msg
     | BlogMsg Blog.Msg

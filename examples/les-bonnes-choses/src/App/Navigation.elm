@@ -2,6 +2,7 @@ module App.Navigation exposing (..)
 
 import App.Types exposing (..)
 import App.Blog.Navigation as Blog
+import App.Site.Navigation as Site
 import Navigation
 import String
 import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
@@ -13,17 +14,8 @@ toHash page =
         BlogP blogPage ->
             "#blog/" ++ Blog.toUrl blogPage
 
-        SearchP formName ->
-            "#search/" ++ formName
-
-        AboutP ->
-            "#about"
-
-        JobsP ->
-            "#jobs"
-
-        StoresP ->
-            "#stores"
+        SiteP sitePage ->
+            "#" ++ Site.toUrl sitePage
 
 
 hashParser : Navigation.Location -> Result String Page
@@ -35,8 +27,5 @@ pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
         [ format BlogP (s "blog" </> Blog.pageParser)
-        , format SearchP (s "search" </> string)
-        , format AboutP (s "about")
-        , format JobsP (s "jobs")
-        , format StoresP (s "stores")
+        , format SiteP Site.pageParser
         ]

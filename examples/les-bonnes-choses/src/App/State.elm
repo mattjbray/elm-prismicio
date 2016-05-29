@@ -2,8 +2,9 @@ module App.State exposing (..)
 
 import App.Types exposing (..)
 import App.Navigation exposing (toHash)
-import App.Article.State as Article
 import App.Blog.State as Blog
+import App.Site.State as Site
+import App.Site.Types as Site
 import Navigation
 
 
@@ -12,7 +13,7 @@ init result =
     let
         model =
             { page =
-                AboutP
+                SiteP Site.AboutP
             , content =
                 NoContent
             }
@@ -23,15 +24,15 @@ init result =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ArticleMsg articleMsg ->
+        SiteMsg siteMsg ->
             case model.content of
-                ArticleC article ->
+                SiteC site ->
                     let
-                        ( newArticle, articleCmd ) =
-                            Article.update articleMsg article
+                        ( newSite, siteCmd ) =
+                            Site.update siteMsg site
                     in
-                        ( { model | content = ArticleC newArticle }
-                        , Cmd.map ArticleMsg articleCmd
+                        ( { model | content = SiteC newSite }
+                        , Cmd.map SiteMsg siteCmd
                         )
 
                 _ ->
@@ -58,14 +59,18 @@ urlUpdate result model =
         Err _ ->
             ( model, Navigation.modifyUrl (toHash model.page) )
 
-        Ok (AboutP as page) ->
-            initArticle page "about" model
+        Ok ((SiteP sitePage) as page) ->
+            let
+                ( site, siteCmd ) =
+                    Site.init sitePage
 
-        Ok (JobsP as page) ->
-            initArticle page "jobs" model
-
-        Ok (StoresP as page) ->
-            initArticle page "stores" model
+                newModel =
+                    { model
+                        | page = page
+                        , content = SiteC site
+                    }
+            in
+                newModel ! [ Cmd.map SiteMsg siteCmd ]
 
         Ok ((BlogP blogPage) as page) ->
             let
@@ -79,28 +84,3 @@ urlUpdate result model =
                     }
             in
                 newModel ! [ Cmd.map BlogMsg blogCmd ]
-
-        Ok page ->
-            let
-                newModel =
-                    { model
-                        | page = page
-                        , content = NoContent
-                    }
-            in
-                newModel ! []
-
-
-initArticle : Page -> String -> Model -> ( Model, Cmd Msg )
-initArticle page bookmarkName model =
-    let
-        ( article, articleCmd ) =
-            Article.init bookmarkName
-
-        newModel =
-            { model
-                | page = page
-                , content = ArticleC article
-            }
-    in
-        newModel ! [ Cmd.map ArticleMsg articleCmd ]
