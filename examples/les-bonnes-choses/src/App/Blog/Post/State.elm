@@ -2,26 +2,23 @@ module App.Blog.Post.State exposing (..)
 
 import App.Blog.Post.Types exposing (..)
 import App.Documents.Decoders as Documents
-import Prismic.Types as P exposing (Url(Url))
-import Prismic.State as P
+import Prismic.Types as P
 import Prismic as P
 import Task
 
 
-init : String -> ( Model, Cmd Msg )
-init docId =
+init : P.Cache -> String -> ( Model, Cmd Msg )
+init prismic docId =
     let
         model =
             { doc =
                 Nothing
             , relatedPosts =
                 []
-            , prismic =
-                P.initCache (Url "https://lesbonneschoses.prismic.io/api")
             }
     in
         ( model
-        , model.prismic
+        , prismic
             |> P.fetchApi
             |> P.form "everything"
             |> P.query (P.at "document.id" docId)
@@ -30,37 +27,32 @@ init docId =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
         SetError _ ->
-            model ! []
+            ( model, Cmd.none, Nothing )
 
-        SetResponse ( response, cache ) ->
-            let
-                newModel =
-                    { model | prismic = cache }
-            in
-                case List.head response.results of
-                    Just result ->
-                        fetchRelatedPosts
-                            { newModel
-                                | doc = Just result.data
-                            }
+        SetResponse ( response, prismic ) ->
+            case List.head response.results of
+                Just result ->
+                    fetchRelatedPosts prismic
+                        { model | doc = Just result.data }
 
-                    Nothing ->
-                        newModel ! []
+                Nothing ->
+                    ( model, Cmd.none, Just prismic )
 
-        SetRelatedPosts ( response, cache ) ->
-            { model
-                | prismic = cache
-                , relatedPosts = List.map .data response.results
-            }
-                ! []
+        SetRelatedPosts ( response, prismic ) ->
+            ( { model
+                | relatedPosts = List.map .data response.results
+              }
+            , Cmd.none
+            , Just prismic
+            )
 
 
-fetchRelatedPosts : Model -> ( Model, Cmd Msg )
-fetchRelatedPosts model =
+fetchRelatedPosts : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+fetchRelatedPosts prismic model =
     case model.doc of
         Just blogPost ->
             let
@@ -77,13 +69,14 @@ fetchRelatedPosts model =
                         blogPost.relatedPosts
             in
                 ( model
-                , model.prismic
+                , prismic
                     |> P.fetchApi
                     |> P.form "everything"
                     |> P.query (P.any "document.id" relatedIds)
                     |> P.submit Documents.decodeBlogPost
                     |> Task.perform SetError SetRelatedPosts
+                , Just prismic
                 )
 
         Nothing ->
-            model ! []
+            ( model, Cmd.none, Just prismic )

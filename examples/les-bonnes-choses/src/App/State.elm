@@ -6,6 +6,8 @@ import App.Blog.State as Blog
 import App.Site.State as Site
 import App.Site.Types as Site
 import Navigation
+import Prismic.Types as P exposing (Url(Url))
+import Prismic.State as P
 
 
 init : Result String Page -> ( Model, Cmd Msg )
@@ -16,6 +18,8 @@ init result =
                 SiteP Site.AboutP
             , content =
                 NoContent
+            , prismic =
+                P.initCache (Url "https://lesbonneschoses.prismic.io/api")
             }
     in
         urlUpdate result model
@@ -28,10 +32,13 @@ update msg model =
             case model.content of
                 SiteC site ->
                     let
-                        ( newSite, siteCmd ) =
+                        ( newSite, siteCmd, mNewPrismic ) =
                             Site.update siteMsg site
                     in
-                        ( { model | content = SiteC newSite }
+                        ( { model
+                            | content = SiteC newSite
+                            , prismic = Maybe.withDefault model.prismic mNewPrismic
+                          }
                         , Cmd.map SiteMsg siteCmd
                         )
 
@@ -42,10 +49,13 @@ update msg model =
             case model.content of
                 BlogC blog ->
                     let
-                        ( newBlog, blogCmd ) =
+                        ( newBlog, blogCmd, mNewPrismic ) =
                             Blog.update blogMsg blog
                     in
-                        ( { model | content = BlogC newBlog }
+                        ( { model
+                            | content = BlogC newBlog
+                            , prismic = Maybe.withDefault model.prismic mNewPrismic
+                          }
                         , Cmd.map BlogMsg blogCmd
                         )
 
@@ -62,7 +72,7 @@ urlUpdate result model =
         Ok ((SiteP sitePage) as page) ->
             let
                 ( site, siteCmd ) =
-                    Site.init sitePage
+                    Site.init model.prismic sitePage
 
                 newModel =
                     { model
@@ -75,7 +85,7 @@ urlUpdate result model =
         Ok ((BlogP blogPage) as page) ->
             let
                 ( blog, blogCmd ) =
-                    Blog.init blogPage
+                    Blog.init model.prismic blogPage
 
                 newModel =
                     { model

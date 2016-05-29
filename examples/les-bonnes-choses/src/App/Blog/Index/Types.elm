@@ -6,7 +6,6 @@ import Prismic.Types as Prismic
 
 type alias Model =
     { docs : Maybe (List Documents.BlogPost)
-    , prismic : Prismic.Cache
     }
 
 

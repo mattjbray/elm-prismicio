@@ -2,35 +2,39 @@ module App.Site.State exposing (..)
 
 import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
+import Prismic.Types as P
 
 
-init : Page -> ( Model, Cmd Msg )
-init page =
+init : P.Cache -> Page -> ( Model, Cmd Msg )
+init prismic page =
     let
         model =
             { page = AboutP
             , content = NoContent
             }
+
+        initWith bookmark =
+            initArticle prismic page bookmark model
     in
         case page of
             AboutP as page ->
-                initArticle page "about" model
+                initWith "about"
 
             JobsP as page ->
-                initArticle page "jobs" model
+                initWith "jobs"
 
             StoresP as page ->
-                initArticle page "stores" model
+                initWith "stores"
 
             (SearchP _) as page ->
-                initArticle page "about" model
+                initWith "about"
 
 
-initArticle : Page -> String -> Model -> ( Model, Cmd Msg )
-initArticle page bookmarkName model =
+initArticle : P.Cache -> Page -> String -> Model -> ( Model, Cmd Msg )
+initArticle prismic page bookmarkName model =
     let
         ( article, articleCmd ) =
-            Article.init bookmarkName
+            Article.init prismic bookmarkName
 
         newModel =
             { model
@@ -41,19 +45,25 @@ initArticle page bookmarkName model =
         newModel ! [ Cmd.map ArticleMsg articleCmd ]
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
         ArticleMsg articleMsg ->
             case model.content of
                 ArticleC article ->
                     let
-                        ( newArticle, articleCmd ) =
+                        ( newArticle, articleCmd, mNewPrismic ) =
                             Article.update articleMsg article
+
+                        newModel =
+                            { model
+                                | content = ArticleC newArticle
+                            }
                     in
-                        ( { model | content = ArticleC newArticle }
+                        ( newModel
                         , Cmd.map ArticleMsg articleCmd
+                        , mNewPrismic
                         )
 
                 _ ->
-                    model ! []
+                    ( model, Cmd.none, Nothing )

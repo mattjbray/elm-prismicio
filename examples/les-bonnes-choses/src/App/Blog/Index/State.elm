@@ -3,23 +3,20 @@ module App.Blog.Index.State exposing (..)
 import App.Blog.Index.Types exposing (..)
 import App.Documents.Decoders as Documents
 import Prismic.Types as P exposing (Url(Url))
-import Prismic.State as P
 import Prismic as P
 import Task
 
 
-init : ( Model, Cmd Msg )
-init =
+init : P.Cache -> ( Model, Cmd Msg )
+init prismic =
     let
         model =
             { docs =
                 Nothing
-            , prismic =
-                P.initCache (Url "https://lesbonneschoses.prismic.io/api")
             }
     in
         ( model
-        , model.prismic
+        , prismic
             |> P.fetchApi
             |> P.form "blog"
             |> P.submit Documents.decodeBlogPost
@@ -27,15 +24,16 @@ init =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
         SetError _ ->
-            model ! []
+            ( model, Cmd.none, Nothing )
 
-        SetResponse ( response, cache ) ->
-            { model
-                | prismic = cache
-                , docs = Just (List.map .data response.results)
-            }
-                ! []
+        SetResponse ( response, prismic ) ->
+            ( { model
+                | docs = Just (List.map .data response.results)
+              }
+            , Cmd.none
+            , Just prismic
+            )

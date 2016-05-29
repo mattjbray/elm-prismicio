@@ -3,23 +3,20 @@ module App.Site.Article.State exposing (..)
 import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
 import Prismic.Types as P exposing (Url(Url))
-import Prismic.State as P
 import Prismic as P
 import Task
 
 
-init : String -> ( Model, Cmd Msg )
-init bookmarkName =
+init : P.Cache -> String -> ( Model, Cmd Msg )
+init prismic bookmarkName =
     let
         model =
             { doc =
                 Nothing
-            , prismic =
-                P.initCache (Url "https://lesbonneschoses.prismic.io/api")
             }
     in
         ( model
-        , model.prismic
+        , prismic
             |> P.fetchApi
             |> P.bookmark bookmarkName
             |> P.submit Documents.decodeArticle
@@ -27,23 +24,22 @@ init bookmarkName =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
         SetError _ ->
-            model ! []
+            ( model, Cmd.none, Nothing )
 
         SetResponse ( response, cache ) ->
             let
                 newModel =
-                    { model | prismic = cache }
-            in
-                case List.head response.results of
-                    Just result ->
-                        { newModel
-                            | doc = Just result.data
-                        }
-                            ! []
+                    case List.head response.results of
+                        Just result ->
+                            { model
+                                | doc = Just result.data
+                            }
 
-                    Nothing ->
-                        newModel ! []
+                        Nothing ->
+                            model
+            in
+                ( newModel, Cmd.none, Just cache )
