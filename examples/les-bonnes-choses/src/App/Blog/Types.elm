@@ -5,7 +5,7 @@ import App.Blog.Post.Types as Post
 
 
 type Page
-    = IndexP
+    = IndexP (Maybe String)
     | PostP String
 
 

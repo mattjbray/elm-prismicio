@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, bookmark, submit, any, at)
+module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at)
 
 import Dict
 import Json.Decode as Json exposing (Decoder)
@@ -164,6 +164,13 @@ at fragment value =
 any : String -> List String -> Predicate
 any fragment values =
     Any fragment values
+
+
+none :
+    Task PrismicError ( Request, Cache' api )
+    -> Task PrismicError ( Request, Cache' api )
+none =
+  Task.map identity
 
 
 submit :

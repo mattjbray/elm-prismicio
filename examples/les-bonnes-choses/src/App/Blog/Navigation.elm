@@ -7,16 +7,20 @@ import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 toUrl : Page -> String
 toUrl page =
     case page of
-        IndexP ->
+        IndexP Nothing ->
             ""
 
+        IndexP (Just category) ->
+            "category/" ++ category
+
         PostP docId ->
-            docId
+            "post/" ++ docId
 
 
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format IndexP (s "")
-        , format PostP string
+        [ format (IndexP Nothing) (s "")
+        , format (IndexP << Just) (s "category" </> string)
+        , format PostP (s "post" </> string)
         ]

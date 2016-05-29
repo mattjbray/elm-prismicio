@@ -39,7 +39,7 @@ viewHeader model =
                 , ul []
                     [ li [] [ mkHeaderLink JobsP "Jobs" ]
                     , li []
-                        [ a [ href (toHash (App.BlogP Blog.IndexP)) ]
+                        [ a [ href (toHash (App.BlogP (Blog.IndexP Nothing))) ]
                             [ text "Blog" ]
                         ]
                     ]

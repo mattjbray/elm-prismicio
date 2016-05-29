@@ -7,8 +7,8 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> ( Model, Cmd Msg )
-init prismic =
+init : P.Cache -> Maybe String -> ( Model, Cmd Msg )
+init prismic mCategory =
     let
         model =
             { docs =
@@ -19,6 +19,9 @@ init prismic =
         , prismic
             |> P.fetchApi
             |> P.form "blog"
+            |> (mCategory
+                 |> Maybe.map (P.query << P.at "my.blog-post.category")
+                 |> Maybe.withDefault P.none)
             |> P.submit Documents.decodeBlogPost
             |> Task.perform SetError SetResponse
         )
