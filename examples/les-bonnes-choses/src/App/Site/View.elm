@@ -21,7 +21,6 @@ view model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     let
-        something = Debug.log "model.page" model.page
         mkHeaderLink page linkText =
             a
                 [ href (toHash (App.SiteP page))

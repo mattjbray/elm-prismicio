@@ -65,7 +65,7 @@ update msg model =
 
 urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
 urlUpdate result model =
-    case Debug.log "result" result of
+    case result of
         Err _ ->
             ( model, Navigation.modifyUrl (toHash model.page) )
 
