@@ -1,11 +1,14 @@
 module App.Blog.Post.View exposing (..)
 
+import App.Types as App
+import App.Navigation exposing (toHash)
+import App.Blog.Types as Blog
 import App.Blog.Post.Types exposing (..)
 import App.Blog.Common.View exposing (viewPostInfo)
 import App.Documents.Types as Documents
 import Html exposing (..)
-import Html.Attributes exposing (id)
-import Prismic.View exposing (structuredTextAsHtml)
+import Html.Attributes exposing (id, href)
+import Prismic.View exposing (getText, getTitle, structuredTextAsHtml)
 
 
 view : Model -> Html Msg
@@ -15,12 +18,25 @@ view model =
             p [] [ text "Blog Post is loading..." ]
 
         Just doc ->
-            viewDocumentBlogPostFull doc
+            viewDocumentBlogPostFull doc model.relatedPosts
 
 
-viewDocumentBlogPostFull : Documents.BlogPost -> Html Msg
-viewDocumentBlogPostFull blogPost =
+viewDocumentBlogPostFull : Documents.BlogPost -> List Documents.BlogPost -> Html Msg
+viewDocumentBlogPostFull blogPost relatedPosts =
     let
+        viewRelated post =
+            let title =
+                  case getTitle post.body of
+                      Nothing ->
+                        "No title"
+                      Just heading ->
+                        getText heading
+            in
+              li []
+                  [ a
+                      [href (toHash (App.BlogP (Blog.PostP post.id)))]
+                      [text title]
+                  ]
         viewLink link =
             li []
                 [ text (toString link) ]
@@ -31,7 +47,7 @@ viewDocumentBlogPostFull blogPost =
                 , article []
                     (structuredTextAsHtml blogPost.body)
                 , h2 [] [ text "These should interest you too" ]
-                , ul [] (List.map viewLink blogPost.relatedPosts)
+                , ul [] (List.map viewRelated relatedPosts)
                 ]
             , aside []
                 [ h2 [] [ text "Some pastries you should love" ]

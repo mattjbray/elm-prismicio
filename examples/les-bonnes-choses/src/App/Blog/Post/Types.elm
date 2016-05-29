@@ -6,10 +6,12 @@ import Prismic.Types as Prismic
 
 type alias Model =
     { doc : Maybe Documents.BlogPost
+    , relatedPosts : List Documents.BlogPost
     , prismic : Prismic.Cache Documents.BlogPost
     }
 
 
 type Msg
     = SetResponse ( Prismic.Response Documents.BlogPost, Prismic.Cache Documents.BlogPost )
+    | SetRelatedPosts ( Prismic.Response Documents.BlogPost, Prismic.Cache Documents.BlogPost )
     | SetError Prismic.PrismicError
