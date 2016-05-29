@@ -251,3 +251,10 @@ getText field =
 
         _ ->
             ""
+
+
+getTexts : StructuredText -> String
+getTexts fields =
+    fields
+        |> List.map getText
+        |> String.join " "

@@ -3,9 +3,11 @@ module App.Blog.Post.View exposing (..)
 import App.Blog.Post.Types exposing (..)
 import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
 import App.Documents.Types as Documents
+import Dict
 import Html exposing (..)
-import Html.Attributes exposing (id, href)
-import Prismic.View exposing (getText, getTitle, structuredTextAsHtml)
+import Html.Attributes exposing (id, href, src)
+import Prismic.View exposing (getText, getTexts, getTitle, structuredTextAsHtml)
+import Prismic.Types exposing (Url(Url))
 
 
 view : Model -> Html Msg
@@ -15,28 +17,40 @@ view model =
             p [] [ text "Blog Post is loading..." ]
 
         Just doc ->
-            viewDocumentBlogPostFull doc model.relatedPosts
+            viewDocumentBlogPostFull doc model
 
 
-viewDocumentBlogPostFull : Documents.BlogPost -> List Documents.BlogPost -> Html Msg
-viewDocumentBlogPostFull blogPost relatedPosts =
+viewDocumentBlogPostFull : Documents.BlogPost -> Model -> Html Msg
+viewDocumentBlogPostFull blogPost model =
     let
-        viewRelated post =
-            let title =
-                  case getTitle post.body of
-                      Nothing ->
-                        "No title"
-                      Just heading ->
-                        getText heading
+        viewRelatedPost post =
+            let
+                title =
+                    case getTitle post.body of
+                        Nothing ->
+                            "No title"
+
+                        Just heading ->
+                            getText heading
             in
-              li []
-                  [ a
-                      [href (blogPostUrl post)]
-                      [text title]
-                  ]
-        viewLink link =
-            li []
-                [ text (toString link) ]
+                li []
+                    [ a [ href (blogPostUrl post) ]
+                        [ text title ]
+                    ]
+
+        viewRelatedProduct product =
+            let
+                (Url imgUrl) =
+                    Dict.get "icon" product.image.views
+                        |> Maybe.map .url
+                        |> Maybe.withDefault (Url "")
+            in
+                li []
+                    [ a []
+                        [ img [ src imgUrl ] []
+                        , span [] [ text (getTexts product.name) ]
+                        ]
+                    ]
     in
         div []
             [ section [ id "post" ]
@@ -44,10 +58,13 @@ viewDocumentBlogPostFull blogPost relatedPosts =
                 , article []
                     (structuredTextAsHtml blogPost.body)
                 , h2 [] [ text "These should interest you too" ]
-                , ul [] (List.map viewRelated relatedPosts)
+                , ul [] (List.map viewRelatedPost model.relatedPosts)
                 ]
             , aside []
                 [ h2 [] [ text "Some pastries you should love" ]
-                , ul [] (List.map viewLink blogPost.relatedProducts)
+                , ul [] (List.map viewRelatedProduct model.relatedProducts)
                 ]
+            , model.error
+                |> Maybe.map (\error -> pre [] [ text (toString error) ])
+                |> Maybe.withDefault (text "")
             ]

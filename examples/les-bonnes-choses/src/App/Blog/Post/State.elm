@@ -15,6 +15,10 @@ init prismic docId =
                 Nothing
             , relatedPosts =
                 []
+            , relatedProducts =
+                []
+            , error =
+                Nothing
             }
     in
         ( model
@@ -30,13 +34,16 @@ init prismic docId =
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
-        SetError _ ->
-            ( model, Cmd.none, Nothing )
+        SetError e ->
+            ( { model | error = Just e }
+            , Cmd.none
+            , Nothing
+            )
 
         SetResponse ( response, prismic ) ->
             case List.head response.results of
                 Just result ->
-                    fetchRelatedPosts prismic
+                    fetchRelated prismic
                         { model | doc = Just result.data }
 
                 Nothing ->
@@ -50,13 +57,21 @@ update msg model =
             , Just prismic
             )
 
+        SetRelatedProducts ( response, prismic ) ->
+            ( { model
+                | relatedProducts = List.map .data response.results
+              }
+            , Cmd.none
+            , Just prismic
+            )
 
-fetchRelatedPosts : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
-fetchRelatedPosts prismic model =
+
+fetchRelated : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+fetchRelated prismic model =
     case model.doc of
         Just blogPost ->
             let
-                relatedIds =
+                getDocIds links =
                     List.filterMap
                         (\related ->
                             case related of
@@ -66,15 +81,29 @@ fetchRelatedPosts prismic model =
                                 _ ->
                                     Nothing
                         )
-                        blogPost.relatedPosts
+                        links
+
+                relatedPostIds =
+                    getDocIds blogPost.relatedPosts
+
+                relatedProductIds =
+                    getDocIds blogPost.relatedProducts
             in
                 ( model
-                , prismic
-                    |> P.fetchApi
-                    |> P.form "everything"
-                    |> P.query (P.any "document.id" relatedIds)
-                    |> P.submit Documents.decodeBlogPost
-                    |> Task.perform SetError SetRelatedPosts
+                , Cmd.batch
+                     [ prismic
+                        |> P.fetchApi
+                        |> P.form "everything"
+                        |> P.query (P.any "document.id" relatedPostIds)
+                        |> P.submit Documents.decodeBlogPost
+                        |> Task.perform SetError SetRelatedPosts
+                     , prismic
+                        |> P.fetchApi
+                        |> P.form "everything"
+                        |> P.query (P.any "document.id" relatedProductIds)
+                        |> P.submit Documents.decodeProduct
+                        |> Task.perform SetError SetRelatedProducts
+                     ]
                 , Just prismic
                 )
 
