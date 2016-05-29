@@ -2,6 +2,7 @@ module App.Site.Products.State exposing (..)
 
 import App.Site.Products.Types exposing (..)
 import App.Site.Products.Index.State as Index
+import App.Site.Products.Product.State as Product
 import Prismic.Types as P
 
 
@@ -19,6 +20,17 @@ init prismic page =
         , Cmd.map IndexMsg indexCmd
         )
 
+    ProductP docId _ ->
+      let
+        ( product, productCmd ) =
+          Product.init prismic docId
+      in
+        ( { page = page
+          , content = ProductC product
+          }
+        , Cmd.map ProductMsg productCmd
+        )
+
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
@@ -33,6 +45,21 @@ update msg model =
                     in
                         ( { model | content = IndexC newIndex }
                         , Cmd.map IndexMsg indexCmd
+                        , mNewPrismic
+                        )
+
+                _ ->
+                    ( model, Cmd.none, Nothing )
+
+        ProductMsg productMsg ->
+            case model.content of
+                ProductC product ->
+                    let
+                        ( newProduct, productCmd, mNewPrismic ) =
+                            Product.update productMsg product
+                    in
+                        ( { model | content = ProductC newProduct }
+                        , Cmd.map ProductMsg productCmd
                         , mNewPrismic
                         )
 

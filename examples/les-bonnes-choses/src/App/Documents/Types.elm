@@ -36,7 +36,9 @@ type alias JobOffer =
 
 
 type alias Product =
-    { allergens : Maybe String
+    { id : String
+    , slugs : List String
+    , allergens : Maybe String
     , color : String
     , description : StructuredText
     , flavour : Maybe (List String)

@@ -59,6 +59,8 @@ decodeBlogPost =
 decodeProduct : Decoder Product
 decodeProduct =
     (succeed Product
+        |: at [ "id" ] string
+        |: at [ "slugs" ] (list string)
         |: maybe (at [ "data", "product", "allergens", "value" ] string)
         |: at [ "data", "product", "color", "value" ] string
         |: at [ "data", "product", "description", "value" ] decodeStructuredText
