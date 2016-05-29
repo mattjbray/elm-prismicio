@@ -1,10 +1,7 @@
 module App.Blog.Post.View exposing (..)
 
-import App.Types as App
-import App.Navigation exposing (toHash)
-import App.Blog.Types as Blog
 import App.Blog.Post.Types exposing (..)
-import App.Blog.Common.View exposing (viewPostInfo)
+import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
 import App.Documents.Types as Documents
 import Html exposing (..)
 import Html.Attributes exposing (id, href)
@@ -34,7 +31,7 @@ viewDocumentBlogPostFull blogPost relatedPosts =
             in
               li []
                   [ a
-                      [href (toHash (App.BlogP (Blog.PostP post.id)))]
+                      [href (blogPostUrl post)]
                       [text title]
                   ]
         viewLink link =

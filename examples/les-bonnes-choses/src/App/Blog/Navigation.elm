@@ -1,6 +1,7 @@
 module App.Blog.Navigation exposing (..)
 
 import App.Blog.Types exposing (..)
+import String
 import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 
 
@@ -11,10 +12,10 @@ toUrl page =
             ""
 
         IndexP (Just category) ->
-            "category/" ++ category
+            String.join "/" [ "category", category ]
 
-        PostP docId ->
-            "post/" ++ docId
+        PostP docId slug ->
+            String.join "/" [ "post", docId, slug ]
 
 
 pageParser : Parser (Page -> a) a
@@ -22,5 +23,5 @@ pageParser =
     oneOf
         [ format (IndexP Nothing) (s "")
         , format (IndexP << Just) (s "category" </> string)
-        , format PostP (s "post" </> string)
+        , format PostP (s "post" </> string </> string)
         ]

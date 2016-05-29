@@ -13,6 +13,7 @@ type alias Article =
 
 type alias BlogPost =
     { id : String
+    , slugs : List String
     , body : StructuredText
     , author : String
     , category : String

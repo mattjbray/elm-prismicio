@@ -45,6 +45,7 @@ decodeBlogPost =
     in
         succeed BlogPost
             |: at [ "id" ] string
+            |: at [ "slugs" ] (list string)
             |: at [ "data", "blog-post", "body", "value" ] decodeStructuredText
             |: at [ "data", "blog-post", "author", "value" ] string
             |: at [ "data", "blog-post", "category", "value" ] string

@@ -1,11 +1,8 @@
 module App.Blog.Index.View exposing (..)
 
 import App.Blog.Index.Types exposing (..)
-import App.Blog.Types exposing (Page(PostP))
-import App.Blog.Common.View exposing (viewPostInfo)
+import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
 import App.Documents.Types as Documents
-import App.Navigation exposing (toHash)
-import App.Types exposing (Page(BlogP))
 import Html exposing (..)
 import Html.Attributes exposing (class, id, href, style)
 import Prismic.View exposing (getFirstImage, getFirstParagraph, getText, getTitle, structuredTextAsHtml)
@@ -55,7 +52,7 @@ viewDocumentBlogPostShort blogPost =
                     ""
     in
         article []
-            [ a [ href (toHash (BlogP (PostP blogPost.id))) ]
+            [ a [ href (blogPostUrl blogPost) ]
                 [ viewPostInfo blogPost
                 , h2 [] [ text title ]
                 , p [] [ text firstPara ]

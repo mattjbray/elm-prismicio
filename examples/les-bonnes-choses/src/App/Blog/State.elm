@@ -20,7 +20,7 @@ init prismic page =
                 , Cmd.map IndexMsg indexCmd
                 )
 
-        PostP docId ->
+        PostP docId _ ->
             let
                 ( post, postCmd ) =
                     Post.init prismic docId
