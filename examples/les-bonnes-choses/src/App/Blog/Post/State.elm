@@ -6,7 +6,6 @@ import Prismic.Types as P exposing (Url(Url))
 import Prismic.State as P
 import Prismic as P
 import Task
-import String
 
 
 init : String -> ( Model, Cmd Msg )
@@ -25,7 +24,7 @@ init docId =
         , model.prismic
             |> P.fetchApi
             |> P.form "everything"
-            |> P.query ("[[:d = at(document.id, \"" ++ docId ++ "\")]]")
+            |> P.query (P.at "document.id" docId)
             |> P.submit Documents.decodeBlogPost
             |> Task.perform SetError SetResponse
         )
@@ -76,17 +75,12 @@ fetchRelatedPosts model =
                                     Nothing
                         )
                         blogPost.relatedPosts
-
-                query =
-                    "[[:d = any(document.id, ["
-                        ++ String.join ", " (List.map (\id -> "\"" ++ id ++ "\"") relatedIds)
-                        ++ "])]]"
             in
                 ( model
                 , model.prismic
                     |> P.fetchApi
                     |> P.form "everything"
-                    |> P.query query
+                    |> P.query (P.any "document.id" relatedIds)
                     |> P.submit Documents.decodeBlogPost
                     |> Task.perform SetError SetRelatedPosts
                 )

@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, bookmark, submit)
+module Prismic exposing (fetchApi, form, ref, query, bookmark, submit, any, at)
 
 import Dict
 import Json.Decode exposing (Decoder)
@@ -97,14 +97,14 @@ getRefById refId api =
 
 
 query :
-    String
+    Predicate
     -> Task PrismicError ( Request, CacheWithApi docType )
     -> Task PrismicError ( Request, CacheWithApi docType )
-query queryStr requestTask =
+query predicate requestTask =
     let
         addQuery ( request, cache ) =
             Task.succeed
-                ( { request | q = queryStr }
+                ( { request | q = predicateToStr predicate }
                 , cache
                 )
     in
@@ -129,8 +129,41 @@ bookmark bookmarkId cacheTask =
                                     Just docId ->
                                         Task.succeed cacheWithApi
                                             |> form "everything"
-                                            |> query ("[[:d = at(document.id, \"" ++ docId ++ "\")]]")
+                                            |> query (at "document.id" docId)
                        )
+
+
+type Predicate
+    = At String String
+    | Any String (List String)
+
+
+predicateToStr : Predicate -> String
+predicateToStr predicate =
+    let
+        query =
+            case predicate of
+                At fragment value ->
+                    "at(" ++ fragment ++ ", \"" ++ value ++ "\")"
+
+                Any fragment values ->
+                    let
+                        valuesStr =
+                            String.join ", " (List.map (\value -> "\"" ++ value ++ "\"") values)
+                    in
+                        "any(" ++ fragment ++ ", [" ++ valuesStr ++ "])"
+    in
+        "[[:d = " ++ query ++ "]]"
+
+
+at : String -> String -> Predicate
+at fragment value =
+    At fragment value
+
+
+any : String -> List String -> Predicate
+any fragment values =
+    Any fragment values
 
 
 submit :
