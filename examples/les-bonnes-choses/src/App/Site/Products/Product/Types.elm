@@ -6,10 +6,12 @@ import Prismic.Types as P
 
 type alias Model =
     { product : Maybe Documents.Product
+    , relatedProducts : List Documents.Product
     , error : Maybe P.PrismicError
     }
 
 
 type Msg
     = SetResponse ( P.Response Documents.Product, P.Cache )
+    | SetRelatedProducts ( P.Response Documents.Product, P.Cache )
     | SetError P.PrismicError

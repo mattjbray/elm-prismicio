@@ -6,7 +6,7 @@ import App.Types as App
 import App.Site.Types as Site
 import App.Site.Products.Types as Products
 import App.Site.Products.Product.Types exposing (..)
-import App.Site.Products.Common.View exposing (toCurrency)
+import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
 import Prismic.Types as P exposing (Url(Url))
@@ -57,6 +57,7 @@ view model =
 
                         _ ->
                             viewTestamonial product
+                    , viewRelatedProducts model
                     ]
 
         Nothing ->
@@ -97,3 +98,17 @@ viewTestamonial product =
     in
         Maybe.map2 quoteSection product.testimonialAuthor product.testimonialQuote
             |> Maybe.withDefault (text "")
+
+
+viewRelatedProducts : Model -> Html Msg
+viewRelatedProducts model =
+  let viewRelated prod =
+        li []
+  in
+    section
+        [ id "related"
+        , class "products"
+        ]
+        [ h2 [] [ text "You might like these as well" ]
+        , ul [] (List.map viewProductShort model.relatedProducts)
+        ]

@@ -10,6 +10,7 @@ import Task
 init : P.Cache -> String -> ( Model, Cmd Msg )
 init prismic docId =
     ( { product = Nothing
+      , relatedProducts = []
       , error = Nothing
       }
     , prismic
@@ -42,4 +43,43 @@ update msg model =
                         Nothing ->
                             model
             in
-                ( newModel, Cmd.none, Just prismic )
+                fetchRelatedProducts prismic newModel
+
+        SetRelatedProducts ( response, prismic ) ->
+            ( { model
+                | relatedProducts = List.map .data response.results
+              }
+            , Cmd.none
+            , Just prismic
+            )
+
+
+fetchRelatedProducts : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+fetchRelatedProducts prismic model =
+    ( model
+    , case model.product of
+        Just product ->
+            let
+                relatedDocIds =
+                    List.filterMap
+                        (\related ->
+                            case related of
+                                P.DocumentLink doc _ ->
+                                    Just doc.id
+
+                                _ ->
+                                    Nothing
+                        )
+                        product.related
+            in
+                prismic
+                    |> P.fetchApi
+                    |> P.form "products"
+                    |> P.query (P.any "document.id" relatedDocIds)
+                    |> P.submit Documents.decodeProduct
+                    |> Task.perform SetError SetRelatedProducts
+
+        Nothing ->
+            Cmd.none
+    , Just prismic
+    )
