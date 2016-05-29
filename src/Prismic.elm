@@ -176,40 +176,31 @@ submit decodeDocType requestTask =
             let
                 (Url url) =
                     requestToUrl request
+
+                cacheWithApi =
+                    { cache | api = Just cache.api }
+
+                decodeResponseStr mkCache responseStr =
+                    Json.decodeString (decodeResponse decodeDocType) responseStr
+                        |> Task.fromResult
+                        |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
+                        |> Task.map
+                            (\response ->
+                                ( response, mkCache responseStr )
+                            )
             in
                 case getFromCache request cache of
                     Just responseStr ->
-                        Json.decodeString (decodeResponse decodeDocType) responseStr
-                            |> Task.fromResult
-                            |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
-                            |> Task.map
-                                (\response ->
-                                    ( response
-                                    , { cache | api = Just cache.api }
-                                    )
-                                )
+                        decodeResponseStr (always cacheWithApi)
+                            responseStr
 
-                    -- Task.succeed
-                    --       ( Json.decodeString (decodeResponse decodeDocType) responseStr
-                    --       , { cache | api = Just cache.api }
-                    --       )
                     Nothing ->
-                        let
-                            cacheWithApi =
-                                { cache | api = Just cache.api }
-
-                        in
-                            Task.mapError SubmitRequestError (Http.getString url)
-                                `Task.andThen` (\ responseStr ->
-                                                  Json.decodeString (decodeResponse decodeDocType) responseStr
-                                                    |> Task.fromResult -- Task String (Response a)
-                                                    |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
-                                                    |> Task.map (\response ->
-                                                                  ( response
-                                                                  , setInCache request responseStr cacheWithApi
-                                                                  )
-                                                                )
-                                            )
+                        Task.mapError SubmitRequestError (Http.getString url)
+                            `Task.andThen` (decodeResponseStr
+                                                (\responseStr ->
+                                                    setInCache request responseStr cacheWithApi
+                                                )
+                                           )
     in
         requestTask `Task.andThen` doSubmit
 
