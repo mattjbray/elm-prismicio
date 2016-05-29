@@ -16,7 +16,6 @@ view model =
     div []
         [ viewHeader model
         , viewContent model
-          --, viewFooter model
         ]
 
 
@@ -25,20 +24,27 @@ viewHeader model =
     header []
         [ a [ href (toHash (App.SiteP Site.AboutP)) ]
             [ h1 [] [ text "Les Bonnes Choses" ] ]
+        , nav []
+            [ ul []
+                [ li [] [ a [ href (toHash (App.BlogP IndexP)) ] [ text "Home" ] ]
+                , li [] [ a [] [ text "Announcements" ] ]
+                , li [] [ a [] [ text "Do it yourself" ] ]
+                , li [] [ a [] [ text "Behind the scenes" ] ]
+                ]
+            ]
         ]
 
 
 viewContent : Model -> Html Msg
 viewContent model =
-  div [class "main"]
-    [case model.content of
-        IndexC index ->
-            map IndexMsg (Index.view index)
+    div [ class "main" ]
+        [ case model.content of
+            IndexC index ->
+                map IndexMsg (Index.view index)
 
-        PostC post ->
-            map PostMsg (Post.view post)
+            PostC post ->
+                map PostMsg (Post.view post)
 
-        NoContent ->
-            p [] [ text "Blog is loading..." ]
-    ]
-
+            NoContent ->
+                p [] [ text "Blog is loading..." ]
+        ]

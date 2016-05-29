@@ -15,7 +15,6 @@ view model =
     div []
         [ viewHeader model
         , viewContent model
-        , viewFooter model
         ]
 
 
@@ -59,12 +58,3 @@ viewContent model =
 
         NoContent ->
             p [] [ text "No Site page loaded." ]
-
-
-viewFooter : Model -> Html Msg
-viewFooter _ =
-    footer []
-        [ text "This is a demonstration website for "
-        , a [ href "https://github.com/mattjbray/elm-prismicio" ]
-            [ text "elm-prismicio" ]
-        ]

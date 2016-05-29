@@ -56,7 +56,7 @@ asHtml field =
 
 structuredTextAsHtml : StructuredText -> List (Html msg)
 structuredTextAsHtml =
-  List.map structuredTextFieldAsHtml
+    List.map structuredTextFieldAsHtml
 
 
 structuredTextFieldAsHtml : StructuredTextField -> Html msg
