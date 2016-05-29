@@ -180,3 +180,74 @@ viewDefaultDocType doc =
     in
         div []
             (h2 [] (List.map text (Dict.keys doc)) :: (List.map asHtml allDocFields))
+
+
+getTitle : StructuredText -> Maybe StructuredTextField
+getTitle structuredText =
+    let
+        isTitle field =
+            case field of
+                SSimple simpleField ->
+                    case simpleField.fieldType of
+                        Heading1 ->
+                            True
+
+                        Heading2 ->
+                            True
+
+                        Heading3 ->
+                            True
+
+                        _ ->
+                            False
+
+                _ ->
+                    False
+    in
+        List.head (List.filter isTitle structuredText)
+
+
+getFirstParagraph : StructuredText -> Maybe StructuredTextField
+getFirstParagraph structuredText =
+    let
+        isParagraph field =
+            case field of
+                SSimple simpleField ->
+                    case simpleField.fieldType of
+                        Paragraph ->
+                            True
+
+                        _ ->
+                            False
+
+                _ ->
+                    False
+    in
+        List.head (List.filter isParagraph structuredText)
+
+
+getFirstImage : StructuredText -> Maybe ImageProperties
+getFirstImage structuredText =
+    let
+        getImage field =
+            case field of
+                SImage image ->
+                    Just image
+
+                _ ->
+                    Nothing
+    in
+        List.head (List.filterMap getImage structuredText)
+
+
+getText : StructuredTextField -> String
+getText field =
+    case field of
+        SSimple simpleField ->
+            simpleField.text
+
+        SImage imageField ->
+            Maybe.withDefault "<image>" imageField.alt
+
+        _ ->
+            ""
