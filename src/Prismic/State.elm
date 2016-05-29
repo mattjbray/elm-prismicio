@@ -4,7 +4,7 @@ import Dict
 import Prismic.Types exposing (..)
 
 
-initCache : Url -> Cache docType
+initCache : Url -> Cache
 initCache url =
   { api = Nothing
   , url = url

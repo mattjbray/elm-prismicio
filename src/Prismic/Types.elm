@@ -3,16 +3,16 @@ module Prismic.Types exposing (..)
 import Dict exposing (Dict)
 import Http
 
-type alias Cache docType = Cache' (Maybe Api) docType
+type alias Cache = Cache' (Maybe Api)
 
-type alias CacheWithApi docType = Cache' Api docType
+type alias CacheWithApi = Cache' Api
 
-type alias Cache' api docType =
+type alias Cache' api =
     { api : api
     , url : Url
     , nextRequestId : Int
     , requests : Dict Int Request
-    , responses : Dict Int (Response docType)
+    , responses : Dict Int String
     }
 
 

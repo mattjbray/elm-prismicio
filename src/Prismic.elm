@@ -1,7 +1,7 @@
 module Prismic exposing (fetchApi, form, ref, query, bookmark, submit, any, at)
 
 import Dict
-import Json.Decode exposing (Decoder)
+import Json.Decode as Json exposing (Decoder)
 import Http
 import Task exposing (Task)
 import Prismic.Types exposing (..)
@@ -9,7 +9,7 @@ import Prismic.Decoders exposing (..)
 import String
 
 
-fetchApi : Cache docType -> Task PrismicError (CacheWithApi docType)
+fetchApi : Cache -> Task PrismicError CacheWithApi
 fetchApi cache =
     case cache.api of
         Just api ->
@@ -28,8 +28,8 @@ fetchApi cache =
 
 form :
     String
-    -> Task PrismicError (CacheWithApi docType)
-    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError CacheWithApi
+    -> Task PrismicError ( Request, CacheWithApi )
 form formId apiTask =
     let
         addForm cache =
@@ -71,8 +71,8 @@ form formId apiTask =
 
 ref :
     String
-    -> Task PrismicError ( Request, CacheWithApi docType )
-    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ( Request, CacheWithApi )
 ref refId requestTask =
     let
         addRef ( request, cache ) =
@@ -98,8 +98,8 @@ getRefById refId api =
 
 query :
     Predicate
-    -> Task PrismicError ( Request, CacheWithApi docType )
-    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ( Request, CacheWithApi )
 query predicate requestTask =
     let
         addQuery ( request, cache ) =
@@ -113,8 +113,8 @@ query predicate requestTask =
 
 bookmark :
     String
-    -> Task PrismicError (CacheWithApi docType)
-    -> Task PrismicError ( Request, CacheWithApi docType )
+    -> Task PrismicError (CacheWithApi)
+    -> Task PrismicError ( Request, CacheWithApi )
 bookmark bookmarkId cacheTask =
     cacheTask
         `Task.andThen` (\cacheWithApi ->
@@ -168,8 +168,8 @@ any fragment values =
 
 submit :
     Decoder docType
-    -> Task PrismicError ( Request, CacheWithApi docType )
-    -> Task PrismicError ( Response docType, Cache docType )
+    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ( Response docType, Cache )
 submit decodeDocType requestTask =
     let
         doSubmit ( request, cache ) =
@@ -178,20 +178,38 @@ submit decodeDocType requestTask =
                     requestToUrl request
             in
                 case getFromCache request cache of
-                    Just response ->
-                        Task.succeed ( response, { cache | api = Just cache.api } )
+                    Just responseStr ->
+                        Json.decodeString (decodeResponse decodeDocType) responseStr
+                            |> Task.fromResult
+                            |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
+                            |> Task.map
+                                (\response ->
+                                    ( response
+                                    , { cache | api = Just cache.api }
+                                    )
+                                )
 
+                    -- Task.succeed
+                    --       ( Json.decodeString (decodeResponse decodeDocType) responseStr
+                    --       , { cache | api = Just cache.api }
+                    --       )
                     Nothing ->
                         let
                             cacheWithApi =
                                 { cache | api = Just cache.api }
 
-                            mkResponse response =
-                                ( response, setInCache request response cacheWithApi )
                         in
-                            Http.get (decodeResponse decodeDocType) url
-                                |> Task.map mkResponse
-                                |> Task.mapError SubmitRequestError
+                            Task.mapError SubmitRequestError (Http.getString url)
+                                `Task.andThen` (\ responseStr ->
+                                                  Json.decodeString (decodeResponse decodeDocType) responseStr
+                                                    |> Task.fromResult -- Task String (Response a)
+                                                    |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
+                                                    |> Task.map (\response ->
+                                                                  ( response
+                                                                  , setInCache request responseStr cacheWithApi
+                                                                  )
+                                                                )
+                                            )
     in
         requestTask `Task.andThen` doSubmit
 
@@ -218,8 +236,8 @@ requestToUrl request =
 
 getFromCache :
     Request
-    -> Cache' api docType
-    -> Maybe (Response docType)
+    -> Cache' api
+    -> Maybe String
 getFromCache request cache =
     let
         mRequestId =
@@ -239,9 +257,9 @@ getFromCache request cache =
 
 setInCache :
     Request
-    -> Response docType
-    -> Cache' api docType
-    -> Cache' api docType
+    -> String
+    -> Cache' api
+    -> Cache' api
 setInCache request response cache =
     let
         id =
