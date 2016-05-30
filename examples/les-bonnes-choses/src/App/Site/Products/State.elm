@@ -9,10 +9,10 @@ import Prismic.Types as P
 init : P.Cache -> Page -> (Model, Cmd Msg)
 init prismic page =
   case page of
-    IndexP ->
+    IndexP mFlavour ->
       let
         ( index, indexCmd ) =
-          Index.init prismic
+          Index.init prismic mFlavour
       in
         ( { page = page
           , content = IndexC index

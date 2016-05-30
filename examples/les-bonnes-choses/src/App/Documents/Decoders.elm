@@ -64,7 +64,7 @@ decodeProduct =
         |: maybe (at [ "data", "product", "allergens", "value" ] string)
         |: at [ "data", "product", "color", "value" ] string
         |: at [ "data", "product", "description", "value" ] decodeStructuredText
-        |: maybe (at [ "data", "product", "flavour" ] (list ("value" := string)))
+        |: maybeWithDefault [] (at [ "data", "product", "flavour" ] (list ("value" := string)))
         |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := decodeImageField)))
         |: at [ "data", "product", "image", "value" ] decodeImageField
         |: at [ "data", "product", "name", "value" ] decodeStructuredText

@@ -41,7 +41,7 @@ type alias Product =
     , allergens : Maybe String
     , color : String
     , description : StructuredText
-    , flavour : Maybe (List String)
+    , flavours : List String
     , gallery : List ImageField
     , image : ImageField
     , name : StructuredText

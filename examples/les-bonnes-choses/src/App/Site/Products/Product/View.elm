@@ -20,6 +20,9 @@ view model =
             let
                 (Url imageUrl) =
                     product.image.main.url
+                primaryFlavour =
+                  List.head product.flavours
+                      |> Maybe.withDefault ""
             in
                 div
                     [ class "main"
@@ -36,7 +39,7 @@ view model =
                              ]
                                 ++ structuredTextAsHtml product.description
                                 ++ [ p []
-                                        [ a []
+                                        [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP (Just primaryFlavour))))) ]
                                             [ strong
                                                 [ class "color"
                                                 , style [ ( "background", product.color ) ]
@@ -47,7 +50,7 @@ view model =
                                    ]
                             )
                         , p []
-                            [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP)))) ]
+                            [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing)))) ]
                                 [ text "Browse all our products" ]
                             ]
                         ]

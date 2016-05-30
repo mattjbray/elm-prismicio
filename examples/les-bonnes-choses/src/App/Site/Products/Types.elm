@@ -11,7 +11,7 @@ type alias Model =
     }
 
 type Page
-  = IndexP
+  = IndexP (Maybe String)
   | ProductP String String
 
 

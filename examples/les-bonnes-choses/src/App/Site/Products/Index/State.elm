@@ -7,14 +7,17 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> ( Model, Cmd Msg )
-init prismic =
+init : P.Cache -> Maybe String -> ( Model, Cmd Msg )
+init prismic mFlavour =
     ( { products = Nothing
       , error = Nothing
       }
     , prismic
         |> P.fetchApi
         |> P.form "products"
+        |> (mFlavour
+             |> Maybe.map (\flavour -> P.query (P.at "my.product.flavour" flavour))
+             |> Maybe.withDefault P.none)
         |> P.submit Documents.decodeProduct
         |> Task.perform SetError SetResponse
     )
