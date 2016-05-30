@@ -105,13 +105,13 @@ viewTestamonial product =
 
 viewRelatedProducts : Model -> Html Msg
 viewRelatedProducts model =
-  let viewRelated prod =
-        li []
-  in
-    section
-        [ id "related"
-        , class "products"
-        ]
-        [ h2 [] [ text "You might like these as well" ]
-        , ul [] (List.map viewProductShort model.relatedProducts)
-        ]
+    if List.isEmpty model.relatedProducts then
+        text ""
+    else
+        section
+            [ id "related"
+            , class "products"
+            ]
+            [ h2 [] [ text "You might like these as well" ]
+            , ul [] (List.map viewProductShort model.relatedProducts)
+            ]
