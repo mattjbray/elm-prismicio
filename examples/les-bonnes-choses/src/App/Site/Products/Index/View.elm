@@ -21,7 +21,7 @@ view model =
                     (List.map viewProductShort (Maybe.withDefault [] model.products))
                 ]
             , p []
-                [ a [ href (toHash (App.SiteP (Site.AboutP))) ]
+                [ a [ href (toHash (App.SiteP (Site.HomeP))) ]
                     [ text "Close the products list" ]
                 ]
             ]

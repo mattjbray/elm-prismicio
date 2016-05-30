@@ -22,7 +22,7 @@ view model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     header []
-        [ a [ href (toHash (App.SiteP Site.AboutP)) ]
+        [ a [ href (toHash (App.SiteP Site.HomeP)) ]
             [ h1 [] [ text "Les Bonnes Choses" ] ]
         , nav []
             [ ul []

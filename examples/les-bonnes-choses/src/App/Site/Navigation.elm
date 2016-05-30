@@ -23,6 +23,9 @@ toUrl page =
         ProductsP productsPage ->
             "products/" ++ Products.toUrl productsPage
 
+        HomeP ->
+            ""
+
 
 pageParser : Parser (Page -> a) a
 pageParser =
@@ -32,4 +35,5 @@ pageParser =
         , format JobsP (s "jobs")
         , format StoresP (s "stores")
         , format ProductsP (s "products" </> Products.pageParser)
+        , format HomeP (s "")
         ]

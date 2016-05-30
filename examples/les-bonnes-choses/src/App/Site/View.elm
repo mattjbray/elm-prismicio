@@ -3,6 +3,7 @@ module App.Site.View exposing (..)
 import App.Navigation exposing (toHash)
 import App.Site.Types exposing (..)
 import App.Site.Article.View as Article
+import App.Site.Home.View as Home
 import App.Site.Products.View as Products
 import App.Types as App
 import App.Blog.Types as Blog
@@ -32,7 +33,7 @@ viewHeader model =
         header []
             [ nav []
                 [ h1 []
-                    [ mkHeaderLink AboutP "Les bonnes choses" ]
+                    [ mkHeaderLink HomeP "Les bonnes choses" ]
                 , ul []
                     [ li [] [ mkHeaderLink AboutP "About" ]
                     , li [] [ mkHeaderLink StoresP "Stores" ]
@@ -55,6 +56,9 @@ viewContent model =
     case model.content of
         ArticleC article ->
             map ArticleMsg (Article.view article)
+
+        HomeC home ->
+            map HomeMsg (Home.view home)
 
         ProductsC products ->
             map ProductsMsg (Products.view products)

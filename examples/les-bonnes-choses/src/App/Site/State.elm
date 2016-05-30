@@ -2,6 +2,7 @@ module App.Site.State exposing (..)
 
 import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
+import App.Site.Home.State as Home
 import App.Site.Products.State as Products
 import Prismic.Types as P
 
@@ -10,7 +11,7 @@ init : P.Cache -> Page -> ( Model, Cmd Msg )
 init prismic page =
     let
         model =
-            { page = AboutP
+            { page = HomeP
             , content = NoContent
             }
 
@@ -18,6 +19,18 @@ init prismic page =
             initArticle prismic page bookmark model
     in
         case page of
+            HomeP as page ->
+                let
+                  (home, homeCmd) =
+                    Home.init prismic
+                  newModel =
+                    { model
+                        | page = page
+                        , content = HomeC home
+                    }
+                in
+                    newModel ! [ Cmd.map HomeMsg homeCmd ]
+
             AboutP as page ->
                 initWith "about"
 
@@ -61,6 +74,26 @@ initArticle prismic page bookmarkName model =
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
+        HomeMsg homeMsg ->
+            case model.content of
+                HomeC home ->
+                    let
+                        ( newHome, homeCmd, mNewPrismic ) =
+                            Home.update homeMsg home
+
+                        newModel =
+                            { model
+                                | content = HomeC newHome
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map HomeMsg homeCmd
+                        , mNewPrismic
+                        )
+
+                _ ->
+                    ( model, Cmd.none, Nothing )
+
         ArticleMsg articleMsg ->
             case model.content of
                 ArticleC article ->
