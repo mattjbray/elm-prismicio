@@ -11,7 +11,7 @@ import Html.Attributes exposing (class, classList, disabled, href, id, rel, sele
 
 view : Model -> Html Msg
 view model =
-    div [class "main", id "home"]
+    div [ class "main", id "home" ]
         [ section [ id "caroussel" ]
             [ nav []
                 [ ul []
@@ -20,11 +20,10 @@ view model =
                     , li [] [ a [] [ text "Little pies" ] ]
                     ]
                 ]
-            , div [class "products"] []
+            , div [ class "products" ] []
             , p []
-                [a [href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing))))]
-                   [text "Browse all our products"]
+                [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing)))) ]
+                    [ text "Browse all our products" ]
                 ]
-
             ]
         ]

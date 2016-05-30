@@ -9,15 +9,16 @@ type alias Model =
     , content : Content
     }
 
+
 type Page
-  = IndexP (Maybe String)
-  | ProductP String String
+    = IndexP (Maybe String)
+    | ProductP String String
 
 
 type Content
-  = NoContent
-  | IndexC Index.Model
-  | ProductC Product.Model
+    = NoContent
+    | IndexC Index.Model
+    | ProductC Product.Model
 
 
 type Msg

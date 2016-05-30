@@ -14,7 +14,6 @@ viewPostInfo blogPost =
         [ text (blogPost.date ++ " by " ++ blogPost.author) ]
 
 
-
 blogPostUrl : Documents.BlogPost -> String
 blogPostUrl blogPost =
-  toHash (App.BlogP (Blog.PostP blogPost.id (Maybe.withDefault "post" (List.head blogPost.slugs))))
+    toHash (App.BlogP (Blog.PostP blogPost.id (Maybe.withDefault "post" (List.head blogPost.slugs))))

@@ -21,13 +21,14 @@ init prismic page =
         case page of
             HomeP as page ->
                 let
-                  (home, homeCmd) =
-                    Home.init prismic
-                  newModel =
-                    { model
-                        | page = page
-                        , content = HomeC home
-                    }
+                    ( home, homeCmd ) =
+                        Home.init prismic
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = HomeC home
+                        }
                 in
                     newModel ! [ Cmd.map HomeMsg homeCmd ]
 
@@ -45,13 +46,14 @@ init prismic page =
 
             (ProductsP productsPage) as page ->
                 let
-                  (products, productsCmd) =
-                    Products.init prismic productsPage
-                  newModel =
-                    { model
-                        | page = page
-                        , content = ProductsC products
-                    }
+                    ( products, productsCmd ) =
+                        Products.init prismic productsPage
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = ProductsC products
+                        }
                 in
                     newModel ! [ Cmd.map ProductsMsg productsCmd ]
 

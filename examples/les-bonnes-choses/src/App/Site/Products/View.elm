@@ -9,12 +9,12 @@ import Html.App exposing (map)
 
 view : Model -> Html Msg
 view model =
-  case model.content of
-    IndexC index ->
-      map IndexMsg (Index.view index)
+    case model.content of
+        IndexC index ->
+            map IndexMsg (Index.view index)
 
-    ProductC product ->
-      map ProductMsg (Product.view product)
+        ProductC product ->
+            map ProductMsg (Product.view product)
 
-    NoContent ->
-      p [] [text "No Products content"]
+        NoContent ->
+            p [] [ text "No Products content" ]

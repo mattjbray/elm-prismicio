@@ -21,11 +21,11 @@ viewContent model =
     case model.content of
         SiteC site ->
             viewWithStyleSheet "http://lesbonneschoses.prismic.me/assets/stylesheets/main.css"
-                [map SiteMsg (Site.view site)]
+                [ map SiteMsg (Site.view site) ]
 
         BlogC blog ->
             viewWithStyleSheet "http://lesbonneschoses.prismic.me/assets/stylesheets/blog.css"
-                [map BlogMsg (Blog.view blog)]
+                [ map BlogMsg (Blog.view blog) ]
 
         NoContent ->
             p [] [ text "No page loaded." ]

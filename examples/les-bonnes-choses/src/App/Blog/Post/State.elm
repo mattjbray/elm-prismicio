@@ -91,19 +91,19 @@ fetchRelated prismic model =
             in
                 ( model
                 , Cmd.batch
-                     [ prismic
+                    [ prismic
                         |> P.fetchApi
                         |> P.form "everything"
                         |> P.query (P.any "document.id" relatedPostIds)
                         |> P.submit Documents.decodeBlogPost
                         |> Task.perform SetError SetRelatedPosts
-                     , prismic
+                    , prismic
                         |> P.fetchApi
                         |> P.form "everything"
                         |> P.query (P.any "document.id" relatedProductIds)
                         |> P.submit Documents.decodeProduct
                         |> Task.perform SetError SetRelatedProducts
-                     ]
+                    ]
                 , Just prismic
                 )
 

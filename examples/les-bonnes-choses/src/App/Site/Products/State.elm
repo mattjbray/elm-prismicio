@@ -6,31 +6,30 @@ import App.Site.Products.Product.State as Product
 import Prismic.Types as P
 
 
-init : P.Cache -> Page -> (Model, Cmd Msg)
+init : P.Cache -> Page -> ( Model, Cmd Msg )
 init prismic page =
-  case page of
-    IndexP mFlavour ->
-      let
-        ( index, indexCmd ) =
-          Index.init prismic mFlavour
-      in
-        ( { page = page
-          , content = IndexC index
-          }
-        , Cmd.map IndexMsg indexCmd
-        )
+    case page of
+        IndexP mFlavour ->
+            let
+                ( index, indexCmd ) =
+                    Index.init prismic mFlavour
+            in
+                ( { page = page
+                  , content = IndexC index
+                  }
+                , Cmd.map IndexMsg indexCmd
+                )
 
-    ProductP docId _ ->
-      let
-        ( product, productCmd ) =
-          Product.init prismic docId
-      in
-        ( { page = page
-          , content = ProductC product
-          }
-        , Cmd.map ProductMsg productCmd
-        )
-
+        ProductP docId _ ->
+            let
+                ( product, productCmd ) =
+                    Product.init prismic docId
+            in
+                ( { page = page
+                  , content = ProductC product
+                  }
+                , Cmd.map ProductMsg productCmd
+                )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )

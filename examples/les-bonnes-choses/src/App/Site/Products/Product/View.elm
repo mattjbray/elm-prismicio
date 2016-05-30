@@ -20,9 +20,10 @@ view model =
             let
                 (Url imageUrl) =
                     product.image.main.url
+
                 primaryFlavour =
-                  List.head product.flavours
-                      |> Maybe.withDefault ""
+                    List.head product.flavours
+                        |> Maybe.withDefault ""
             in
                 div
                     [ class "main"

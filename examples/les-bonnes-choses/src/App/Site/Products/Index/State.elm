@@ -16,8 +16,9 @@ init prismic mFlavour =
         |> P.fetchApi
         |> P.form "products"
         |> (mFlavour
-             |> Maybe.map (\flavour -> P.query (P.at "my.product.flavour" flavour))
-             |> Maybe.withDefault P.none)
+                |> Maybe.map (\flavour -> P.query (P.at "my.product.flavour" flavour))
+                |> Maybe.withDefault P.none
+           )
         |> P.submit Documents.decodeProduct
         |> Task.perform SetError SetResponse
     )
