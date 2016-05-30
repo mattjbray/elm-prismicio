@@ -1,5 +1,9 @@
 module App.Blog.Post.View exposing (..)
 
+import App.Navigation exposing (toHash)
+import App.Types as App
+import App.Site.Types as Site
+import App.Site.Products.Types as Products
 import App.Blog.Post.Types exposing (..)
 import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
 import App.Documents.Types as Documents
@@ -44,9 +48,16 @@ viewDocumentBlogPostFull blogPost model =
                     Dict.get "icon" product.image.views
                         |> Maybe.map .url
                         |> Maybe.withDefault (Url "")
+
+                slug =
+                    product.slugs
+                        |> List.head
+                        |> Maybe.withDefault ""
             in
                 li []
-                    [ a []
+                    [ a
+                        [ href (toHash (App.SiteP (Site.ProductsP (Products.ProductP product.id slug))))
+                        ]
                         [ img [ src imgUrl ] []
                         , span [] [ text (getTexts product.name) ]
                         ]
