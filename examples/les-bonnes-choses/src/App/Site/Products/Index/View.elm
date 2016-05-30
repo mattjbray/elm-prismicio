@@ -1,5 +1,8 @@
 module App.Site.Products.Index.View exposing (..)
 
+import App.Navigation exposing (toHash)
+import App.Types as App
+import App.Site.Types as Site
 import App.Site.Products.Index.Types exposing (..)
 import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
 import Html exposing (..)
@@ -12,16 +15,15 @@ view model =
         [ class "main"
         , id "products"
         ]
-        [ section
-            [ id "catalog"
-            , style [ ( "height", "1170px" ) ]
-            ]
+        [ section [ id "catalog" ]
             [ div [ class "products" ]
                 [ ul []
                     (List.map viewProductShort (Maybe.withDefault [] model.products))
                 ]
             , p []
-                [ a [] [ text "Close the products list" ] ]
+                [ a [ href (toHash (App.SiteP (Site.AboutP))) ]
+                    [ text "Close the products list" ]
+                ]
             ]
         , pre [] [ text (Maybe.withDefault "" (Maybe.map toString model.error)) ]
         ]
