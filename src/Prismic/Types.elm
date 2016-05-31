@@ -1,6 +1,7 @@
 module Prismic.Types exposing (..)
 
 import Dict exposing (Dict)
+import Json.Decode as Json
 import Http
 
 type alias Cache = Cache' (Maybe Api)
@@ -12,7 +13,7 @@ type alias Cache' api =
     , url : Url
     , nextRequestId : Int
     , requests : Dict Int Request
-    , responses : Dict Int String
+    , responses : Dict Int Json.Value
     }
 
 

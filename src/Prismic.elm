@@ -208,27 +208,32 @@ submit decodeDocType requestTask =
                 cacheWithApi =
                     { cache | api = Just cache.api }
 
-                decodeResponseStr mkCache responseStr =
-                    Json.decodeString (decodeResponse decodeDocType) responseStr
+                decodeResponseValue responseValue =
+                    Json.decodeValue (decodeResponse decodeDocType) responseValue
                         |> Task.fromResult
                         |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
-                        |> Task.map
-                            (\response ->
-                                ( response, mkCache responseStr )
-                            )
             in
                 case getFromCache request cache of
-                    Just responseStr ->
-                        decodeResponseStr (always cacheWithApi)
-                            responseStr
+                    Just responseValue ->
+                        decodeResponseValue responseValue
+                            |> Task.map (\response -> ( response, cacheWithApi ))
 
                     Nothing ->
-                        Task.mapError SubmitRequestError (Http.getString url)
-                            `Task.andThen` (decodeResponseStr
-                                                (\responseStr ->
-                                                    setInCache request responseStr cacheWithApi
-                                                )
-                                           )
+                        let
+                            fetchUrl =
+                                Http.get Json.value url
+                                    |> Task.mapError SubmitRequestError
+
+                            decodeAndMkResult responseValue =
+                                decodeResponseValue responseValue
+                                    |> Task.map (mkResultTuple responseValue)
+
+                            mkResultTuple responseValue response =
+                                ( response
+                                , setInCache request responseValue cacheWithApi
+                                )
+                        in
+                            fetchUrl `Task.andThen` decodeAndMkResult
     in
         requestTask `Task.andThen` doSubmit
 
@@ -256,7 +261,7 @@ requestToUrl request =
 getFromCache :
     Request
     -> Cache' api
-    -> Maybe String
+    -> Maybe Json.Value
 getFromCache request cache =
     let
         mRequestId =
@@ -276,7 +281,7 @@ getFromCache request cache =
 
 setInCache :
     Request
-    -> String
+    -> Json.Value
     -> Cache' api
     -> Cache' api
 setInCache request response cache =
