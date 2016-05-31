@@ -8956,6 +8956,12 @@ var _user$project$App_Site_Home_Types$Model = F3(
 	function (a, b, c) {
 		return {products: a, featured: b, category: c};
 	});
+var _user$project$App_Site_Home_Types$BlogPost = function (a) {
+	return {ctor: 'BlogPost', _0: a};
+};
+var _user$project$App_Site_Home_Types$Product = function (a) {
+	return {ctor: 'Product', _0: a};
+};
 var _user$project$App_Site_Home_Types$SetCategory = function (a) {
 	return {ctor: 'SetCategory', _0: a};
 };
@@ -10232,29 +10238,19 @@ var _user$project$Prismic$submit = F2(
 			var _p5 = _p4;
 			var _p9 = _p5._0;
 			var _p8 = _p5._1;
-			var decodeResponseStr = F2(
-				function (mkCache, responseStr) {
-					return A2(
-						_elm_lang$core$Task$map,
-						function (response) {
-							return {
-								ctor: '_Tuple2',
-								_0: response,
-								_1: mkCache(responseStr)
-							};
-						},
+			var decodeResponseValue = function (responseValue) {
+				return A2(
+					_elm_lang$core$Task$mapError,
+					function (msg) {
+						return _user$project$Prismic_Types$SubmitRequestError(
+							_evancz$elm_http$Http$UnexpectedPayload(msg));
+					},
+					_elm_lang$core$Task$fromResult(
 						A2(
-							_elm_lang$core$Task$mapError,
-							function (msg) {
-								return _user$project$Prismic_Types$SubmitRequestError(
-									_evancz$elm_http$Http$UnexpectedPayload(msg));
-							},
-							_elm_lang$core$Task$fromResult(
-								A2(
-									_elm_lang$core$Json_Decode$decodeString,
-									_user$project$Prismic_Decoders$decodeResponse(decodeDocType),
-									responseStr))));
-				});
+							_elm_lang$core$Json_Decode$decodeValue,
+							_user$project$Prismic_Decoders$decodeResponse(decodeDocType),
+							responseValue)));
+			};
 			var cacheWithApi = _elm_lang$core$Native_Utils.update(
 				_p8,
 				{
@@ -10265,20 +10261,31 @@ var _user$project$Prismic$submit = F2(
 			var _p7 = A2(_user$project$Prismic$getFromCache, _p9, _p8);
 			if (_p7.ctor === 'Just') {
 				return A2(
-					decodeResponseStr,
-					_elm_lang$core$Basics$always(cacheWithApi),
-					_p7._0);
+					_elm_lang$core$Task$map,
+					function (response) {
+						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
+					},
+					decodeResponseValue(_p7._0));
 			} else {
-				return A2(
-					_elm_lang$core$Task$andThen,
-					A2(
-						_elm_lang$core$Task$mapError,
-						_user$project$Prismic_Types$SubmitRequestError,
-						_evancz$elm_http$Http$getString(url)),
-					decodeResponseStr(
-						function (responseStr) {
-							return A3(_user$project$Prismic$setInCache, _p9, responseStr, cacheWithApi);
-						}));
+				var mkResultTuple = F2(
+					function (responseValue, response) {
+						return {
+							ctor: '_Tuple2',
+							_0: response,
+							_1: A3(_user$project$Prismic$setInCache, _p9, responseValue, cacheWithApi)
+						};
+					});
+				var decodeAndMkResult = function (responseValue) {
+					return A2(
+						_elm_lang$core$Task$map,
+						mkResultTuple(responseValue),
+						decodeResponseValue(responseValue));
+				};
+				var fetchUrl = A2(
+					_elm_lang$core$Task$mapError,
+					_user$project$Prismic_Types$SubmitRequestError,
+					A2(_evancz$elm_http$Http$get, _elm_lang$core$Json_Decode$value, url));
+				return A2(_elm_lang$core$Task$andThen, fetchUrl, decodeAndMkResult);
 			}
 		};
 		return A2(_elm_lang$core$Task$andThen, requestTask, doSubmit);
@@ -11766,6 +11773,12 @@ var _user$project$App_Site_Article_View$view = function (model) {
 				]));
 	}
 };
+var _user$project$App_Site_Home_Decoders$decodeFeatured = _elm_lang$core$Json_Decode$oneOf(
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(_elm_lang$core$Json_Decode$object1, _user$project$App_Site_Home_Types$BlogPost, _user$project$App_Documents_Decoders$decodeBlogPost),
+			A2(_elm_lang$core$Json_Decode$object1, _user$project$App_Site_Home_Types$Product, _user$project$App_Documents_Decoders$decodeProduct)
+		]));
 var _user$project$App_Site_Home_State$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
@@ -11877,7 +11890,7 @@ var _user$project$App_Site_Home_State$init = function (prismic) {
 					_elm_lang$core$Task$toResult(
 						A2(
 							_user$project$Prismic$submit,
-							_user$project$App_Documents_Decoders$decodeProduct,
+							_user$project$App_Site_Home_Decoders$decodeFeatured,
 							A2(
 								_user$project$Prismic$query,
 								_elm_lang$core$Native_List.fromArray(
@@ -11887,7 +11900,11 @@ var _user$project$App_Site_Home_State$init = function (prismic) {
 										'document.tags',
 										_elm_lang$core$Native_List.fromArray(
 											['Featured'])),
-										A2(_user$project$Prismic$at, 'document.type', 'product')
+										A2(
+										_user$project$Prismic$any,
+										'document.type',
+										_elm_lang$core$Native_List.fromArray(
+											['product', 'blog-post']))
 									]),
 								A2(
 									_user$project$Prismic$form,
@@ -12102,6 +12119,139 @@ var _user$project$App_Site_Products_Common_View$viewProductShort = function (pro
 					]))
 			]));
 };
+var _user$project$App_Site_Home_View$viewFeaturedBlogPost = function (blogPost) {
+	var slug = A2(
+		_elm_lang$core$Maybe$withDefault,
+		'',
+		_elm_lang$core$List$head(blogPost.slugs));
+	var blogPostUrl = _user$project$App_Navigation$toHash(
+		_user$project$App_Types$BlogP(
+			A2(_user$project$App_Blog_Types$PostP, blogPost.id, slug)));
+	var blogIndexUrl = _user$project$App_Navigation$toHash(
+		_user$project$App_Types$BlogP(
+			_user$project$App_Blog_Types$IndexP(_elm_lang$core$Maybe$Nothing)));
+	return A2(
+		_elm_lang$html$Html$section,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$id('blog')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h2,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Fresh news from '),
+						A2(
+						_elm_lang$html$Html$a,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$href(blogIndexUrl)
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('our blog')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(blogPostUrl)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$h1,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								A2(
+									_elm_lang$core$Maybe$withDefault,
+									'',
+									A2(
+										_elm_lang$core$Maybe$map,
+										_user$project$Prismic_View$getText,
+										_user$project$Prismic_View$getTitle(blogPost.body))))
+							])),
+						A2(
+						_elm_lang$html$Html$p,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								A2(
+									_elm_lang$core$Maybe$withDefault,
+									'',
+									A2(
+										_elm_lang$core$Maybe$map,
+										_user$project$Prismic_View$getText,
+										_user$project$Prismic_View$getFirstParagraph(blogPost.body))))
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('more'),
+						_elm_lang$html$Html_Attributes$href(blogPostUrl)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Read more')
+					]))
+			]));
+};
+var _user$project$App_Site_Home_View$getFeaturedBlogPosts = _elm_lang$core$List$filterMap(
+	function (featured) {
+		var _p0 = featured;
+		if (_p0.ctor === 'BlogPost') {
+			return _elm_lang$core$Maybe$Just(_p0._0);
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	});
+var _user$project$App_Site_Home_View$viewBlog = function (model) {
+	return A3(
+		_elm_community$result_extra$Result_Extra$mapBoth,
+		function (err) {
+			return A2(
+				_elm_lang$html$Html$pre,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(err))
+					]));
+		},
+		function (_p1) {
+			return A2(
+				_elm_lang$core$Maybe$withDefault,
+				_elm_lang$html$Html$text(''),
+				A2(
+					_elm_lang$core$Maybe$map,
+					_user$project$App_Site_Home_View$viewFeaturedBlogPost,
+					_elm_lang$core$List$head(
+						_user$project$App_Site_Home_View$getFeaturedBlogPosts(_p1))));
+		},
+		model.featured);
+};
+var _user$project$App_Site_Home_View$getFeaturedProducts = _elm_lang$core$List$filterMap(
+	function (featured) {
+		var _p2 = featured;
+		if (_p2.ctor === 'Product') {
+			return _elm_lang$core$Maybe$Just(_p2._0);
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	});
 var _user$project$App_Site_Home_View$viewFeatured = function (model) {
 	return A2(
 		_elm_lang$html$Html$section,
@@ -12132,7 +12282,12 @@ var _user$project$App_Site_Home_View$viewFeatured = function (model) {
 							]))
 					]);
 			},
-			_elm_lang$core$List$map(_user$project$App_Site_Products_Common_View$viewFeaturedProduct),
+			function (_p3) {
+				return A2(
+					_elm_lang$core$List$map,
+					_user$project$App_Site_Products_Common_View$viewFeaturedProduct,
+					_user$project$App_Site_Home_View$getFeaturedProducts(_p3));
+			},
 			model.featured));
 };
 var _user$project$App_Site_Home_View$filterProducts = F2(
@@ -12240,11 +12395,11 @@ var _user$project$App_Site_Home_View$viewCaroussel = function (model) {
 											]))
 									]);
 							},
-							function (_p0) {
+							function (_p4) {
 								return A2(
 									_elm_lang$core$List$map,
 									_user$project$App_Site_Products_Common_View$viewProductShort,
-									A2(_user$project$App_Site_Home_View$filterProducts, model.category, _p0));
+									A2(_user$project$App_Site_Home_View$filterProducts, model.category, _p4));
 							},
 							model.products))
 					])),
@@ -12282,7 +12437,8 @@ var _user$project$App_Site_Home_View$view = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_user$project$App_Site_Home_View$viewCaroussel(model),
-				_user$project$App_Site_Home_View$viewFeatured(model)
+				_user$project$App_Site_Home_View$viewFeatured(model),
+				_user$project$App_Site_Home_View$viewBlog(model)
 			]));
 };
 var _user$project$App_Site_Products_Index_State$update = F2(
