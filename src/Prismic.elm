@@ -9,6 +9,20 @@ import Prismic.Decoders exposing (..)
 import String
 
 
+getJson : Decoder a -> String -> Task Http.Error a
+getJson decoder url =
+    let
+        request =
+            { verb = "GET"
+            , headers =
+                [ ( "Accept", "application/json" ) ]
+            , url = url
+            , body = Http.empty
+            }
+    in
+        Http.fromJson decoder (Http.send Http.defaultSettings request)
+
+
 fetchApi : Cache -> Task PrismicError CacheWithApi
 fetchApi cache =
     case cache.api of
@@ -22,7 +36,7 @@ fetchApi cache =
             in
                 Task.map (\api -> { cache | api = api })
                     (Task.mapError FetchApiError
-                        (Http.get decodeApi url)
+                        (getJson decodeApi url)
                     )
 
 
@@ -221,7 +235,7 @@ submit decodeDocType requestTask =
                     Nothing ->
                         let
                             fetchUrl =
-                                Http.get Json.value url
+                                getJson Json.value url
                                     |> Task.mapError SubmitRequestError
 
                             decodeAndMkResult responseValue =
