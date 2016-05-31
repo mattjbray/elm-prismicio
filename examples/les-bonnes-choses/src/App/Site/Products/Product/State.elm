@@ -16,7 +16,7 @@ init prismic docId =
     , prismic
         |> P.fetchApi
         |> P.form "products"
-        |> P.query (P.at "document.id" docId)
+        |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeProduct
         |> Task.perform SetError SetResponse
     )
@@ -75,7 +75,7 @@ fetchRelatedProducts prismic model =
                 prismic
                     |> P.fetchApi
                     |> P.form "products"
-                    |> P.query (P.any "document.id" relatedDocIds)
+                    |> P.query [ P.any "document.id" relatedDocIds ]
                     |> P.submit Documents.decodeProduct
                     |> Task.perform SetError SetRelatedProducts
 

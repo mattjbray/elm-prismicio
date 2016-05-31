@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at)
+module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at, atL)
 
 import Dict
 import Json.Decode as Json exposing (Decoder)
@@ -97,14 +97,14 @@ getRefById refId api =
 
 
 query :
-    Predicate
+    List Predicate
     -> Task PrismicError ( Request, CacheWithApi )
     -> Task PrismicError ( Request, CacheWithApi )
-query predicate requestTask =
+query predicates requestTask =
     let
         addQuery ( request, cache ) =
             Task.succeed
-                ( { request | q = predicateToStr predicate }
+                ( { request | q = predicatesToStr predicates }
                 , cache
                 )
     in
@@ -129,36 +129,57 @@ bookmark bookmarkId cacheTask =
                                     Just docId ->
                                         Task.succeed cacheWithApi
                                             |> form "everything"
-                                            |> query (at "document.id" docId)
+                                            |> query [ at "document.id" docId ]
                        )
 
 
 type Predicate
     = At String String
+    | AtL String (List String)
     | Any String (List String)
 
 
-predicateToStr : Predicate -> String
-predicateToStr predicate =
+predicatesToStr : List Predicate -> String
+predicatesToStr predicates =
     let
-        query =
-            case predicate of
-                At fragment value ->
-                    "at(" ++ fragment ++ ", \"" ++ value ++ "\")"
+        wrapQuotes value =
+            "\"" ++ value ++ "\""
 
-                Any fragment values ->
-                    let
-                        valuesStr =
-                            String.join ", " (List.map (\value -> "\"" ++ value ++ "\"") values)
-                    in
-                        "any(" ++ fragment ++ ", [" ++ valuesStr ++ "])"
+        toStrList values =
+            let
+                valueStrs =
+                    values
+                        |> List.map wrapQuotes
+                        |> String.join ", "
+            in
+                "[" ++ valueStrs ++ "]"
+
+        predicateToStr predicate =
+            let
+                query =
+                    case predicate of
+                        At fragment value ->
+                            "at(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
+
+                        AtL fragment values ->
+                            "at(" ++ fragment ++ ", " ++ toStrList values ++ ")"
+
+                        Any fragment values ->
+                            "any(" ++ fragment ++ ", " ++ toStrList values ++ ")"
+            in
+                "[:d = " ++ query ++ "]"
     in
-        "[[:d = " ++ query ++ "]]"
+        "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
 
 
 at : String -> String -> Predicate
 at fragment value =
     At fragment value
+
+
+atL : String -> List String -> Predicate
+atL fragment values =
+    AtL fragment values
 
 
 any : String -> List String -> Predicate
@@ -170,7 +191,7 @@ none :
     Task PrismicError ( Request, Cache' api )
     -> Task PrismicError ( Request, Cache' api )
 none =
-  Task.map identity
+    Task.map identity
 
 
 submit :

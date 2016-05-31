@@ -20,7 +20,10 @@ init prismic mCategory =
             |> P.fetchApi
             |> P.form "blog"
             |> (mCategory
-                    |> Maybe.map (P.query << P.at "my.blog-post.category")
+                    |> Maybe.map
+                        (\category ->
+                            P.query [ P.at "my.blog-post.category" category ]
+                        )
                     |> Maybe.withDefault P.none
                )
             |> P.submit Documents.decodeBlogPost
