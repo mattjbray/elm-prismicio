@@ -15,11 +15,20 @@ init prismic =
       , featured = Ok []
       , category = Documents.Macaron
       }
-    , P.fetchApi prismic
-        |> P.form "products"
-        |> P.submit Documents.decodeProduct
-        |> Task.toResult
-        |> Task.perform never SetProducts
+    , Cmd.batch
+         -- TODO: Avoid fetching the api twice.
+        [ P.fetchApi prismic
+            |> P.form "products"
+            |> P.submit Documents.decodeProduct
+            |> Task.toResult
+            |> Task.perform never SetProducts
+        , P.fetchApi prismic
+            |> P.form "featured"
+            |> P.query [P.atL "document.tags" ["Featured"], P.at "document.type" "product"]
+            |> P.submit Documents.decodeProduct
+            |> Task.toResult
+            |> Task.perform never SetFeatured
+        ]
     )
 
 

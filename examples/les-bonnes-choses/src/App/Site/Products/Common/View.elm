@@ -55,6 +55,17 @@ categoryToString category =
             "Pies"
 
 
+urlForProduct : Documents.Product -> String
+urlForProduct product =
+    let
+        slug =
+            product.slugs
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+        (toHash (App.SiteP (Site.ProductsP (Products.ProductP product.id slug))))
+
+
 viewProductShort : Documents.Product -> Html msg
 viewProductShort product =
     let
@@ -62,19 +73,30 @@ viewProductShort product =
             Dict.get "icon" product.image.views
                 |> Maybe.map .url
                 |> Maybe.withDefault (Url "")
-
-        slug =
-            product.slugs
-                |> List.head
-                |> Maybe.withDefault ""
-
-        productUrl =
-            (toHash (App.SiteP (Site.ProductsP (Products.ProductP product.id slug))))
     in
         li [ attribute "data-category" (Maybe.withDefault "" (Maybe.map categoryToString (List.head product.categories))) ]
-            [ a [ href productUrl ]
+            [ a [ href (urlForProduct product) ]
                 [ img [ src imageUrl ] []
                 , span [] [ text (getTexts product.name) ]
                 , em [] [ text (toCurrency product.price) ]
+                ]
+            ]
+
+
+viewFeaturedProduct : Documents.Product -> Html msg
+viewFeaturedProduct product =
+    let
+        (Url backgroundImgUrl) =
+            (List.head product.gallery
+                |> Maybe.map .views
+            )
+                `Maybe.andThen` Dict.get "squared"
+                |> Maybe.map .url
+                |> Maybe.withDefault (Url "")
+    in
+        div [ style [ ( "background-image", "url(" ++ backgroundImgUrl ++ ")" ) ] ]
+            [ a [ href (urlForProduct product) ]
+                [ h3 [] [ span [] [ text (getTexts product.name) ] ]
+                , p [] [ span [] [ text (getTexts product.shortLede) ] ]
                 ]
             ]

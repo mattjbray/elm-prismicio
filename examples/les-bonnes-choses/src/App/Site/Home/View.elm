@@ -22,6 +22,7 @@ view : Model -> Html Msg
 view model =
     div [ class "main", id "home" ]
         [ viewCaroussel model
+        , viewFeatured model
         ]
 
 
@@ -66,3 +67,12 @@ filterProducts category products =
                     && not (List.member "Featured" product.tags)
             )
         |> List.take 5
+
+
+viewFeatured : Model -> Html Msg
+viewFeatured model =
+    section [ id "featured" ]
+        (model.featured
+            |> Result.mapBoth (\err -> [ div [] [ pre [] [ text (toString err) ] ] ])
+                (List.map Common.viewFeaturedProduct)
+        )
