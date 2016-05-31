@@ -10232,64 +10232,6 @@ var _user$project$Prismic$requestToUrl = function (request) {
 						{ctor: '_Tuple2', _0: 'q', _1: request.q}
 					]))));
 };
-var _user$project$Prismic$submit = F2(
-	function (decodeDocType, requestTask) {
-		var doSubmit = function (_p4) {
-			var _p5 = _p4;
-			var _p9 = _p5._0;
-			var _p8 = _p5._1;
-			var decodeResponseValue = function (responseValue) {
-				return A2(
-					_elm_lang$core$Task$mapError,
-					function (msg) {
-						return _user$project$Prismic_Types$SubmitRequestError(
-							_evancz$elm_http$Http$UnexpectedPayload(msg));
-					},
-					_elm_lang$core$Task$fromResult(
-						A2(
-							_elm_lang$core$Json_Decode$decodeValue,
-							_user$project$Prismic_Decoders$decodeResponse(decodeDocType),
-							responseValue)));
-			};
-			var cacheWithApi = _elm_lang$core$Native_Utils.update(
-				_p8,
-				{
-					api: _elm_lang$core$Maybe$Just(_p8.api)
-				});
-			var _p6 = _user$project$Prismic$requestToUrl(_p9);
-			var url = _p6._0;
-			var _p7 = A2(_user$project$Prismic$getFromCache, _p9, _p8);
-			if (_p7.ctor === 'Just') {
-				return A2(
-					_elm_lang$core$Task$map,
-					function (response) {
-						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
-					},
-					decodeResponseValue(_p7._0));
-			} else {
-				var mkResultTuple = F2(
-					function (responseValue, response) {
-						return {
-							ctor: '_Tuple2',
-							_0: response,
-							_1: A3(_user$project$Prismic$setInCache, _p9, responseValue, cacheWithApi)
-						};
-					});
-				var decodeAndMkResult = function (responseValue) {
-					return A2(
-						_elm_lang$core$Task$map,
-						mkResultTuple(responseValue),
-						decodeResponseValue(responseValue));
-				};
-				var fetchUrl = A2(
-					_elm_lang$core$Task$mapError,
-					_user$project$Prismic_Types$SubmitRequestError,
-					A2(_evancz$elm_http$Http$get, _elm_lang$core$Json_Decode$value, url));
-				return A2(_elm_lang$core$Task$andThen, fetchUrl, decodeAndMkResult);
-			}
-		};
-		return A2(_elm_lang$core$Task$andThen, requestTask, doSubmit);
-	});
 var _user$project$Prismic$none = _elm_lang$core$Task$map(_elm_lang$core$Basics$identity);
 var _user$project$Prismic$predicatesToStr = function (predicates) {
 	var wrapQuotes = function (value) {
@@ -10310,21 +10252,21 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 	};
 	var predicateToStr = function (predicate) {
 		var query = function () {
-			var _p10 = predicate;
-			switch (_p10.ctor) {
+			var _p4 = predicate;
+			switch (_p4.ctor) {
 				case 'At':
 					return A2(
 						_elm_lang$core$Basics_ops['++'],
 						'at(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p10._0,
+							_p4._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									wrapQuotes(_p10._1),
+									wrapQuotes(_p4._1),
 									')'))));
 				case 'AtL':
 					return A2(
@@ -10332,13 +10274,13 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 						'at(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p10._0,
+							_p4._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p10._1),
+									toStrList(_p4._1),
 									')'))));
 				default:
 					return A2(
@@ -10346,13 +10288,13 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 						'any(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p10._0,
+							_p4._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p10._1),
+									toStrList(_p4._1),
 									')'))));
 			}
 		}();
@@ -10372,17 +10314,17 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 };
 var _user$project$Prismic$query = F2(
 	function (predicates, requestTask) {
-		var addQuery = function (_p11) {
-			var _p12 = _p11;
+		var addQuery = function (_p5) {
+			var _p6 = _p5;
 			return _elm_lang$core$Task$succeed(
 				{
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p12._0,
+						_p6._0,
 						{
 							q: _user$project$Prismic$predicatesToStr(predicates)
 						}),
-					_1: _p12._1
+					_1: _p6._1
 				});
 		};
 		return A2(_elm_lang$core$Task$andThen, requestTask, addQuery);
@@ -10399,11 +10341,11 @@ var _user$project$Prismic$getRefById = F2(
 	});
 var _user$project$Prismic$ref = F2(
 	function (refId, requestTask) {
-		var addRef = function (_p13) {
-			var _p14 = _p13;
-			var _p16 = _p14._1;
-			var _p15 = A2(_user$project$Prismic$getRefById, refId, _p16.api);
-			if (_p15.ctor === 'Nothing') {
+		var addRef = function (_p7) {
+			var _p8 = _p7;
+			var _p10 = _p8._1;
+			var _p9 = A2(_user$project$Prismic$getRefById, refId, _p10.api);
+			if (_p9.ctor === 'Nothing') {
 				return _elm_lang$core$Task$fail(
 					_user$project$Prismic_Types$RefDoesNotExist(refId));
 			} else {
@@ -10411,9 +10353,9 @@ var _user$project$Prismic$ref = F2(
 					{
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
-							_p14._0,
-							{ref: _p15._0.ref}),
-						_1: _p16
+							_p8._0,
+							{ref: _p9._0.ref}),
+						_1: _p10
 					});
 			}
 		};
@@ -10425,29 +10367,29 @@ var _user$project$Prismic$form = F2(
 			var defaultRefId = 'master';
 			var mRef = A2(_user$project$Prismic$getRefById, defaultRefId, cache.api);
 			var mForm = A2(_elm_lang$core$Dict$get, formId, cache.api.forms);
-			var _p17 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
-			if (_p17._0.ctor === 'Nothing') {
+			var _p11 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
+			if (_p11._0.ctor === 'Nothing') {
 				return _elm_lang$core$Task$fail(
 					_user$project$Prismic_Types$FormDoesNotExist(formId));
 			} else {
-				if (_p17._1.ctor === 'Nothing') {
+				if (_p11._1.ctor === 'Nothing') {
 					return _elm_lang$core$Task$fail(
 						_user$project$Prismic_Types$RefDoesNotExist(defaultRefId));
 				} else {
-					var _p18 = _p17._0._0;
+					var _p12 = _p11._0._0;
 					var q = A2(
 						_elm_lang$core$Maybe$withDefault,
 						'',
 						A2(
 							_elm_lang$core$Maybe$andThen,
-							A2(_elm_lang$core$Dict$get, 'q', _p18.fields),
+							A2(_elm_lang$core$Dict$get, 'q', _p12.fields),
 							function (_) {
 								return _.$default;
 							}));
 					return _elm_lang$core$Task$succeed(
 						{
 							ctor: '_Tuple2',
-							_0: {action: _p18.action, ref: _p17._1._0.ref, q: q},
+							_0: {action: _p12.action, ref: _p11._1._0.ref, q: q},
 							_1: cache
 						});
 				}
@@ -10455,16 +10397,32 @@ var _user$project$Prismic$form = F2(
 		};
 		return A2(_elm_lang$core$Task$andThen, apiTask, addForm);
 	});
+var _user$project$Prismic$getJson = F2(
+	function (decoder, url) {
+		var request = {
+			verb: 'GET',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Accept', _1: 'application/json'}
+				]),
+			url: url,
+			body: _evancz$elm_http$Http$empty
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
 var _user$project$Prismic$fetchApi = function (cache) {
-	var _p19 = cache.api;
-	if (_p19.ctor === 'Just') {
+	var _p13 = cache.api;
+	if (_p13.ctor === 'Just') {
 		return _elm_lang$core$Task$succeed(
 			_elm_lang$core$Native_Utils.update(
 				cache,
-				{api: _p19._0}));
+				{api: _p13._0}));
 	} else {
-		var _p20 = cache.url;
-		var url = _p20._0;
+		var _p14 = cache.url;
+		var url = _p14._0;
 		return A2(
 			_elm_lang$core$Task$map,
 			function (api) {
@@ -10475,9 +10433,67 @@ var _user$project$Prismic$fetchApi = function (cache) {
 			A2(
 				_elm_lang$core$Task$mapError,
 				_user$project$Prismic_Types$FetchApiError,
-				A2(_evancz$elm_http$Http$get, _user$project$Prismic_Decoders$decodeApi, url)));
+				A2(_user$project$Prismic$getJson, _user$project$Prismic_Decoders$decodeApi, url)));
 	}
 };
+var _user$project$Prismic$submit = F2(
+	function (decodeDocType, requestTask) {
+		var doSubmit = function (_p15) {
+			var _p16 = _p15;
+			var _p20 = _p16._0;
+			var _p19 = _p16._1;
+			var decodeResponseValue = function (responseValue) {
+				return A2(
+					_elm_lang$core$Task$mapError,
+					function (msg) {
+						return _user$project$Prismic_Types$SubmitRequestError(
+							_evancz$elm_http$Http$UnexpectedPayload(msg));
+					},
+					_elm_lang$core$Task$fromResult(
+						A2(
+							_elm_lang$core$Json_Decode$decodeValue,
+							_user$project$Prismic_Decoders$decodeResponse(decodeDocType),
+							responseValue)));
+			};
+			var cacheWithApi = _elm_lang$core$Native_Utils.update(
+				_p19,
+				{
+					api: _elm_lang$core$Maybe$Just(_p19.api)
+				});
+			var _p17 = _user$project$Prismic$requestToUrl(_p20);
+			var url = _p17._0;
+			var _p18 = A2(_user$project$Prismic$getFromCache, _p20, _p19);
+			if (_p18.ctor === 'Just') {
+				return A2(
+					_elm_lang$core$Task$map,
+					function (response) {
+						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
+					},
+					decodeResponseValue(_p18._0));
+			} else {
+				var mkResultTuple = F2(
+					function (responseValue, response) {
+						return {
+							ctor: '_Tuple2',
+							_0: response,
+							_1: A3(_user$project$Prismic$setInCache, _p20, responseValue, cacheWithApi)
+						};
+					});
+				var decodeAndMkResult = function (responseValue) {
+					return A2(
+						_elm_lang$core$Task$map,
+						mkResultTuple(responseValue),
+						decodeResponseValue(responseValue));
+				};
+				var fetchUrl = A2(
+					_elm_lang$core$Task$mapError,
+					_user$project$Prismic_Types$SubmitRequestError,
+					A2(_user$project$Prismic$getJson, _elm_lang$core$Json_Decode$value, url));
+				return A2(_elm_lang$core$Task$andThen, fetchUrl, decodeAndMkResult);
+			}
+		};
+		return A2(_elm_lang$core$Task$andThen, requestTask, doSubmit);
+	});
 var _user$project$Prismic$Any = F2(
 	function (a, b) {
 		return {ctor: 'Any', _0: a, _1: b};
