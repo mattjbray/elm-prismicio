@@ -21,33 +21,38 @@ categories =
 view : Model -> Html Msg
 view model =
     div [ class "main", id "home" ]
-        [ section [ id "caroussel" ]
-            [ nav []
-                [ ul []
-                    (List.map
-                        (\cat ->
-                            li []
-                                [ a
-                                    [ classList [ ( "selected", cat == model.category ) ]
-                                    , onClick (SetCategory cat)
-                                    ]
-                                    [ text (Common.categoryToString cat) ]
+        [ viewCaroussel model
+        ]
+
+
+viewCaroussel : Model -> Html Msg
+viewCaroussel model =
+    section [ id "caroussel" ]
+        [ nav []
+            [ ul []
+                (List.map
+                    (\cat ->
+                        li []
+                            [ a
+                                [ classList [ ( "selected", cat == model.category ) ]
+                                , onClick (SetCategory cat)
                                 ]
-                        )
-                        categories
+                                [ text (Common.categoryToString cat) ]
+                            ]
                     )
-                ]
-            , div [ class "products" ]
-                [ ul [ class "current" ]
-                    (model.products
-                        |> Result.mapBoth (\err -> [ li [] [ pre [] [ text (toString err) ] ] ])
-                            (List.map Common.viewProductShort << filterProducts model.category)
-                    )
-                ]
-            , p []
-                [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing)))) ]
-                    [ text "Browse all our products" ]
-                ]
+                    categories
+                )
+            ]
+        , div [ class "products" ]
+            [ ul [ class "current" ]
+                (model.products
+                    |> Result.mapBoth (\err -> [ li [] [ pre [] [ text (toString err) ] ] ])
+                        (List.map Common.viewProductShort << filterProducts model.category)
+                )
+            ]
+        , p []
+            [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing)))) ]
+                [ text "Browse all our products" ]
             ]
         ]
 
