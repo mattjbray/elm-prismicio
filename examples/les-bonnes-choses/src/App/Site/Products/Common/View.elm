@@ -42,6 +42,19 @@ toCurrency amount =
         "$" ++ String.join "." (build parts)
 
 
+categoryToString : Documents.Category -> String
+categoryToString category =
+    case category of
+        Documents.Macaron ->
+            "Macarons"
+
+        Documents.Cupcake ->
+            "Cupcakes"
+
+        Documents.Pie ->
+            "Pies"
+
+
 viewProductShort : Documents.Product -> Html msg
 viewProductShort product =
     let
@@ -58,7 +71,7 @@ viewProductShort product =
         productUrl =
             (toHash (App.SiteP (Site.ProductsP (Products.ProductP product.id slug))))
     in
-        li [ attribute "data-category" (Maybe.withDefault "" (List.head product.tags)) ]
+        li [ attribute "data-category" (Maybe.withDefault "" (Maybe.map categoryToString (List.head product.categories))) ]
             [ a [ href productUrl ]
                 [ img [ src imageUrl ] []
                 , span [] [ text (getTexts product.name) ]

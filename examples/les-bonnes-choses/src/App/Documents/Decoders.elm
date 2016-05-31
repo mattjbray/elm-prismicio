@@ -56,6 +56,27 @@ decodeBlogPost =
             |: at [ "data", "blog-post", "allow_comments", "value" ] (string `andThen` decodeAllowComments)
 
 
+decodeCategories : Decoder (List Category)
+decodeCategories =
+    let
+        strToCategory str =
+            case str of
+                "Pie" ->
+                    Just Pie
+
+                "Macaron" ->
+                    Just Macaron
+
+                "Cupcake" ->
+                    Just Cupcake
+
+                _ ->
+                    Nothing
+    in
+        (list string)
+            `andThen` (succeed << List.filterMap strToCategory)
+
+
 decodeProduct : Decoder Product
 decodeProduct =
     (succeed Product
@@ -74,4 +95,5 @@ decodeProduct =
         |: maybe (at [ "data", "product", "testimonial_author", "value" ] decodeStructuredText)
         |: maybe (at [ "data", "product", "testimonial_quote", "value" ] decodeStructuredText)
         |: at [ "tags" ] (list string)
+        |: at [ "tags" ] decodeCategories
     )

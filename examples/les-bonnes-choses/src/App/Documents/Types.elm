@@ -35,6 +35,12 @@ type alias JobOffer =
     }
 
 
+type Category
+  = Macaron
+  | Cupcake
+  | Pie
+
+
 type alias Product =
     { id : String
     , slugs : List String
@@ -51,4 +57,5 @@ type alias Product =
     , testimonialAuthor : Maybe StructuredText
     , testimonialQuote : Maybe StructuredText
     , tags : List String
+    , categories : List Category
     }
