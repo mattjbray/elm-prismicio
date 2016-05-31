@@ -1,5 +1,6 @@
 module App.Site.Home.State exposing (..)
 
+import App.Site.Home.Decoders exposing (..)
 import App.Site.Home.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
@@ -24,8 +25,8 @@ init prismic =
             |> Task.perform never SetProducts
         , P.fetchApi prismic
             |> P.form "featured"
-            |> P.query [P.atL "document.tags" ["Featured"], P.at "document.type" "product"]
-            |> P.submit Documents.decodeProduct
+            |> P.query [P.atL "document.tags" ["Featured"], P.any "document.type" ["product", "blog-post"]]
+            |> P.submit decodeFeatured
             |> Task.toResult
             |> Task.perform never SetFeatured
         ]
