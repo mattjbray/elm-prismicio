@@ -1,7 +1,7 @@
 module App.Site.Products.Types exposing (..)
 
 import App.Site.Products.Index.Types as Index
-import App.Site.Products.Product.Types as Product
+import App.Site.Products.Show.Types as Show
 
 
 type alias Model =
@@ -12,15 +12,15 @@ type alias Model =
 
 type Page
     = IndexP (Maybe String)
-    | ProductP String String
+    | ShowP String String
 
 
 type Content
     = NoContent
     | IndexC Index.Model
-    | ProductC Product.Model
+    | ShowC Show.Model
 
 
 type Msg
     = IndexMsg Index.Msg
-    | ProductMsg Product.Msg
+    | ShowMsg Show.Msg

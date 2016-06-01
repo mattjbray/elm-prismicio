@@ -14,7 +14,7 @@ toUrl page =
         IndexP (Just flavour) ->
             String.join "/" [ "by-flavour", flavour ]
 
-        ProductP docId slug ->
+        ShowP docId slug ->
             String.join "/" [ docId, slug ]
 
 
@@ -22,6 +22,6 @@ pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
         [ format (IndexP << Just) (s "by-flavour" </> string)
-        , format ProductP (string </> string)
+        , format ShowP (string </> string)
         , format (IndexP Nothing) (s "")
         ]

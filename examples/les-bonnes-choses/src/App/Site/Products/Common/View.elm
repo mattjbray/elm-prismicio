@@ -63,7 +63,7 @@ urlForProduct product =
                 |> List.head
                 |> Maybe.withDefault ""
     in
-        (toHash (App.SiteP (Site.ProductsP (Products.ProductP product.id slug))))
+        (toHash (App.SiteP (Site.ProductsP (Products.ShowP product.id slug))))
 
 
 viewProductShort : Documents.Product -> Html msg

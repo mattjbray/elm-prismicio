@@ -1,4 +1,4 @@
-module App.Site.Products.Product.Types exposing (..)
+module App.Site.Products.Show.Types exposing (..)
 
 import App.Documents.Types as Documents
 import Prismic.Types as P

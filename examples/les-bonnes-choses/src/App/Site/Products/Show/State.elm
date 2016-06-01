@@ -1,6 +1,6 @@
-module App.Site.Products.Product.State exposing (..)
+module App.Site.Products.Show.State exposing (..)
 
-import App.Site.Products.Product.Types exposing (..)
+import App.Site.Products.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))

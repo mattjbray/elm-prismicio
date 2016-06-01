@@ -2,7 +2,7 @@ module App.Site.Products.View exposing (..)
 
 import App.Site.Products.Types exposing (..)
 import App.Site.Products.Index.View as Index
-import App.Site.Products.Product.View as Product
+import App.Site.Products.Show.View as Show
 import Html exposing (..)
 import Html.App exposing (map)
 
@@ -13,8 +13,8 @@ view model =
         IndexC index ->
             map IndexMsg (Index.view index)
 
-        ProductC product ->
-            map ProductMsg (Product.view product)
+        ShowC product ->
+            map ShowMsg (Show.view product)
 
         NoContent ->
             p [] [ text "No Products content" ]
