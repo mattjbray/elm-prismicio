@@ -73,3 +73,24 @@ type alias Selection =
     , products : List Link
     , shortLede : StructuredText
     }
+
+
+type alias Store =
+    { id : String
+    , slugs : List String
+    , tags : List String
+    , address : String
+    , city : String
+    , zipcode : String
+    , country : String
+    , description : StructuredText
+    , name : StructuredText
+    , image : ImageField
+    , monday : List String
+    , tuesday : List String
+    , wednesday : List String
+    , thursday : List String
+    , friday : List String
+    , saturday : List String
+    , sunday : List String
+    }

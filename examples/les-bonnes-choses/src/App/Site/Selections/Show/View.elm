@@ -1,6 +1,6 @@
 module App.Site.Selections.Show.View exposing (..)
 
-import App.Common exposing (structuredTextAsHtml)
+import App.Common exposing (structuredTextAsHtml, toCssUrl)
 import App.Documents.Types as Documents
 import App.Site.Selections.Show.Types exposing (..)
 import App.Site.Products.Common.View as Common
@@ -42,11 +42,6 @@ viewMaybeSelection mSelection =
     mSelection
         |> Maybe.map viewSelection
         |> Maybe.withDefault [ p [] [ text "No selection loaded." ] ]
-
-
-toCssUrl : Url -> String
-toCssUrl (Url url) =
-    "url(" ++ url ++ ")"
 
 
 viewSelection : Documents.Selection -> List (Html Msg)

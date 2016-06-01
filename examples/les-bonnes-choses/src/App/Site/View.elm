@@ -6,6 +6,8 @@ import App.Site.Article.View as Article
 import App.Site.Home.View as Home
 import App.Site.Products.View as Products
 import App.Site.Selections.View as Selections
+import App.Site.Stores.View as Stores
+import App.Site.Stores.Types as Stores
 import App.Types as App
 import App.Blog.Types as Blog
 import Html exposing (..)
@@ -37,7 +39,7 @@ viewHeader model =
                     [ mkHeaderLink HomeP "Les bonnes choses" ]
                 , ul []
                     [ li [] [ mkHeaderLink AboutP "About" ]
-                    , li [] [ mkHeaderLink StoresP "Stores" ]
+                    , li [] [ mkHeaderLink (StoresP Stores.IndexP) "Stores" ]
                     ]
                 , ul []
                     [ li [] [ mkHeaderLink JobsP "Jobs" ]
@@ -66,6 +68,9 @@ viewContent model =
 
         SelectionsC selections ->
             map SelectionsMsg (Selections.view selections)
+
+        StoresC stores ->
+            map StoresMsg (Stores.view stores)
 
         NoContent ->
             p [] [ text "No Site page loaded." ]

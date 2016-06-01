@@ -112,3 +112,25 @@ decodeSelection =
         |: at [ "data", "selection", "price", "value" ] float
         |: at [ "data", "selection", "product" ] (list decodeLink)
         |: at [ "data", "selection", "short_lede", "value" ] decodeStructuredText
+
+
+decodeStore : Decoder Store
+decodeStore =
+    succeed Store
+        |: at [ "id" ] string
+        |: at [ "slugs" ] (list string)
+        |: at [ "tags" ] (list string)
+        |: at [ "data", "store", "address", "value" ] string
+        |: at [ "data", "store", "city", "value" ] string
+        |: at [ "data", "store", "zipcode", "value" ] string
+        |: at [ "data", "store", "country", "value" ] string
+        |: at [ "data", "store", "description", "value" ] decodeStructuredText
+        |: at [ "data", "store", "name", "value" ] decodeStructuredText
+        |: at [ "data", "store", "image", "value" ] decodeImageField
+        |: at [ "data", "store", "monday" ] (list ("value" := string))
+        |: at [ "data", "store", "tuesday" ] (list ("value" := string))
+        |: at [ "data", "store", "wednesday" ] (list ("value" := string))
+        |: at [ "data", "store", "thursday" ] (list ("value" := string))
+        |: at [ "data", "store", "friday" ] (list ("value" := string))
+        |: at [ "data", "store", "saturday" ] (list ("value" := string))
+        |: at [ "data", "store", "sunday" ] (list ("value" := string))

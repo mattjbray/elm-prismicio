@@ -5,6 +5,7 @@ import App.Site.Article.State as Article
 import App.Site.Home.State as Home
 import App.Site.Products.State as Products
 import App.Site.Selections.State as Selections
+import App.Site.Stores.State as Stores
 import Prismic.Types as P
 
 
@@ -39,9 +40,6 @@ init prismic page =
             JobsP as page ->
                 initWith "jobs"
 
-            StoresP as page ->
-                initWith "stores"
-
             (SearchP _) as page ->
                 initWith "about"
 
@@ -70,6 +68,19 @@ init prismic page =
                         }
                 in
                     newModel ! [ Cmd.map SelectionsMsg selectionsCmd ]
+
+            (StoresP storesPage) as page ->
+                let
+                    ( stores, storesCmd ) =
+                        Stores.init prismic storesPage
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = StoresC stores
+                        }
+                in
+                    newModel ! [ Cmd.map StoresMsg storesCmd ]
 
 
 initArticle : P.Cache -> Page -> String -> Model -> ( Model, Cmd Msg )
@@ -164,6 +175,27 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map SelectionsMsg selectionsCmd
+                        , mNewPrismic
+                        )
+
+                _ ->
+                    ( model, Cmd.none, Nothing )
+
+
+        StoresMsg storesMsg ->
+            case model.content of
+                StoresC stores ->
+                    let
+                        ( newStores, storesCmd, mNewPrismic ) =
+                            Stores.update storesMsg stores
+
+                        newModel =
+                            { model
+                                | content = StoresC newStores
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map StoresMsg storesCmd
                         , mNewPrismic
                         )
 

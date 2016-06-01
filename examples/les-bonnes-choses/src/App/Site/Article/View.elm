@@ -2,7 +2,7 @@ module App.Site.Article.View exposing (..)
 
 import App.Site.Article.Types exposing (..)
 import App.Documents.Types as Documents
-import App.Common exposing (structuredTextAsHtml)
+import App.Common exposing (structuredTextAsHtml, viewLoading)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Prismic.Types as P exposing (Url(Url))
@@ -31,17 +31,6 @@ viewMArticle mArticle =
 
         Just article ->
             viewArticle article
-
-
-viewLoading : Html msg
-viewLoading =
-    section [ id "page-header" ]
-        [ div []
-            [ div []
-                [ h1 [] [ text "Loading article..." ]
-                ]
-            ]
-        ]
 
 
 viewArticle : Documents.Article -> List (Html msg)
