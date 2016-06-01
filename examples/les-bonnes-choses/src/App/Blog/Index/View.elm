@@ -5,7 +5,7 @@ import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
 import App.Documents.Types as Documents
 import Html exposing (..)
 import Html.Attributes exposing (class, id, href, style)
-import Prismic.View exposing (getFirstImage, getFirstParagraph, getText, getTitle, structuredTextAsHtml)
+import Prismic.View exposing (getFirstImage, getFirstParagraph, getText, getTitle)
 import Prismic.Types exposing (Url(Url))
 
 

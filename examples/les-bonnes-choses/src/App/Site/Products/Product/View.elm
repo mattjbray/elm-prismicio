@@ -1,5 +1,6 @@
 module App.Site.Products.Product.View exposing (..)
 
+import App.Common exposing (structuredTextAsHtml)
 import App.Documents.Types as Documents
 import App.Navigation exposing (toHash)
 import App.Types as App
@@ -10,7 +11,7 @@ import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
 import Prismic.Types as P exposing (Url(Url))
-import Prismic.View exposing (getTexts, structuredTextAsHtml)
+import Prismic.View exposing (getTexts)
 
 
 view : Model -> Html Msg

@@ -1,5 +1,6 @@
 module App.Blog.Post.View exposing (..)
 
+import App.Common exposing (structuredTextAsHtml)
 import App.Navigation exposing (toHash)
 import App.Types as App
 import App.Site.Types as Site
@@ -10,7 +11,7 @@ import App.Documents.Types as Documents
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (id, href, src)
-import Prismic.View exposing (getText, getTexts, getTitle, structuredTextAsHtml)
+import Prismic.View exposing (getText, getTexts, getTitle)
 import Prismic.Types exposing (Url(Url))
 
 

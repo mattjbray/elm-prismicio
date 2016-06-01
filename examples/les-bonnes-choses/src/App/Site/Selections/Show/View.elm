@@ -1,12 +1,13 @@
 module App.Site.Selections.Show.View exposing (..)
 
+import App.Common exposing (structuredTextAsHtml)
 import App.Documents.Types as Documents
 import App.Site.Selections.Show.Types exposing (..)
 import App.Site.Products.Common.View as Common
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
 import Prismic.Types as P exposing (Url(Url))
-import Prismic.View exposing (getTexts, structuredTextAsHtml)
+import Prismic.View exposing (getTexts)
 import Result.Extra as Result
 
 

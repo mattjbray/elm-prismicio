@@ -1,9 +1,9 @@
 module App.Site.Article.View exposing (..)
 
 import App.Site.Article.Types exposing (..)
+import App.Common exposing (structuredTextAsHtml)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Prismic.View exposing (structuredTextAsHtml, asHtml, imageAsHtml, viewDefaultDocType)
 import Prismic.Types exposing (Url(Url))
 
 
