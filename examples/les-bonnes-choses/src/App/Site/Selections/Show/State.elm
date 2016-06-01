@@ -3,6 +3,7 @@ module App.Site.Selections.Show.State exposing (..)
 import App.Site.Selections.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic.Types as P
 import Prismic as P
@@ -24,7 +25,7 @@ init prismic docId =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetSelection result ->
@@ -34,7 +35,7 @@ update msg model =
                         | selection = Err error
                       }
                     , Cmd.none
-                    , Nothing
+                    , []
                     )
 
                 Ok ( response, prismic ) ->
@@ -50,7 +51,7 @@ update msg model =
                         , mSelection
                             |> Maybe.map (fetchProducts prismic)
                             |> Maybe.withDefault Cmd.none
-                        , Just prismic
+                        , [ SetPrismic prismic ]
                         )
 
         SetProducts result ->
@@ -60,7 +61,7 @@ update msg model =
                         | products = Err error
                       }
                     , Cmd.none
-                    , Nothing
+                    , []
                     )
 
                 Ok ( response, prismic ) ->
@@ -68,7 +69,7 @@ update msg model =
                         | products = Ok (List.map .data response.results)
                       }
                     , Cmd.none
-                    , Just prismic
+                    , [ SetPrismic prismic ]
                     )
 
 

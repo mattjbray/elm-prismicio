@@ -2,6 +2,7 @@ module App.Site.Products.Index.State exposing (..)
 
 import App.Site.Products.Index.Types exposing (..)
 import App.Documents.Decoders as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 import Prismic as P
 import Task
@@ -24,13 +25,13 @@ init prismic mFlavour =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetError e ->
             ( { model | error = Just e }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetResponse ( response, cache ) ->
@@ -40,4 +41,4 @@ update msg model =
                         | products = Just (List.map .data response.results)
                     }
             in
-                ( newModel, Cmd.none, Just cache )
+                ( newModel, Cmd.none, [ SetPrismic cache ] )

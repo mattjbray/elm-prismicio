@@ -1,5 +1,6 @@
 module App.Blog.State exposing (..)
 
+import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Blog.Types exposing (..)
 import App.Blog.Index.State as Index
 import App.Blog.Post.State as Post
@@ -32,35 +33,35 @@ init prismic page =
                 )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         IndexMsg indexMsg ->
             case model.content of
                 IndexC index ->
                     let
-                        ( newIndex, indexCmd, mNewPrismic ) =
+                        ( newIndex, indexCmd, globalMsgs ) =
                             Index.update indexMsg index
                     in
                         ( { model | content = IndexC newIndex }
                         , Cmd.map IndexMsg indexCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )
 
         PostMsg postMsg ->
             case model.content of
                 PostC post ->
                     let
-                        ( newPost, postCmd, mNewPrismic ) =
+                        ( newPost, postCmd, globalMsgs ) =
                             Post.update postMsg post
                     in
                         ( { model | content = PostC newPost }
                         , Cmd.map PostMsg postCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )

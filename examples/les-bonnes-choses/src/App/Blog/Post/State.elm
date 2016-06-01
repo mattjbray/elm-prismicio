@@ -1,6 +1,7 @@
 module App.Blog.Post.State exposing (..)
 
 import App.Blog.Post.Types exposing (..)
+import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Documents.Decoders as Documents
 import Prismic.Types as P
 import Prismic as P
@@ -31,13 +32,13 @@ init prismic docId =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetError e ->
             ( { model | error = Just e }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetResponse ( response, prismic ) ->
@@ -47,14 +48,14 @@ update msg model =
                         { model | doc = Just result.data }
 
                 Nothing ->
-                    ( model, Cmd.none, Just prismic )
+                    ( model, Cmd.none, [ SetPrismic prismic ] )
 
         SetRelatedPosts ( response, prismic ) ->
             ( { model
                 | relatedPosts = List.map .data response.results
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )
 
         SetRelatedProducts ( response, prismic ) ->
@@ -62,11 +63,11 @@ update msg model =
                 | relatedProducts = List.map .data response.results
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )
 
 
-fetchRelated : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+fetchRelated : P.Cache -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 fetchRelated prismic model =
     case model.doc of
         Just blogPost ->
@@ -104,8 +105,8 @@ fetchRelated prismic model =
                         |> P.submit Documents.decodeProduct
                         |> Task.perform SetError SetRelatedProducts
                     ]
-                , Just prismic
+                , [ SetPrismic prismic ]
                 )
 
         Nothing ->
-            ( model, Cmd.none, Just prismic )
+            ( model, Cmd.none, [ SetPrismic prismic ] )

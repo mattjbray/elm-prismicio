@@ -1,6 +1,7 @@
 module App.Blog.Index.State exposing (..)
 
 import App.Blog.Index.Types exposing (..)
+import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Documents.Decoders as Documents
 import Prismic.Types as P exposing (Url(Url))
 import Prismic as P
@@ -31,16 +32,16 @@ init prismic mCategory =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetError _ ->
-            ( model, Cmd.none, Nothing )
+            ( model, Cmd.none, [] )
 
         SetResponse ( response, prismic ) ->
             ( { model
                 | docs = Just (List.map .data response.results)
               }
             , Cmd.none
-            , Just prismic
+            , [SetPrismic prismic]
             )

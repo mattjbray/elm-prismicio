@@ -6,6 +6,7 @@ import App.Site.Home.State as Home
 import App.Site.Products.State as Products
 import App.Site.Selections.State as Selections
 import App.Site.Stores.State as Stores
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 
 
@@ -98,14 +99,14 @@ initArticle prismic page bookmarkName model =
         newModel ! [ Cmd.map ArticleMsg articleCmd ]
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         HomeMsg homeMsg ->
             case model.content of
                 HomeC home ->
                     let
-                        ( newHome, homeCmd, mNewPrismic ) =
+                        ( newHome, homeCmd, globalMsgs ) =
                             Home.update homeMsg home
 
                         newModel =
@@ -115,17 +116,17 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map HomeMsg homeCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )
 
         ArticleMsg articleMsg ->
             case model.content of
                 ArticleC article ->
                     let
-                        ( newArticle, articleCmd, mNewPrismic ) =
+                        ( newArticle, articleCmd, globalMsgs ) =
                             Article.update articleMsg article
 
                         newModel =
@@ -135,17 +136,17 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ArticleMsg articleCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )
 
         ProductsMsg productsMsg ->
             case model.content of
                 ProductsC products ->
                     let
-                        ( newProducts, productsCmd, mNewPrismic ) =
+                        ( newProducts, productsCmd, globalMsgs ) =
                             Products.update productsMsg products
 
                         newModel =
@@ -155,17 +156,17 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ProductsMsg productsCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )
 
         SelectionsMsg selectionsMsg ->
             case model.content of
                 SelectionsC selections ->
                     let
-                        ( newSelections, selectionsCmd, mNewPrismic ) =
+                        ( newSelections, selectionsCmd, globalMsgs ) =
                             Selections.update selectionsMsg selections
 
                         newModel =
@@ -175,18 +176,17 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map SelectionsMsg selectionsCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
-
+                    ( model, Cmd.none, [] )
 
         StoresMsg storesMsg ->
             case model.content of
                 StoresC stores ->
                     let
-                        ( newStores, storesCmd, mNewPrismic ) =
+                        ( newStores, storesCmd, globalMsgs ) =
                             Stores.update storesMsg stores
 
                         newModel =
@@ -196,8 +196,8 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map StoresMsg storesCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )

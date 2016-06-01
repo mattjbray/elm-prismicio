@@ -27,3 +27,7 @@ type Content
 type Msg
     = SiteMsg Site.Msg
     | BlogMsg Blog.Msg
+
+
+type GlobalMsg
+    = SetPrismic P.Cache

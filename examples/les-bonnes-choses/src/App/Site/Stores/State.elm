@@ -3,6 +3,7 @@ module App.Site.Stores.State exposing (..)
 import App.Site.Stores.Types exposing (..)
 import App.Site.Stores.Index.State as Index
 import App.Site.Stores.Show.State as Show
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 
 
@@ -32,35 +33,35 @@ init prismic page =
                 )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         IndexMsg indexMsg ->
             case model.content of
                 IndexC index ->
                     let
-                        ( newIndex, indexCmd, mNewPrismic ) =
+                        ( newIndex, indexCmd, globalMsgs ) =
                             Index.update indexMsg index
                     in
                         ( { model | content = IndexC newIndex }
                         , Cmd.map IndexMsg indexCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )
 
         ShowMsg showMsg ->
             case model.content of
                 ShowC store ->
                     let
-                        ( newStore, showCmd, mNewPrismic ) =
+                        ( newStore, showCmd, globalMsgs ) =
                             Show.update showMsg store
                     in
                         ( { model | content = ShowC newStore }
                         , Cmd.map ShowMsg showCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )

@@ -2,6 +2,7 @@ module App.Site.Selections.State exposing (..)
 
 import App.Site.Selections.Types exposing (..)
 import App.Site.Selections.Show.State as Show
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 
 
@@ -20,20 +21,20 @@ init prismic page =
                 )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         ShowMsg showMsg ->
             case model.content of
                 ShowC selection ->
                     let
-                        ( newSelection, showCmd, mNewPrismic ) =
+                        ( newSelection, showCmd, globalMsgs ) =
                             Show.update showMsg selection
                     in
                         ( { model | content = ShowC newSelection }
                         , Cmd.map ShowMsg showCmd
-                        , mNewPrismic
+                        , globalMsgs
                         )
 
                 _ ->
-                    ( model, Cmd.none, Nothing )
+                    ( model, Cmd.none, [] )

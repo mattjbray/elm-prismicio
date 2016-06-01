@@ -2,6 +2,7 @@ module App.Site.Article.State exposing (..)
 
 import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic.Types as P exposing (Url(Url))
 import Prismic as P
@@ -26,7 +27,7 @@ init prismic bookmarkName =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetArticle (Err error) ->
@@ -34,7 +35,7 @@ update msg model =
                 | article = Err error
               }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetArticle (Ok ( response, prismic )) ->
@@ -46,5 +47,5 @@ update msg model =
                         |> Ok
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )

@@ -30,13 +30,13 @@ update msg model =
             case model.content of
                 SiteC site ->
                     let
-                        ( newSite, siteCmd, mNewPrismic ) =
+                        ( newSite, siteCmd, globalMsgs ) =
                             Site.update siteMsg site
                     in
                         ( { model
                             | content = SiteC newSite
-                            , prismic = Maybe.withDefault model.prismic mNewPrismic
                           }
+                            |> processGlobalMsgs globalMsgs
                         , Cmd.map SiteMsg siteCmd
                         )
 
@@ -47,13 +47,13 @@ update msg model =
             case model.content of
                 BlogC blog ->
                     let
-                        ( newBlog, blogCmd, mNewPrismic ) =
+                        ( newBlog, blogCmd, globalMsgs ) =
                             Blog.update blogMsg blog
                     in
                         ( { model
                             | content = BlogC newBlog
-                            , prismic = Maybe.withDefault model.prismic mNewPrismic
                           }
+                            |> processGlobalMsgs globalMsgs
                         , Cmd.map BlogMsg blogCmd
                         )
 
@@ -61,21 +61,34 @@ update msg model =
                     model ! []
 
 
+processGlobalMsgs : List GlobalMsg -> Model -> Model
+processGlobalMsgs msgs model =
+    let
+        processMsg msg mod =
+            case msg of
+                SetPrismic prismic ->
+                    { mod
+                        | prismic = prismic
+                    }
+    in
+        List.foldl processMsg model msgs
+
+
 urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
 urlUpdate result model =
     case result of
         Err _ ->
             ( { model
-                  | page = NotFoundP
-                  , content = NoContent
+                | page = NotFoundP
+                , content = NoContent
               }
             , Cmd.none
             )
 
-        Ok (NotFoundP) ->
+        Ok NotFoundP ->
             ( { model
-                  | page = NotFoundP
-                  , content = NoContent
+                | page = NotFoundP
+                , content = NoContent
               }
             , Cmd.none
             )

@@ -2,6 +2,7 @@ module App.Site.Products.Product.State exposing (..)
 
 import App.Site.Products.Product.Types exposing (..)
 import App.Documents.Decoders as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 import Prismic as P
 import Task
@@ -22,13 +23,13 @@ init prismic docId =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetError e ->
             ( { model | error = Just e }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetResponse ( response, prismic ) ->
@@ -50,11 +51,11 @@ update msg model =
                 | relatedProducts = List.map .data response.results
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )
 
 
-fetchRelatedProducts : P.Cache -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+fetchRelatedProducts : P.Cache -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 fetchRelatedProducts prismic model =
     ( model
     , case model.product of
@@ -81,5 +82,5 @@ fetchRelatedProducts prismic model =
 
         Nothing ->
             Cmd.none
-    , Just prismic
+    , [ SetPrismic prismic ]
     )

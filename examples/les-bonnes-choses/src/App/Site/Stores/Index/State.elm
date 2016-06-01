@@ -2,6 +2,7 @@ module App.Site.Stores.Index.State exposing (..)
 
 import App.Site.Stores.Index.Types exposing (..)
 import App.Documents.Decoders as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic.Types as P exposing (Url(Url))
 import Prismic as P
@@ -36,7 +37,7 @@ init prismic =
         )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetArticle (Err error) ->
@@ -44,7 +45,7 @@ update msg model =
                 | article = Err error
               }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetArticle (Ok ( response, prismic )) ->
@@ -56,7 +57,7 @@ update msg model =
                         |> Ok
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )
 
         SetStores (Err error) ->
@@ -64,7 +65,7 @@ update msg model =
                 | stores = Err error
               }
             , Cmd.none
-            , Nothing
+            , []
             )
 
         SetStores (Ok ( response, prismic )) ->
@@ -75,5 +76,5 @@ update msg model =
                         |> Ok
               }
             , Cmd.none
-            , Just prismic
+            , [ SetPrismic prismic ]
             )

@@ -4,6 +4,7 @@ import App.Site.Home.Decoders exposing (..)
 import App.Site.Home.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic as P
 import Prismic.Types as P
@@ -32,7 +33,7 @@ init prismic =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetProducts result ->
@@ -42,7 +43,7 @@ update msg model =
                         | products = Err error
                       }
                     , Cmd.none
-                    , Nothing
+                    , []
                     )
 
                 Ok ( response, prismic ) ->
@@ -50,7 +51,7 @@ update msg model =
                         | products = Ok (List.map .data response.results)
                       }
                     , Cmd.none
-                    , Just prismic
+                    , [ SetPrismic prismic ]
                     )
 
         SetFeatured result ->
@@ -60,7 +61,7 @@ update msg model =
                         | featured = Err error
                       }
                     , Cmd.none
-                    , Nothing
+                    , []
                     )
 
                 Ok ( response, prismic ) ->
@@ -68,7 +69,7 @@ update msg model =
                         | featured = Ok (List.map .data response.results)
                       }
                     , Cmd.none
-                    , Just prismic
+                    , [ SetPrismic prismic ]
                     )
 
         SetCategory category ->
@@ -76,5 +77,5 @@ update msg model =
                 | category = category
               }
             , Cmd.none
-            , Nothing
+            , []
             )

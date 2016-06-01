@@ -2,7 +2,7 @@ module App.Site.Stores.Show.State exposing (..)
 
 import App.Site.Stores.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
-import App.Documents.Types as Documents
+import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic.Types as P
 import Prismic as P
@@ -24,7 +24,7 @@ init prismic docId =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetStore result ->
@@ -34,7 +34,7 @@ update msg model =
                         | store = Err error
                       }
                     , Cmd.none
-                    , Nothing
+                    , []
                     )
 
                 Ok ( response, prismic ) ->
@@ -48,5 +48,5 @@ update msg model =
                             | store = Ok mStore
                           }
                         , Cmd.none
-                        , Just prismic
+                        , [ SetPrismic prismic ]
                         )
