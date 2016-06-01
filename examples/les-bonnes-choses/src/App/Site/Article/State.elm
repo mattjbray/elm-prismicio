@@ -2,6 +2,7 @@ module App.Site.Article.State exposing (..)
 
 import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
+import Basics.Extra exposing (never)
 import Prismic.Types as P exposing (Url(Url))
 import Prismic as P
 import Task
@@ -11,8 +12,8 @@ init : P.Cache -> String -> ( Model, Cmd Msg )
 init prismic bookmarkName =
     let
         model =
-            { doc =
-                Nothing
+            { article =
+                Ok Nothing
             }
     in
         ( model
@@ -20,26 +21,30 @@ init prismic bookmarkName =
             |> P.fetchApi
             |> P.bookmark bookmarkName
             |> P.submit Documents.decodeArticle
-            |> Task.perform SetError SetResponse
+            |> Task.toResult
+            |> Task.perform never SetArticle
         )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe P.Cache )
 update msg model =
     case msg of
-        SetError _ ->
-            ( model, Cmd.none, Nothing )
+        SetArticle (Err error) ->
+            ( { model
+                | article = Err error
+              }
+            , Cmd.none
+            , Nothing
+            )
 
-        SetResponse ( response, cache ) ->
-            let
-                newModel =
-                    case List.head response.results of
-                        Just result ->
-                            { model
-                                | doc = Just result.data
-                            }
-
-                        Nothing ->
-                            model
-            in
-                ( newModel, Cmd.none, Just cache )
+        SetArticle (Ok ( response, prismic )) ->
+            ( { model
+                | article =
+                    response.results
+                        |> List.head
+                        |> Maybe.map .data
+                        |> Ok
+              }
+            , Cmd.none
+            , Just prismic
+            )
