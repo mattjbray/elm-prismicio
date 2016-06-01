@@ -3,7 +3,7 @@ module App.Site.Selections.Show.State exposing (..)
 import App.Site.Selections.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
-import App.Types exposing (GlobalMsg(SetPrismic))
+import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Basics.Extra exposing (never)
 import Prismic.Types as P
 import Prismic as P
@@ -52,6 +52,10 @@ update msg model =
                             |> Maybe.map (fetchProducts prismic)
                             |> Maybe.withDefault Cmd.none
                         , [ SetPrismic prismic ]
+                            ++ if List.isEmpty response.results then
+                                [ RenderNotFound ]
+                               else
+                                []
                         )
 
         SetProducts result ->

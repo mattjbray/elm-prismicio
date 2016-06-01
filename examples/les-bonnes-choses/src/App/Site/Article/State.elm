@@ -2,7 +2,7 @@ module App.Site.Article.State exposing (..)
 
 import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
-import App.Types exposing (GlobalMsg(SetPrismic))
+import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Basics.Extra exposing (never)
 import Prismic.Types as P exposing (Url(Url))
 import Prismic as P
@@ -48,4 +48,8 @@ update msg model =
               }
             , Cmd.none
             , [ SetPrismic prismic ]
+                ++ if List.isEmpty response.results then
+                    [ RenderNotFound ]
+                   else
+                    []
             )

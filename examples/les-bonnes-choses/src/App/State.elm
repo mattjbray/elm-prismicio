@@ -70,6 +70,12 @@ processGlobalMsgs msgs model =
                     { mod
                         | prismic = prismic
                     }
+
+                RenderNotFound ->
+                    { mod
+                        | content = NoContent
+                        , page = NotFoundP
+                    }
     in
         List.foldl processMsg model msgs
 

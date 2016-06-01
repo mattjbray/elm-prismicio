@@ -31,3 +31,4 @@ type Msg
 
 type GlobalMsg
     = SetPrismic P.Cache
+    | RenderNotFound

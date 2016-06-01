@@ -2,7 +2,8 @@ module App.Site.Products.Product.State exposing (..)
 
 import App.Site.Products.Product.Types exposing (..)
 import App.Documents.Decoders as Documents
-import App.Types exposing (GlobalMsg(SetPrismic))
+import App.Documents.Types as Documents
+import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Prismic.Types as P
 import Prismic as P
 import Task
@@ -33,18 +34,22 @@ update msg model =
             )
 
         SetResponse ( response, prismic ) ->
-            let
-                newModel =
-                    case List.head response.results of
-                        Just result ->
-                            { model
-                                | product = Just result.data
-                            }
+            case List.head response.results of
+                Just result ->
+                    ( { model
+                        | product = Just result.data
+                      }
+                    , fetchRelatedProducts prismic result.data
+                    , [ SetPrismic prismic ]
+                    )
 
-                        Nothing ->
-                            model
-            in
-                fetchRelatedProducts prismic newModel
+                Nothing ->
+                    ( model
+                    , Cmd.none
+                    , [ SetPrismic prismic
+                      , RenderNotFound
+                      ]
+                    )
 
         SetRelatedProducts ( response, prismic ) ->
             ( { model
@@ -55,32 +60,24 @@ update msg model =
             )
 
 
-fetchRelatedProducts : P.Cache -> Model -> ( Model, Cmd Msg, List GlobalMsg )
-fetchRelatedProducts prismic model =
-    ( model
-    , case model.product of
-        Just product ->
-            let
-                relatedDocIds =
-                    List.filterMap
-                        (\related ->
-                            case related of
-                                P.DocumentLink doc _ ->
-                                    Just doc.id
+fetchRelatedProducts : P.Cache -> Documents.Product -> Cmd Msg
+fetchRelatedProducts prismic product =
+    let
+        relatedDocIds =
+            List.filterMap
+                (\related ->
+                    case related of
+                        P.DocumentLink doc _ ->
+                            Just doc.id
 
-                                _ ->
-                                    Nothing
-                        )
-                        product.related
-            in
-                prismic
-                    |> P.fetchApi
-                    |> P.form "products"
-                    |> P.query [ P.any "document.id" relatedDocIds ]
-                    |> P.submit Documents.decodeProduct
-                    |> Task.perform SetError SetRelatedProducts
-
-        Nothing ->
-            Cmd.none
-    , [ SetPrismic prismic ]
-    )
+                        _ ->
+                            Nothing
+                )
+                product.related
+    in
+        prismic
+            |> P.fetchApi
+            |> P.form "products"
+            |> P.query [ P.any "document.id" relatedDocIds ]
+            |> P.submit Documents.decodeProduct
+            |> Task.perform SetError SetRelatedProducts

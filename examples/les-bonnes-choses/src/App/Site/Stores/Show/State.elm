@@ -2,7 +2,7 @@ module App.Site.Stores.Show.State exposing (..)
 
 import App.Site.Stores.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
-import App.Types exposing (GlobalMsg(SetPrismic))
+import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Basics.Extra exposing (never)
 import Prismic.Types as P
 import Prismic as P
@@ -12,7 +12,7 @@ import Task
 init : P.Cache -> String -> ( Model, Cmd Msg )
 init prismic docId =
     ( { store =
-          Ok Nothing
+            Ok Nothing
       }
     , prismic
         |> P.fetchApi
@@ -49,4 +49,8 @@ update msg model =
                           }
                         , Cmd.none
                         , [ SetPrismic prismic ]
+                            ++ if List.isEmpty response.results then
+                                [ RenderNotFound ]
+                               else
+                                []
                         )

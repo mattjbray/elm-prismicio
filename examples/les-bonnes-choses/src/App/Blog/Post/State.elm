@@ -1,7 +1,7 @@
 module App.Blog.Post.State exposing (..)
 
 import App.Blog.Post.Types exposing (..)
-import App.Types exposing (GlobalMsg(SetPrismic))
+import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import App.Documents.Decoders as Documents
 import Prismic.Types as P
 import Prismic as P
@@ -48,7 +48,7 @@ update msg model =
                         { model | doc = Just result.data }
 
                 Nothing ->
-                    ( model, Cmd.none, [ SetPrismic prismic ] )
+                    ( model, Cmd.none, [ SetPrismic prismic, RenderNotFound ] )
 
         SetRelatedPosts ( response, prismic ) ->
             ( { model
