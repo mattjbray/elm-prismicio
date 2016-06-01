@@ -10,7 +10,7 @@ import Html.Attributes exposing (class, classList, disabled, href, id, rel, sele
 
 view : Model -> Html Msg
 view model =
-    viewWithStyleSheet "http://lesbonneschoses.prismic.me/assets/stylesheets/normalize.min.css"
+    viewWithStyleSheet "assets/css/normalize.min.css"
         [ viewContent model
         , viewFooter model
         ]
@@ -20,11 +20,11 @@ viewContent : Model -> Html Msg
 viewContent model =
     case model.content of
         SiteC site ->
-            viewWithStyleSheet "http://lesbonneschoses.prismic.me/assets/stylesheets/main.css"
+            viewWithStyleSheet "assets/css/main.css"
                 [ map SiteMsg (Site.view site) ]
 
         BlogC blog ->
-            viewWithStyleSheet "http://lesbonneschoses.prismic.me/assets/stylesheets/blog.css"
+            viewWithStyleSheet "assets/css/blog.css"
                 [ map BlogMsg (Blog.view blog) ]
 
         NoContent ->
