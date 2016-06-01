@@ -57,7 +57,7 @@ viewDocumentBlogPostFull blogPost model =
             in
                 li []
                     [ a
-                        [ href (toHash (App.SiteP (Site.ProductsP (Products.ShowP product.id slug))))
+                        [ href (toHash <| App.SiteP <| Site.ProductsP <| Products.ShowP product.id slug)
                         ]
                         [ img [ src imgUrl ] []
                         , span [] [ text (getTexts product.name) ]
