@@ -8,8 +8,14 @@ import Prismic.Types exposing (..)
 import String
 
 
-asHtmlWithDefault : Html msg -> String -> String -> Dict String (Dict String (List DocumentField)) -> Html msg
-asHtmlWithDefault default documentType fieldName data =
+asHtmlWithDefault :
+    (LinkedDocument -> Url)
+    -> Html msg
+    -> String
+    -> String
+    -> Dict String (Dict String (List DocumentField))
+    -> Html msg
+asHtmlWithDefault linkResolver default documentType fieldName data =
     Maybe.withDefault default
         (Dict.get documentType data
             `Maybe.andThen` Dict.get fieldName
@@ -17,17 +23,17 @@ asHtmlWithDefault default documentType fieldName data =
                                 Just
                                     (case docs of
                                         [ doc ] ->
-                                            asHtml doc
+                                            asHtml linkResolver doc
 
                                         _ ->
-                                            div [] (List.map asHtml docs)
+                                            div [] (List.map (asHtml linkResolver) docs)
                                     )
                             )
         )
 
 
-asHtml : DocumentField -> Html msg
-asHtml field =
+asHtml : (LinkedDocument -> Url) -> DocumentField -> Html msg
+asHtml linkResolver field =
     case field of
         Text t ->
             span [] [ text t ]
@@ -45,25 +51,25 @@ asHtml field =
             span [] [ text ("<Color> " ++ t) ]
 
         Link l ->
-            linkAsHtml l
+            linkAsHtml linkResolver l
 
         Image i ->
             imageAsHtml i.main
 
         StructuredText fields ->
-            div [] (structuredTextAsHtml fields)
+            div [] (structuredTextAsHtml linkResolver fields)
 
 
-structuredTextAsHtml : StructuredText -> List (Html msg)
-structuredTextAsHtml =
-    List.map structuredTextFieldAsHtml
+structuredTextAsHtml : (LinkedDocument -> Url) -> StructuredText -> List (Html msg)
+structuredTextAsHtml linkResolver =
+    List.map (structuredTextFieldAsHtml linkResolver)
 
 
-structuredTextFieldAsHtml : StructuredTextField -> Html msg
-structuredTextFieldAsHtml field =
+structuredTextFieldAsHtml : (LinkedDocument -> Url) -> StructuredTextField -> Html msg
+structuredTextFieldAsHtml linkResolver field =
     case field of
         SSimple simpleField ->
-            simpleFieldAsHtml simpleField
+            simpleFieldAsHtml linkResolver simpleField
 
         SImage image ->
             imageAsHtml image
@@ -72,8 +78,8 @@ structuredTextFieldAsHtml field =
             embedAsHtml embed
 
 
-simpleFieldAsHtml : SimpleStructuredTextField -> Html msg
-simpleFieldAsHtml field =
+simpleFieldAsHtml : (LinkedDocument -> Url) -> SimpleStructuredTextField -> Html msg
+simpleFieldAsHtml linkResolver field =
     let
         el =
             case field.fieldType of
@@ -104,7 +110,7 @@ simpleFieldAsHtml field =
                     strong []
 
                 Hyperlink link ->
-                    linkAsHtmlWith link
+                    linkAsHtmlWith linkResolver link
 
         foldFn span ( childs, index ) =
             let
@@ -145,24 +151,37 @@ embedAsHtml embed =
             div [ property "innerHTML" (Json.string props.html) ] []
 
 
-linkAsHtml : Link -> Html msg
-linkAsHtml link =
+linkAsHtml : (LinkedDocument -> Url) -> Link -> Html msg
+linkAsHtml linkResolver link =
     case link of
         DocumentLink linkedDoc isBroken ->
-            a [ href "#" ] [ text (toString linkedDoc.slug) ]
+            let
+                (Url url) =
+                    linkResolver linkedDoc
+            in
+                a [ href url ] [ text (toString linkedDoc.slug) ]
 
         WebLink (Url url) ->
             a [ href url ] [ text url ]
 
 
-linkAsHtmlWith : Link -> List (Html msg) -> Html msg
-linkAsHtmlWith link childs =
+linkAsHtmlWith : (LinkedDocument -> Url) -> Link -> List (Html msg) -> Html msg
+linkAsHtmlWith linkResolver link childs =
     case link of
         DocumentLink linkedDoc isBroken ->
-            a [] childs
+            let
+                (Url url) =
+                    linkResolver linkedDoc
+            in
+                a [ href url ] childs
 
         WebLink (Url url) ->
             a [ href url ] childs
+
+
+defaultLinkResolver : LinkedDocument -> Url
+defaultLinkResolver linkedDoc =
+    Url (String.join "/" [ "documents", linkedDoc.id, linkedDoc.slug ])
 
 
 viewDefaultDocType : DefaultDocType -> Html msg
@@ -179,7 +198,9 @@ viewDefaultDocType doc =
                 List.concat fieldsPerField
     in
         div []
-            (h2 [] (List.map text (Dict.keys doc)) :: (List.map asHtml allDocFields))
+            ([ h2 [] (List.map text (Dict.keys doc)) ]
+                ++ List.map (asHtml defaultLinkResolver) allDocFields
+            )
 
 
 getTitle : StructuredText -> Maybe StructuredTextField
