@@ -12,7 +12,7 @@ examples: ../publish/index.html ../publish/assets
 
 .PHONY: clean
 clean:
-	rm -rf elm-stuff/build-artifacts examples/les-bonnes-choses/elm-stuff/build-artifacts
+	rm -rf elm-stuff/build-artifacts examples/les-bonnes-choses/elm-stuff/build-artifacts && rm ../publish/index.html
 
 .PHONY: reactor
 reactor:
