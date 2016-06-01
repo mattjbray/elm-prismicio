@@ -6,7 +6,7 @@ import App.Blog.Types as Blog
 import App.Site.Types as Site
 import App.Site.Stores.Types as Stores
 import Html exposing (..)
-import Html.Attributes exposing (id)
+import Html.Attributes exposing (classList, id, href)
 import Prismic.Types as P
 import Prismic.View as P
 
@@ -51,3 +51,34 @@ viewLoading =
                 ]
             ]
         ]
+
+
+viewHeader : App.Page -> Html msg
+viewHeader currentPage =
+    let
+        mkHeaderLink page linkText =
+            a
+                [ href (toHash (App.SiteP page))
+                , classList [ ( "selected", currentPage == App.SiteP page ) ]
+                ]
+                [ text linkText ]
+    in
+        header []
+            [ nav []
+                [ h1 []
+                    [ mkHeaderLink Site.HomeP "Les bonnes choses" ]
+                , ul []
+                    [ li [] [ mkHeaderLink Site.AboutP "About" ]
+                    , li [] [ mkHeaderLink (Site.StoresP Stores.IndexP) "Stores" ]
+                    ]
+                , ul []
+                    [ li [] [ mkHeaderLink Site.JobsP "Jobs" ]
+                    , li []
+                        [ a [ href (toHash (App.BlogP (Blog.IndexP Nothing))) ]
+                            [ text "Blog" ]
+                        ]
+                    ]
+                , a [ href (toHash (App.SiteP (Site.SearchP "everything"))) ]
+                    [ span [] [ text "Search" ] ]
+                ]
+            ]

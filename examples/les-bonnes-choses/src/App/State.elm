@@ -1,11 +1,9 @@
 module App.State exposing (..)
 
 import App.Types exposing (..)
-import App.Navigation exposing (toHash)
 import App.Blog.State as Blog
 import App.Site.State as Site
 import App.Site.Types as Site
-import Navigation
 import Prismic.Types as P exposing (Url(Url))
 import Prismic.State as P
 
@@ -67,7 +65,20 @@ urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
 urlUpdate result model =
     case result of
         Err _ ->
-            ( model, Navigation.modifyUrl (toHash model.page) )
+            ( { model
+                  | page = NotFoundP
+                  , content = NoContent
+              }
+            , Cmd.none
+            )
+
+        Ok (NotFoundP) ->
+            ( { model
+                  | page = NotFoundP
+                  , content = NoContent
+              }
+            , Cmd.none
+            )
 
         Ok ((SiteP sitePage) as page) ->
             let

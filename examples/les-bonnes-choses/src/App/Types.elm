@@ -15,6 +15,7 @@ type alias Model =
 type Page
     = SiteP Site.Page
     | BlogP Blog.Page
+    | NotFoundP
 
 
 type Content

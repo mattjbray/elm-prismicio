@@ -17,6 +17,9 @@ toHash page =
         SiteP sitePage ->
             "#" ++ Site.toUrl sitePage
 
+        NotFoundP ->
+            "#404"
+
 
 hashParser : Navigation.Location -> Result String Page
 hashParser location =

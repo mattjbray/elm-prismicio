@@ -2,7 +2,11 @@ module App.View exposing (..)
 
 import App.Types exposing (..)
 import App.Site.View as Site
+import App.Site.Types as Site
+import App.Types as App
+import App.Navigation exposing (toHash)
 import App.Blog.View as Blog
+import App.Common as Common
 import Html exposing (..)
 import Html.App exposing (map)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
@@ -28,7 +32,8 @@ viewContent model =
                 [ map BlogMsg (Blog.view blog) ]
 
         NoContent ->
-            p [] [ text "No page loaded." ]
+            viewWithStyleSheet "assets/css/main.css"
+                viewNotFound
 
 
 viewWithStyleSheet : String -> List (Html Msg) -> Html Msg
@@ -40,6 +45,23 @@ viewWithStyleSheet stylesheet elems =
          ]
             ++ elems
         )
+
+
+viewNotFound : List (Html msg)
+viewNotFound =
+    [ Common.viewHeader NotFoundP
+    , div [ class "main", id "not-found" ]
+        [ section []
+            [ h1 [] [ text "Page not found" ] ]
+        , section []
+            [ p [] [ text "We can't seem to find what you are looking for." ]
+            , p []
+                [ a [ href (toHash <| App.SiteP <| Site.HomeP) ]
+                    [ text "Go to the home page" ]
+                ]
+            ]
+        ]
+    ]
 
 
 viewFooter : Model -> Html Msg
