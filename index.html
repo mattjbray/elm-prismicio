@@ -8965,13 +8965,10 @@ var _user$project$App_Blog_Types$IndexMsg = function (a) {
 	return {ctor: 'IndexMsg', _0: a};
 };
 var _user$project$App_Site_Article_Types$Model = function (a) {
-	return {doc: a};
+	return {article: a};
 };
-var _user$project$App_Site_Article_Types$SetError = function (a) {
-	return {ctor: 'SetError', _0: a};
-};
-var _user$project$App_Site_Article_Types$SetResponse = function (a) {
-	return {ctor: 'SetResponse', _0: a};
+var _user$project$App_Site_Article_Types$SetArticle = function (a) {
+	return {ctor: 'SetArticle', _0: a};
 };
 var _user$project$App_Site_Home_Types$Model = F3(
 	function (a, b, c) {
@@ -10824,14 +10821,26 @@ var _user$project$Prismic_View$getTitle = function (structuredText) {
 	return _elm_lang$core$List$head(
 		A2(_elm_lang$core$List$filter, isTitle, structuredText));
 };
-var _user$project$Prismic_View$linkAsHtmlWith = F2(
-	function (link, childs) {
+var _user$project$Prismic_View$defaultLinkResolver = function (linkedDoc) {
+	return _user$project$Prismic_Types$Url(
+		A2(
+			_elm_lang$core$String$join,
+			'/',
+			_elm_lang$core$Native_List.fromArray(
+				['documents', linkedDoc.id, linkedDoc.slug])));
+};
+var _user$project$Prismic_View$linkAsHtmlWith = F3(
+	function (linkResolver, link, childs) {
 		var _p6 = link;
 		if (_p6.ctor === 'DocumentLink') {
+			var _p7 = linkResolver(_p6._0);
+			var url = _p7._0;
 			return A2(
 				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
-					[]),
+					[
+						_elm_lang$html$Html_Attributes$href(url)
+					]),
 				childs);
 		} else {
 			return A2(
@@ -10843,37 +10852,41 @@ var _user$project$Prismic_View$linkAsHtmlWith = F2(
 				childs);
 		}
 	});
-var _user$project$Prismic_View$linkAsHtml = function (link) {
-	var _p7 = link;
-	if (_p7.ctor === 'DocumentLink') {
-		return A2(
-			_elm_lang$html$Html$a,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$href('#')
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p7._0.slug))
-				]));
-	} else {
-		var _p8 = _p7._0._0;
-		return A2(
-			_elm_lang$html$Html$a,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$href(_p8)
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text(_p8)
-				]));
-	}
-};
+var _user$project$Prismic_View$linkAsHtml = F2(
+	function (linkResolver, link) {
+		var _p8 = link;
+		if (_p8.ctor === 'DocumentLink') {
+			var _p10 = _p8._0;
+			var _p9 = linkResolver(_p10);
+			var url = _p9._0;
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(url)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(_p10.slug))
+					]));
+		} else {
+			var _p11 = _p8._0._0;
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(_p11)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(_p11)
+					]));
+		}
+	});
 var _user$project$Prismic_View$embedAsHtml = function (embed) {
-	var _p9 = embed;
-	if (_p9.ctor === 'EmbedVideo') {
+	var _p12 = embed;
+	if (_p12.ctor === 'EmbedVideo') {
 		return A2(
 			_elm_lang$html$Html$div,
 			_elm_lang$core$Native_List.fromArray(
@@ -10881,7 +10894,7 @@ var _user$project$Prismic_View$embedAsHtml = function (embed) {
 					A2(
 					_elm_lang$html$Html_Attributes$property,
 					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p9._0.html))
+					_elm_lang$core$Json_Encode$string(_p12._0.html))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
@@ -10893,15 +10906,15 @@ var _user$project$Prismic_View$embedAsHtml = function (embed) {
 					A2(
 					_elm_lang$html$Html_Attributes$property,
 					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p9._0.html))
+					_elm_lang$core$Json_Encode$string(_p12._0.html))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
 	}
 };
 var _user$project$Prismic_View$imageAsHtml = function (image) {
-	var _p10 = image.url;
-	var urlStr = _p10._0;
+	var _p13 = image.url;
+	var urlStr = _p13._0;
 	return A2(
 		_elm_lang$html$Html$img,
 		_elm_lang$core$Native_List.fromArray(
@@ -10911,176 +10924,182 @@ var _user$project$Prismic_View$imageAsHtml = function (image) {
 		_elm_lang$core$Native_List.fromArray(
 			[]));
 };
-var _user$project$Prismic_View$simpleFieldAsHtml = function (field) {
-	var spanEl = function (span) {
-		var _p11 = span.spanType;
-		switch (_p11.ctor) {
-			case 'Em':
-				return _elm_lang$html$Html$em(
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'Strong':
-				return _elm_lang$html$Html$strong(
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			default:
-				return _user$project$Prismic_View$linkAsHtmlWith(_p11._0);
-		}
-	};
-	var foldFn = F2(
-		function (span, _p12) {
-			var _p13 = _p12;
-			var middle = A3(_elm_lang$core$String$slice, span.start, span.end, field.text);
-			var beginning = A3(_elm_lang$core$String$slice, _p13._1, span.start, field.text);
-			return {
-				ctor: '_Tuple2',
-				_0: A2(
+var _user$project$Prismic_View$simpleFieldAsHtml = F2(
+	function (linkResolver, field) {
+		var spanEl = function (span) {
+			var _p14 = span.spanType;
+			switch (_p14.ctor) {
+				case 'Em':
+					return _elm_lang$html$Html$em(
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				case 'Strong':
+					return _elm_lang$html$Html$strong(
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				default:
+					return A2(_user$project$Prismic_View$linkAsHtmlWith, linkResolver, _p14._0);
+			}
+		};
+		var foldFn = F2(
+			function (span, _p15) {
+				var _p16 = _p15;
+				var middle = A3(_elm_lang$core$String$slice, span.start, span.end, field.text);
+				var beginning = A3(_elm_lang$core$String$slice, _p16._1, span.start, field.text);
+				return {
+					ctor: '_Tuple2',
+					_0: A2(
+						_elm_lang$core$Basics_ops['++'],
+						_p16._0,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(beginning),
+								A2(
+								spanEl,
+								span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(middle)
+									]))
+							])),
+					_1: span.end
+				};
+			});
+		var el = function () {
+			var _p17 = field.fieldType;
+			switch (_p17.ctor) {
+				case 'Heading1':
+					return _elm_lang$html$Html$h1;
+				case 'Heading2':
+					return _elm_lang$html$Html$h2;
+				case 'Heading3':
+					return _elm_lang$html$Html$h3;
+				case 'Paragraph':
+					return _elm_lang$html$Html$p;
+				default:
+					return F2(
+						function (attrs, childs) {
+							return A2(
+								_elm_lang$html$Html$ul,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(_elm_lang$html$Html$li, attrs, childs)
+									]));
+						});
+			}
+		}();
+		return A2(
+			el,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			function (_p18) {
+				var _p19 = _p18;
+				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_p13._0,
+					_p19._0,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(beginning),
-							A2(
-							spanEl,
-							span,
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html$text(middle)
-								]))
-						])),
-				_1: span.end
-			};
-		});
-	var el = function () {
-		var _p14 = field.fieldType;
-		switch (_p14.ctor) {
-			case 'Heading1':
-				return _elm_lang$html$Html$h1;
-			case 'Heading2':
-				return _elm_lang$html$Html$h2;
-			case 'Heading3':
-				return _elm_lang$html$Html$h3;
-			case 'Paragraph':
-				return _elm_lang$html$Html$p;
-			default:
-				return F2(
-					function (attrs, childs) {
-						return A2(
-							_elm_lang$html$Html$ul,
-							_elm_lang$core$Native_List.fromArray(
-								[]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									A2(_elm_lang$html$Html$li, attrs, childs)
-								]));
-					});
-		}
-	}();
-	return A2(
-		el,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		function (_p15) {
-			var _p16 = _p15;
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				_p16._0,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(
-						A2(_elm_lang$core$String$dropLeft, _p16._1, field.text))
-					]));
-		}(
-			A3(
-				_elm_lang$core$List$foldl,
-				foldFn,
-				{
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_List.fromArray(
-						[]),
-					_1: 0
-				},
-				A2(
-					_elm_lang$core$List$sortBy,
-					function (_) {
-						return _.start;
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$String$dropLeft, _p19._1, field.text))
+						]));
+			}(
+				A3(
+					_elm_lang$core$List$foldl,
+					foldFn,
+					{
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_List.fromArray(
+							[]),
+						_1: 0
 					},
-					field.spans))));
+					A2(
+						_elm_lang$core$List$sortBy,
+						function (_) {
+							return _.start;
+						},
+						field.spans))));
+	});
+var _user$project$Prismic_View$structuredTextFieldAsHtml = F2(
+	function (linkResolver, field) {
+		var _p20 = field;
+		switch (_p20.ctor) {
+			case 'SSimple':
+				return A2(_user$project$Prismic_View$simpleFieldAsHtml, linkResolver, _p20._0);
+			case 'SImage':
+				return _user$project$Prismic_View$imageAsHtml(_p20._0);
+			default:
+				return _user$project$Prismic_View$embedAsHtml(_p20._0);
+		}
+	});
+var _user$project$Prismic_View$structuredTextAsHtml = function (linkResolver) {
+	return _elm_lang$core$List$map(
+		_user$project$Prismic_View$structuredTextFieldAsHtml(linkResolver));
 };
-var _user$project$Prismic_View$structuredTextFieldAsHtml = function (field) {
-	var _p17 = field;
-	switch (_p17.ctor) {
-		case 'SSimple':
-			return _user$project$Prismic_View$simpleFieldAsHtml(_p17._0);
-		case 'SImage':
-			return _user$project$Prismic_View$imageAsHtml(_p17._0);
-		default:
-			return _user$project$Prismic_View$embedAsHtml(_p17._0);
-	}
-};
-var _user$project$Prismic_View$structuredTextAsHtml = _elm_lang$core$List$map(_user$project$Prismic_View$structuredTextFieldAsHtml);
-var _user$project$Prismic_View$asHtml = function (field) {
-	var _p18 = field;
-	switch (_p18.ctor) {
-		case 'Text':
-			return A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(_p18._0)
-					]));
-		case 'Date':
-			return A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(_p18._0)
-					]));
-		case 'Number':
-			return A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(_p18._0))
-					]));
-		case 'Select':
-			return A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(_p18._0)
-					]));
-		case 'Color':
-			return A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(
-						A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p18._0))
-					]));
-		case 'Link':
-			return _user$project$Prismic_View$linkAsHtml(_p18._0);
-		case 'Image':
-			return _user$project$Prismic_View$imageAsHtml(_p18._0.main);
-		default:
-			return A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_user$project$Prismic_View$structuredTextAsHtml(_p18._0));
-	}
-};
+var _user$project$Prismic_View$asHtml = F2(
+	function (linkResolver, field) {
+		var _p21 = field;
+		switch (_p21.ctor) {
+			case 'Text':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p21._0)
+						]));
+			case 'Date':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p21._0)
+						]));
+			case 'Number':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							_elm_lang$core$Basics$toString(_p21._0))
+						]));
+			case 'Select':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p21._0)
+						]));
+			case 'Color':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p21._0))
+						]));
+			case 'Link':
+				return A2(_user$project$Prismic_View$linkAsHtml, linkResolver, _p21._0);
+			case 'Image':
+				return _user$project$Prismic_View$imageAsHtml(_p21._0.main);
+			default:
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					A2(_user$project$Prismic_View$structuredTextAsHtml, linkResolver, _p21._0));
+		}
+	});
 var _user$project$Prismic_View$viewDefaultDocType = function (doc) {
 	var allDocFields = function () {
 		var fieldsPerType = _elm_lang$core$Dict$values(doc);
@@ -11092,19 +11111,25 @@ var _user$project$Prismic_View$viewDefaultDocType = function (doc) {
 		_elm_lang$core$Native_List.fromArray(
 			[]),
 		A2(
-			_elm_lang$core$List_ops['::'],
+			_elm_lang$core$Basics_ops['++'],
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$h2,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					A2(
+						_elm_lang$core$List$map,
+						_elm_lang$html$Html$text,
+						_elm_lang$core$Dict$keys(doc)))
+				]),
 			A2(
-				_elm_lang$html$Html$h2,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				A2(
-					_elm_lang$core$List$map,
-					_elm_lang$html$Html$text,
-					_elm_lang$core$Dict$keys(doc))),
-			A2(_elm_lang$core$List$map, _user$project$Prismic_View$asHtml, allDocFields)));
+				_elm_lang$core$List$map,
+				_user$project$Prismic_View$asHtml(_user$project$Prismic_View$defaultLinkResolver),
+				allDocFields)));
 };
-var _user$project$Prismic_View$asHtmlWithDefault = F4(
-	function ($default, documentType, fieldName, data) {
+var _user$project$Prismic_View$asHtmlWithDefault = F5(
+	function (linkResolver, $default, documentType, fieldName, data) {
 		return A2(
 			_elm_lang$core$Maybe$withDefault,
 			$default,
@@ -11117,15 +11142,18 @@ var _user$project$Prismic_View$asHtmlWithDefault = F4(
 				function (docs) {
 					return _elm_lang$core$Maybe$Just(
 						function () {
-							var _p19 = docs;
-							if ((_p19.ctor === '::') && (_p19._1.ctor === '[]')) {
-								return _user$project$Prismic_View$asHtml(_p19._0);
+							var _p22 = docs;
+							if ((_p22.ctor === '::') && (_p22._1.ctor === '[]')) {
+								return A2(_user$project$Prismic_View$asHtml, linkResolver, _p22._0);
 							} else {
 								return A2(
 									_elm_lang$html$Html$div,
 									_elm_lang$core$Native_List.fromArray(
 										[]),
-									A2(_elm_lang$core$List$map, _user$project$Prismic_View$asHtml, docs));
+									A2(
+										_elm_lang$core$List$map,
+										_user$project$Prismic_View$asHtml(linkResolver),
+										docs));
 							}
 						}());
 				}));
@@ -11414,6 +11442,21 @@ var _user$project$App_Blog_Post_State$init = F2(
 							_user$project$Prismic$fetchApi(prismic)))))
 		};
 	});
+var _user$project$App_Common$linkResolver = function (linkedDoc) {
+	var page = function () {
+		var _p0 = linkedDoc.linkedDocumentType;
+		if (_p0 === 'blog-post') {
+			return _user$project$App_Types$BlogP(
+				A2(_user$project$App_Blog_Types$PostP, linkedDoc.id, linkedDoc.slug));
+		} else {
+			var _p1 = A2(_elm_lang$core$Debug$log, 'Cannot resolve linkedDoc: ', linkedDoc);
+			return _user$project$App_Types$SiteP(_user$project$App_Site_Types$HomeP);
+		}
+	}();
+	return _user$project$Prismic_Types$Url(
+		_user$project$App_Navigation$toHash(page));
+};
+var _user$project$App_Common$structuredTextAsHtml = _user$project$Prismic_View$structuredTextAsHtml(_user$project$App_Common$linkResolver);
 var _user$project$App_Blog_Post_View$viewDocumentBlogPostFull = F2(
 	function (blogPost, model) {
 		var viewRelatedProduct = function (product) {
@@ -11516,7 +11559,7 @@ var _user$project$App_Blog_Post_View$viewDocumentBlogPostFull = F2(
 							_elm_lang$html$Html$article,
 							_elm_lang$core$Native_List.fromArray(
 								[]),
-							_user$project$Prismic_View$structuredTextAsHtml(blogPost.body)),
+							_user$project$App_Common$structuredTextAsHtml(blogPost.body)),
 							A2(
 							_elm_lang$html$Html$h2,
 							_elm_lang$core$Native_List.fromArray(
@@ -11833,118 +11876,172 @@ var _user$project$App_Blog_View$view = function (model) {
 var _user$project$App_Site_Article_State$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
-		if (_p0.ctor === 'SetError') {
-			return {ctor: '_Tuple3', _0: model, _1: _elm_lang$core$Platform_Cmd$none, _2: _elm_lang$core$Maybe$Nothing};
-		} else {
-			var newModel = function () {
-				var _p1 = _elm_lang$core$List$head(_p0._0._0.results);
-				if (_p1.ctor === 'Just') {
-					return _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							doc: _elm_lang$core$Maybe$Just(_p1._0.data)
-						});
-				} else {
-					return model;
-				}
-			}();
+		if (_p0._0.ctor === 'Err') {
 			return {
 				ctor: '_Tuple3',
-				_0: newModel,
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						article: _elm_lang$core$Result$Err(_p0._0._0)
+					}),
 				_1: _elm_lang$core$Platform_Cmd$none,
-				_2: _elm_lang$core$Maybe$Just(_p0._0._1)
+				_2: _elm_lang$core$Maybe$Nothing
+			};
+		} else {
+			return {
+				ctor: '_Tuple3',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						article: _elm_lang$core$Result$Ok(
+							A2(
+								_elm_lang$core$Maybe$map,
+								function (_) {
+									return _.data;
+								},
+								_elm_lang$core$List$head(_p0._0._0._0.results)))
+					}),
+				_1: _elm_lang$core$Platform_Cmd$none,
+				_2: _elm_lang$core$Maybe$Just(_p0._0._0._1)
 			};
 		}
 	});
 var _user$project$App_Site_Article_State$init = F2(
 	function (prismic, bookmarkName) {
-		var model = {doc: _elm_lang$core$Maybe$Nothing};
+		var model = {
+			article: _elm_lang$core$Result$Ok(_elm_lang$core$Maybe$Nothing)
+		};
 		return {
 			ctor: '_Tuple2',
 			_0: model,
 			_1: A3(
 				_elm_lang$core$Task$perform,
-				_user$project$App_Site_Article_Types$SetError,
-				_user$project$App_Site_Article_Types$SetResponse,
-				A2(
-					_user$project$Prismic$submit,
-					_user$project$App_Documents_Decoders$decodeArticle,
+				_elm_community$basics_extra$Basics_Extra$never,
+				_user$project$App_Site_Article_Types$SetArticle,
+				_elm_lang$core$Task$toResult(
 					A2(
-						_user$project$Prismic$bookmark,
-						bookmarkName,
-						_user$project$Prismic$fetchApi(prismic))))
+						_user$project$Prismic$submit,
+						_user$project$App_Documents_Decoders$decodeArticle,
+						A2(
+							_user$project$Prismic$bookmark,
+							bookmarkName,
+							_user$project$Prismic$fetchApi(prismic)))))
 		};
 	});
-var _user$project$App_Site_Article_View$view = function (model) {
-	var _p0 = model.doc;
-	if (_p0.ctor === 'Nothing') {
-		return A2(
-			_elm_lang$html$Html$p,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text('Article is loading...')
-				]));
-	} else {
-		var _p2 = _p0._0;
-		var _p1 = _p2.image.main.url;
-		var imgUrl = _p1._0;
-		return A2(
-			_elm_lang$html$Html$div,
+var _user$project$App_Site_Article_View$viewArticle = function (article) {
+	var _p0 = article.image.main.url;
+	var imgUrl = _p0._0;
+	return _elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$section,
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html_Attributes$class('main'),
-					_elm_lang$html$Html_Attributes$id('about')
+					_elm_lang$html$Html_Attributes$id('page-header')
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
 					A2(
-					_elm_lang$html$Html$section,
+					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html_Attributes$id('page-header')
+							_elm_lang$html$Html_Attributes$style(
+							_elm_lang$core$Native_List.fromArray(
+								[
+									{
+									ctor: '_Tuple2',
+									_0: 'background-image',
+									_1: A2(
+										_elm_lang$core$Basics_ops['++'],
+										'url(',
+										A2(_elm_lang$core$Basics_ops['++'], imgUrl, ')'))
+								}
+								]))
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
 							A2(
 							_elm_lang$html$Html$div,
 							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html_Attributes$style(
-									_elm_lang$core$Native_List.fromArray(
-										[
-											{
-											ctor: '_Tuple2',
-											_0: 'background-image',
-											_1: A2(
-												_elm_lang$core$Basics_ops['++'],
-												'url(',
-												A2(_elm_lang$core$Basics_ops['++'], imgUrl, ')'))
-										}
-										]))
-								]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									A2(
-									_elm_lang$html$Html$div,
-									_elm_lang$core$Native_List.fromArray(
-										[]),
-									A2(
-										_elm_lang$core$Basics_ops['++'],
-										_user$project$Prismic_View$structuredTextAsHtml(_p2.title),
-										_user$project$Prismic_View$structuredTextAsHtml(_p2.shortLede)))
-								]))
-						])),
+								[]),
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								_user$project$App_Common$structuredTextAsHtml(article.title),
+								_user$project$App_Common$structuredTextAsHtml(article.shortLede)))
+						]))
+				])),
+			A2(
+			_elm_lang$html$Html$section,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$id('page-body')
+				]),
+			_user$project$App_Common$structuredTextAsHtml(article.content))
+		]);
+};
+var _user$project$App_Site_Article_View$viewLoading = A2(
+	_elm_lang$html$Html$section,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$id('page-header')
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
 					A2(
-					_elm_lang$html$Html$section,
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html_Attributes$id('page-body')
-						]),
-					_user$project$Prismic_View$structuredTextAsHtml(_p2.content))
-				]));
+							A2(
+							_elm_lang$html$Html$h1,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html$text('Loading article...')
+								]))
+						]))
+				]))
+		]));
+var _user$project$App_Site_Article_View$viewMArticle = function (mArticle) {
+	var _p1 = mArticle;
+	if (_p1.ctor === 'Nothing') {
+		return _elm_lang$core$Native_List.fromArray(
+			[_user$project$App_Site_Article_View$viewLoading]);
+	} else {
+		return _user$project$App_Site_Article_View$viewArticle(_p1._0);
 	}
+};
+var _user$project$App_Site_Article_View$viewError = function (error) {
+	return _elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$pre,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(
+					_elm_lang$core$Basics$toString(error))
+				]))
+		]);
+};
+var _user$project$App_Site_Article_View$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('main'),
+				_elm_lang$html$Html_Attributes$id('about')
+			]),
+		A3(_elm_community$result_extra$Result_Extra$mapBoth, _user$project$App_Site_Article_View$viewError, _user$project$App_Site_Article_View$viewMArticle, model.article));
 };
 var _user$project$App_Site_Home_Decoders$decodeFeatured = function () {
 	var decodeOnType = function (typeStr) {
@@ -13119,7 +13216,7 @@ var _user$project$App_Site_Products_Product_View$view = function (model) {
 									]),
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									_user$project$Prismic_View$structuredTextAsHtml(_p4.description),
+									_user$project$App_Common$structuredTextAsHtml(_p4.description),
 									_elm_lang$core$Native_List.fromArray(
 										[
 											A2(
@@ -13474,7 +13571,7 @@ var _user$project$App_Site_Selections_Show_View$viewPageBody = function (selecti
 					[]),
 				A2(
 					_elm_lang$core$Basics_ops['++'],
-					_user$project$Prismic_View$structuredTextAsHtml(selection.description),
+					_user$project$App_Common$structuredTextAsHtml(selection.description),
 					_elm_lang$core$Native_List.fromArray(
 						[
 							A2(
@@ -14209,7 +14306,7 @@ var _user$project$App_View$viewContent = function (model) {
 		case 'SiteC':
 			return A2(
 				_user$project$App_View$viewWithStyleSheet,
-				'http://lesbonneschoses.prismic.me/assets/stylesheets/main.css',
+				'assets/css/main.css',
 				_elm_lang$core$Native_List.fromArray(
 					[
 						A2(
@@ -14220,7 +14317,7 @@ var _user$project$App_View$viewContent = function (model) {
 		case 'BlogC':
 			return A2(
 				_user$project$App_View$viewWithStyleSheet,
-				'http://lesbonneschoses.prismic.me/assets/stylesheets/blog.css',
+				'assets/css/blog.css',
 				_elm_lang$core$Native_List.fromArray(
 					[
 						A2(
@@ -14242,7 +14339,7 @@ var _user$project$App_View$viewContent = function (model) {
 var _user$project$App_View$view = function (model) {
 	return A2(
 		_user$project$App_View$viewWithStyleSheet,
-		'http://lesbonneschoses.prismic.me/assets/stylesheets/normalize.min.css',
+		'assets/css/normalize.min.css',
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_user$project$App_View$viewContent(model),
