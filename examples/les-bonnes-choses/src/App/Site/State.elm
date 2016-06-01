@@ -4,6 +4,7 @@ import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
 import App.Site.Home.State as Home
 import App.Site.Products.State as Products
+import App.Site.Selections.State as Selections
 import Prismic.Types as P
 
 
@@ -56,6 +57,19 @@ init prismic page =
                         }
                 in
                     newModel ! [ Cmd.map ProductsMsg productsCmd ]
+
+            (SelectionsP selectionsPage) as page ->
+                let
+                    ( selections, selectionsCmd ) =
+                        Selections.init prismic selectionsPage
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = SelectionsC selections
+                        }
+                in
+                    newModel ! [ Cmd.map SelectionsMsg selectionsCmd ]
 
 
 initArticle : P.Cache -> Page -> String -> Model -> ( Model, Cmd Msg )
@@ -130,6 +144,26 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ProductsMsg productsCmd
+                        , mNewPrismic
+                        )
+
+                _ ->
+                    ( model, Cmd.none, Nothing )
+
+        SelectionsMsg selectionsMsg ->
+            case model.content of
+                SelectionsC selections ->
+                    let
+                        ( newSelections, selectionsCmd, mNewPrismic ) =
+                            Selections.update selectionsMsg selections
+
+                        newModel =
+                            { model
+                                | content = SelectionsC newSelections
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map SelectionsMsg selectionsCmd
                         , mNewPrismic
                         )
 

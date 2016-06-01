@@ -6,6 +6,7 @@ import App.Navigation exposing (toHash)
 import App.Site.Home.Types exposing (..)
 import App.Site.Products.Common.View as Common
 import App.Site.Products.Types as Products
+import App.Site.Selections.Types as Selections
 import App.Site.Types as Site
 import App.Types as App
 import Dict
@@ -106,12 +107,23 @@ viewFeaturedSelection selection =
                 |> Maybe.withDefault (Url "")
     in
         div [ style [ ( "background-image", "url(" ++ backgroundImgUrl ++ ")" ) ] ]
-            [ a []
-                -- href (urlForSelection selection) ]
+            [ a [ href (urlForSelection selection) ]
                 [ h3 [] [ span [] [ text (getTexts selection.name) ] ]
                 , p [] [ span [] [ text (getTexts selection.shortLede) ] ]
                 ]
             ]
+
+
+urlForSelection : Documents.Selection -> String
+urlForSelection selection =
+    let
+        slug =
+            selection.slugs
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+        (toHash (App.SiteP (Site.SelectionsP (Selections.ShowP selection.id slug))))
+
 
 
 getFeaturedBlogPosts : List Featured -> List Documents.BlogPost

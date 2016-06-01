@@ -5,6 +5,7 @@ import App.Site.Types exposing (..)
 import App.Site.Article.View as Article
 import App.Site.Home.View as Home
 import App.Site.Products.View as Products
+import App.Site.Selections.View as Selections
 import App.Types as App
 import App.Blog.Types as Blog
 import Html exposing (..)
@@ -62,6 +63,9 @@ viewContent model =
 
         ProductsC products ->
             map ProductsMsg (Products.view products)
+
+        SelectionsC selections ->
+            map SelectionsMsg (Selections.view selections)
 
         NoContent ->
             p [] [ text "No Site page loaded." ]
