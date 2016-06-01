@@ -5,8 +5,9 @@ import Prismic.Types as P
 
 
 type Featured
-  = Product Documents.Product
-  | BlogPost Documents.BlogPost
+  = ProductF Documents.Product
+  | BlogPostF Documents.BlogPost
+  | SelectionF Documents.Selection
 
 
 type alias Model =

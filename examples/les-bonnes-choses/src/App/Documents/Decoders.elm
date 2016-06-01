@@ -97,3 +97,18 @@ decodeProduct =
         |: at [ "tags" ] (list string)
         |: at [ "tags" ] decodeCategories
     )
+
+
+decodeSelection : Decoder Selection
+decodeSelection =
+    succeed Selection
+        |: at [ "id" ] string
+        |: at [ "slugs" ] (list string)
+        |: at [ "tags" ] (list string)
+        |: at [ "data", "selection", "name", "value" ] decodeStructuredText
+        |: at [ "data", "selection", "catcher_image", "value" ] decodeImageField
+        |: at [ "data", "selection", "description", "value" ] decodeStructuredText
+        |: at [ "data", "selection", "image", "value" ] decodeImageField
+        |: at [ "data", "selection", "price", "value" ] float
+        |: at [ "data", "selection", "product" ] (list decodeLink)
+        |: at [ "data", "selection", "short_lede", "value" ] decodeStructuredText

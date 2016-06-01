@@ -36,9 +36,9 @@ type alias JobOffer =
 
 
 type Category
-  = Macaron
-  | Cupcake
-  | Pie
+    = Macaron
+    | Cupcake
+    | Pie
 
 
 type alias Product =
@@ -58,4 +58,18 @@ type alias Product =
     , testimonialQuote : Maybe StructuredText
     , tags : List String
     , categories : List Category
+    }
+
+
+type alias Selection =
+    { id : String
+    , slugs : List String
+    , tags : List String
+    , name : StructuredText
+    , catcherImage : ImageField
+    , description : StructuredText
+    , image : ImageField
+    , price : Float
+    , products : List Link
+    , shortLede : StructuredText
     }

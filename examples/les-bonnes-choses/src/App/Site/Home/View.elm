@@ -8,11 +8,13 @@ import App.Site.Products.Common.View as Common
 import App.Site.Products.Types as Products
 import App.Site.Types as Site
 import App.Types as App
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
 import Html.Events exposing (onClick)
+import Prismic.Types exposing (Url(Url))
+import Prismic.View exposing (getTitle, getText, getTexts, getFirstParagraph)
 import Result.Extra as Result
-import Prismic.View exposing (getTitle, getText, getFirstParagraph)
 
 
 categories : List Documents.Category
@@ -77,21 +79,39 @@ viewFeatured model =
     section [ id "featured" ]
         (model.featured
             |> Result.mapBoth (\err -> [ div [] [ pre [] [ text (toString err) ] ] ])
-                (List.map Common.viewFeaturedProduct << getFeaturedProducts)
+                (List.filterMap viewFeaturedItem)
         )
 
 
-getFeaturedProducts : List Featured -> List Documents.Product
-getFeaturedProducts =
-    List.filterMap
-        (\featured ->
-            case featured of
-                Product product ->
-                    Just product
+viewFeaturedItem : Featured -> Maybe (Html Msg)
+viewFeaturedItem featured =
+    case featured of
+        ProductF product ->
+            Just (Common.viewFeaturedProduct product)
 
-                _ ->
-                    Nothing
-        )
+        SelectionF selection ->
+            Just (viewFeaturedSelection selection)
+
+        _ ->
+            Nothing
+
+
+viewFeaturedSelection : Documents.Selection -> Html Msg
+viewFeaturedSelection selection =
+    let
+        (Url backgroundImgUrl) =
+            selection.catcherImage.views
+                |> Dict.get "squarred"
+                |> Maybe.map .url
+                |> Maybe.withDefault (Url "")
+    in
+        div [ style [ ( "background-image", "url(" ++ backgroundImgUrl ++ ")" ) ] ]
+            [ a []
+                -- href (urlForSelection selection) ]
+                [ h3 [] [ span [] [ text (getTexts selection.name) ] ]
+                , p [] [ span [] [ text (getTexts selection.shortLede) ] ]
+                ]
+            ]
 
 
 getFeaturedBlogPosts : List Featured -> List Documents.BlogPost
@@ -99,7 +119,7 @@ getFeaturedBlogPosts =
     List.filterMap
         (\featured ->
             case featured of
-                BlogPost blogPost ->
+                BlogPostF blogPost ->
                     Just blogPost
 
                 _ ->
