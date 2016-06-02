@@ -1,11 +1,14 @@
 module App.Common exposing (..)
 
-import App.Navigation exposing (toHash)
-import App.Types as App
 import App.Blog.Types as Blog
-import App.Site.Types as Site
-import App.Site.Stores.Types as Stores
+import App.Documents.Types as Documents
+import App.Navigation exposing (toHash)
+import App.Site.Products.Types as Products
 import App.Site.Search.Types as Search
+import App.Site.Selections.Types as Selections
+import App.Site.Stores.Types as Stores
+import App.Site.Types as Site
+import App.Types as App
 import Html exposing (..)
 import Html.Attributes exposing (classList, id, href)
 import Prismic.Types as P
@@ -54,6 +57,11 @@ viewLoading =
         ]
 
 
+viewError : P.PrismicError -> Html msg
+viewError error =
+    pre [] [ text (toString error) ]
+
+
 viewHeader : App.Page -> Html msg
 viewHeader currentPage =
     let
@@ -83,3 +91,25 @@ viewHeader currentPage =
                     [ span [] [ text "Search" ] ]
                 ]
             ]
+
+
+urlForProduct : Documents.Product -> String
+urlForProduct product =
+    let
+        slug =
+            product.slugs
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+        (toHash (App.SiteP (Site.ProductsP (Products.ShowP product.id slug))))
+
+
+urlForSelection : Documents.Selection -> String
+urlForSelection selection =
+    let
+        slug =
+            selection.slugs
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+        (toHash (App.SiteP (Site.SelectionsP (Selections.ShowP selection.id slug))))

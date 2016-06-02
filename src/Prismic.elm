@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at, atL)
+module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at, atL, fulltext)
 
 import Dict
 import Json.Decode as Json exposing (Decoder)
@@ -151,6 +151,7 @@ type Predicate
     = At String String
     | AtL String (List String)
     | Any String (List String)
+    | FullText String String
 
 
 predicatesToStr : List Predicate -> String
@@ -180,6 +181,9 @@ predicatesToStr predicates =
 
                         Any fragment values ->
                             "any(" ++ fragment ++ ", " ++ toStrList values ++ ")"
+
+                        FullText fragment value ->
+                            "fulltext(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
             in
                 "[:d = " ++ query ++ "]"
     in
@@ -199,6 +203,11 @@ atL fragment values =
 any : String -> List String -> Predicate
 any fragment values =
     Any fragment values
+
+
+fulltext : String -> String -> Predicate
+fulltext fragment value =
+    FullText fragment value
 
 
 none :

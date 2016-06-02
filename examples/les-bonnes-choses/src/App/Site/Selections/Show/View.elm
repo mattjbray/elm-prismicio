@@ -1,6 +1,6 @@
 module App.Site.Selections.Show.View exposing (..)
 
-import App.Common exposing (structuredTextAsHtml, toCssUrl)
+import App.Common exposing (structuredTextAsHtml, toCssUrl, viewError)
 import App.Documents.Types as Documents
 import App.Site.Selections.Show.Types exposing (..)
 import App.Site.Products.Common.View as Common
@@ -30,11 +30,6 @@ view model =
                     ]
                ]
         )
-
-
-viewError : P.PrismicError -> Html Msg
-viewError error =
-    pre [] [ text (toString error) ]
 
 
 viewMaybeSelection : Maybe Documents.Selection -> List (Html Msg)

@@ -1,12 +1,12 @@
 module App.Site.Home.View exposing (..)
 
 import App.Blog.Types as Blog
+import App.Common exposing (urlForSelection)
 import App.Documents.Types as Documents
 import App.Navigation exposing (toHash)
 import App.Site.Home.Types exposing (..)
 import App.Site.Products.Common.View as Common
 import App.Site.Products.Types as Products
-import App.Site.Selections.Types as Selections
 import App.Site.Types as Site
 import App.Types as App
 import Dict
@@ -112,17 +112,6 @@ viewFeaturedSelection selection =
                 , p [] [ span [] [ text (getTexts selection.shortLede) ] ]
                 ]
             ]
-
-
-urlForSelection : Documents.Selection -> String
-urlForSelection selection =
-    let
-        slug =
-            selection.slugs
-                |> List.head
-                |> Maybe.withDefault ""
-    in
-        (toHash (App.SiteP (Site.SelectionsP (Selections.ShowP selection.id slug))))
 
 
 

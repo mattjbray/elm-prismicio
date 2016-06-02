@@ -1,15 +1,12 @@
 module App.Site.Products.Common.View exposing (..)
 
-import App.Navigation exposing (toHash)
-import App.Types as App
-import App.Site.Types as Site
-import App.Site.Products.Types as Products
+import App.Common exposing (urlForProduct)
 import App.Documents.Types as Documents
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
-import Prismic.View exposing (getTexts)
 import Prismic.Types exposing (Url(Url))
+import Prismic.View exposing (getTexts)
 import String
 
 
@@ -53,17 +50,6 @@ categoryToString category =
 
         Documents.Pie ->
             "Pies"
-
-
-urlForProduct : Documents.Product -> String
-urlForProduct product =
-    let
-        slug =
-            product.slugs
-                |> List.head
-                |> Maybe.withDefault ""
-    in
-        (toHash (App.SiteP (Site.ProductsP (Products.ShowP product.id slug))))
 
 
 viewProductShort : Documents.Product -> Html msg

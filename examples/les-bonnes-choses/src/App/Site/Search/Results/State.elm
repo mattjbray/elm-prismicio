@@ -1,14 +1,83 @@
 module App.Site.Search.Results.State exposing (..)
 
+import App.Site.Search.Results.Decoders exposing (..)
 import App.Site.Search.Results.Types exposing (..)
+import App.Types exposing (GlobalMsg(SetPrismic))
+import Basics.Extra exposing (never)
+import Prismic as P
 import Prismic.Types as P
+import Task
+
 
 init : P.Cache -> String -> ( Model, Cmd Msg )
 init prismic query =
-  ( { results = () }
-  , Cmd.none
-  )
+    ( { products = Ok []
+      , articles = Ok []
+      }
+    , Cmd.batch
+        [ P.fetchApi prismic
+            |> P.form "everything"
+            |> P.query
+                [ P.any "document.type" [ "product", "selection" ]
+                , P.fulltext "document" query
+                ]
+            |> P.submit decodeProductR
+            |> Task.toResult
+            |> Task.perform never SetProducts
+        , P.fetchApi prismic
+            |> P.form "everything"
+            |> P.query
+                [ P.any "document.type" [ "blog-post", "article", "store" ]
+                , P.fulltext "document" query
+                ]
+            |> P.submit decodeArticleR
+            |> Task.toResult
+            |> Task.perform never SetArticles
+        ]
+    )
 
-update : Msg -> Model -> ( Model, Cmd Msg, List a )
+
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
-  ( model, Cmd.none, [] )
+    case msg of
+        SetProducts result ->
+            case result of
+                Err error ->
+                    ( { model
+                        | products = Err error
+                      }
+                    , Cmd.none
+                    , []
+                    )
+
+                Ok ( response, prismic ) ->
+                    ( { model
+                        | products =
+                            response.results
+                                |> List.map .data
+                                |> Ok
+                      }
+                    , Cmd.none
+                    , [ SetPrismic prismic ]
+                    )
+
+        SetArticles result ->
+            case result of
+                Err error ->
+                    ( { model
+                        | articles = Err error
+                      }
+                    , Cmd.none
+                    , []
+                    )
+
+                Ok ( response, prismic ) ->
+                    ( { model
+                        | articles =
+                            response.results
+                                |> List.map .data
+                                |> Ok
+                      }
+                    , Cmd.none
+                    , [ SetPrismic prismic ]
+                    )

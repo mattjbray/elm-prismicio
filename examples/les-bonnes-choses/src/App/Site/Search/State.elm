@@ -1,7 +1,7 @@
 module App.Site.Search.State exposing (..)
 
 import App.Navigation exposing (toHash)
-import App.Types as App
+import App.Types as App exposing (GlobalMsg)
 import App.Site.Types as Site
 import App.Site.Search.Types exposing (..)
 import App.Site.Search.Results.State as Results
@@ -35,7 +35,7 @@ init prismic page =
                     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, List a )
+update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         SetQuery query ->

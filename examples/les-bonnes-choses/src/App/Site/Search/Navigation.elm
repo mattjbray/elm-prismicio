@@ -17,6 +17,6 @@ toUrl page =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format ResultsP string
-        , format IndexP (s "")
+        [ format IndexP (s "")
+        , format ResultsP string
         ]
