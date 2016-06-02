@@ -5,9 +5,49 @@
         <title>Les bonnes choses</title>
     </head>
     <body>
+        <script src="//maps.googleapis.com/maps/api/js"></script>
         <script type="text/javascript" src="js/app.js"></script>
         <script type="text/javascript">
-           var app = Elm.Main.fullscreen();
+         var app = Elm.Main.fullscreen();
+
+         app.ports.googleMap.subscribe(function(args) {
+
+             var elementId = args[0],
+                 address = args[1];
+
+             function doIt() {
+
+                 var mapDiv = document.getElementById(elementId);
+
+                 if (!mapDiv) {
+
+                     // Element hasn't been created yet, try again later.
+                     setTimeout(doIt, 100);
+                     return;
+
+                 }
+
+                 new google.maps.Geocoder().geocode({'address': address}, function(results, status) {
+
+                     if (results && results[0]) {
+
+                         var location = results[0].geometry.location;
+
+                         var mapOptions = {
+                             center: location,
+                             zoom: 16,
+                             mapTypeId: google.maps.MapTypeId.ROADMAP
+                         };
+
+                         var map = new google.maps.Map(mapDiv, mapOptions);
+
+                     }
+
+                 });
+             }
+
+             doIt();
+         });
         </script>
     </body>
 </html>
