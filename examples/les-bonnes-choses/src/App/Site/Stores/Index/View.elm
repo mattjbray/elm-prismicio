@@ -18,9 +18,10 @@ import Result.Extra as Result
 view : Model -> Html msg
 view model =
     div [ class "main", id "stores" ]
-        (model.article
+        ((model.article
             |> Result.mapBoth viewError
-                (viewMArticle model)
+                (viewMArticle model))
+            ++ [ viewStores model ]
         )
 
 
@@ -65,17 +66,17 @@ viewArticle model article =
                 ]
             ]
         , section [ id "page-body" ]
-            (structuredTextAsHtml article.content
-                ++ viewStores model
-            )
+            (structuredTextAsHtml article.content)
         ]
 
 
-viewStores : Model -> List (Html msg)
+viewStores : Model -> Html msg
 viewStores model =
-    model.stores
-        |> Result.mapBoth viewError
-            (List.map viewStore << List.sortBy (getTexts << .name))
+    section [ id "page-body" ]
+        (model.stores
+            |> Result.mapBoth viewError
+                (List.map viewStore << List.sortBy (getTexts << .name))
+        )
 
 
 viewStore : Documents.Store -> Html msg
