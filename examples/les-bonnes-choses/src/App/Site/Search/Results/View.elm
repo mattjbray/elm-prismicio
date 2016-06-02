@@ -2,7 +2,7 @@ module App.Site.Search.Results.View exposing (..)
 
 import App.Site.Search.Results.Types exposing (..)
 import App.Common exposing (viewError)
-import App.Navigation exposing (urlForSelection, urlForProduct)
+import App.Navigation exposing (urlForBlogPost, urlForProduct, urlForSelection, urlForStore)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, src)
@@ -86,20 +86,20 @@ viewArticles articleResults =
 
 viewArticleR : ArticleR -> Html msg
 viewArticleR articleR =
-    -- TODO: add URLs
     case articleR of
         ArticleR myArticle ->
+            -- TODO: add URLs for articles
             article []
                 [ a []
                     [ h3 [] [ myArticle.title |> P.getTexts |> text ]
-                    , em [] [ text "some/url" ]
+                    , em [] [ text "" ]
                     , p [] [ myArticle.content |> P.getTexts |> excerpt |> text ]
                     ]
                 ]
 
         BlogPostR blogPost ->
             article []
-                [ a []
+                [ a [ href (urlForBlogPost blogPost) ]
                     [ h3 []
                         [ text "In our blog - "
                         , text
@@ -109,7 +109,7 @@ viewArticleR articleR =
                                 |> Maybe.withDefault "(no title)"
                             )
                         ]
-                    , em [] [ text "some/url" ]
+                    , em [] [ text (urlForBlogPost blogPost) ]
                     , p []
                         [ text
                             (blogPost.body
@@ -123,12 +123,12 @@ viewArticleR articleR =
 
         StoreR store ->
             article []
-                [ a []
+                [ a [ href (urlForStore store) ]
                     [ h3 []
                         [ text "Les Bonnes Choses Store - "
                         , store.name |> P.getTexts |> text
                         ]
-                    , em [] [ text "some/url" ]
+                    , em [] [ text (urlForStore store) ]
                     , p []
                         [ text
                             (String.join " "

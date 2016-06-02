@@ -7,13 +7,12 @@ import Prismic.Decoders exposing (..)
 
 decodeArticle : Decoder Article
 decodeArticle =
-    at [ "data", "article" ]
-        (succeed Article
-            |: at [ "content", "value" ] decodeStructuredText
-            |: at [ "image", "value" ] decodeImageField
-            |: at [ "short_lede", "value" ] decodeStructuredText
-            |: at [ "title", "value" ] decodeStructuredText
-        )
+    succeed Article
+        |: at [ "id" ] string
+        |: at [ "data", "article", "content", "value" ] decodeStructuredText
+        |: at [ "data", "article", "image", "value" ] decodeImageField
+        |: at [ "data", "article", "short_lede", "value" ] decodeStructuredText
+        |: at [ "data", "article", "title", "value" ] decodeStructuredText
 
 
 decodeJobOffer : Decoder JobOffer

@@ -4,7 +4,8 @@ import Prismic.Types exposing (PrismicError, Response, Api, StructuredText, Link
 
 
 type alias Article =
-    { content : StructuredText
+    { id : String
+    , content : StructuredText
     , image : ImageField
     , shortLede : StructuredText
     , title : StructuredText
