@@ -1,7 +1,11 @@
 module App.Site.Search.State exposing (..)
 
+import App.Navigation exposing (toHash)
+import App.Types as App
+import App.Site.Types as Site
 import App.Site.Search.Types exposing (..)
 import App.Site.Search.Results.State as Results
+import Navigation
 import Prismic.Types as P
 
 
@@ -25,6 +29,7 @@ init prismic page =
                 in
                     ( { model
                         | content = ResultsC results
+                        , query = query
                       }
                     , Cmd.map ResultsMsg resultsCmd
                     )
@@ -33,6 +38,20 @@ init prismic page =
 update : Msg -> Model -> ( Model, Cmd Msg, List a )
 update msg model =
     case msg of
+        SetQuery query ->
+            ( { model
+                | query = query
+              }
+            , Cmd.none
+            , []
+            )
+
+        Submit ->
+            ( model
+            , Navigation.newUrl <| toHash <| App.SiteP <| Site.SearchP <| ResultsP model.query
+            , []
+            )
+
         ResultsMsg resultsMsg ->
             case model.content of
                 ResultsC results ->

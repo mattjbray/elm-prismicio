@@ -20,3 +20,5 @@ type Content
 
 type Msg
   = ResultsMsg Results.Msg
+  | SetQuery String
+  | Submit
