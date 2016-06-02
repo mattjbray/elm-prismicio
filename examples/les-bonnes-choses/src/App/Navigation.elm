@@ -11,6 +11,7 @@ import App.Site.Stores.Types as Stores
 import App.Site.Types as Site
 import App.Types as App
 import App.Types exposing (..)
+import Dict exposing (Dict)
 import Navigation
 import Prismic.Types as P
 import String
@@ -73,6 +74,35 @@ linkResolver linkedDoc =
 
 
 -- Url helpers
+
+
+urlForArticle : Dict String String -> Documents.Article -> String
+urlForArticle bookmarks article =
+    let
+        bookmarksById =
+            bookmarks
+                |> Dict.toList
+                |> List.map (\( k, v ) -> ( v, k ))
+                |> Dict.fromList
+
+        mBookmark =
+            Dict.get article.id bookmarksById
+
+        page =
+            case mBookmark of
+                Just "about" ->
+                    App.SiteP <| Site.AboutP
+
+                Just "jobs" ->
+                    App.SiteP <| Site.JobsP
+
+                Just "stores" ->
+                    App.SiteP <| Site.StoresP <| Stores.IndexP
+
+                _ ->
+                    App.NotFoundP
+    in
+        toHash page
 
 
 urlForBlog : String

@@ -1,12 +1,14 @@
 module App.Site.Search.Results.Types exposing (..)
 
 import App.Documents.Types as Documents
+import Dict exposing (Dict)
 import Prismic.Types as P
 
 
 type alias Model =
     { products : Result P.PrismicError (List ProductR)
     , articles : Result P.PrismicError (List ArticleR)
+    , bookmarks : Dict String String
     }
 
 

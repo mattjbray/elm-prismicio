@@ -4,6 +4,7 @@ import App.Site.Search.Results.Decoders exposing (..)
 import App.Site.Search.Results.Types exposing (..)
 import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
+import Dict
 import Prismic as P
 import Prismic.Types as P
 import Task
@@ -13,6 +14,7 @@ init : P.Cache -> String -> ( Model, Cmd Msg )
 init prismic query =
     ( { products = Ok []
       , articles = Ok []
+      , bookmarks = Dict.empty
       }
     , Cmd.batch
         [ P.fetchApi prismic
@@ -77,6 +79,10 @@ update msg model =
                             response.results
                                 |> List.map .data
                                 |> Ok
+                        , bookmarks =
+                            prismic.api
+                              |> Maybe.map .bookmarks
+                              |> Maybe.withDefault Dict.empty
                       }
                     , Cmd.none
                     , [ SetPrismic prismic ]

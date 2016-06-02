@@ -2,7 +2,7 @@ module App.Site.Search.Results.View exposing (..)
 
 import App.Site.Search.Results.Types exposing (..)
 import App.Common exposing (viewError)
-import App.Navigation exposing (urlForBlogPost, urlForProduct, urlForSelection, urlForStore)
+import App.Navigation exposing (urlForArticle, urlForBlogPost, urlForProduct, urlForSelection, urlForStore)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, src)
@@ -21,7 +21,7 @@ view model =
                 viewProducts
         , model.articles
             |> Result.mapBoth viewError
-                viewArticles
+                (viewArticles model)
         ]
 
 
@@ -68,8 +68,8 @@ viewProductR productR =
                 viewItem urlForSelection selection
 
 
-viewArticles : List ArticleR -> Html msg
-viewArticles articleResults =
+viewArticles : Model -> List ArticleR -> Html msg
+viewArticles model articleResults =
     div [ id "other-results" ]
         ([ h2 []
             [ text
@@ -80,19 +80,20 @@ viewArticles articleResults =
                 )
             ]
          ]
-            ++ List.map viewArticleR articleResults
+            ++ List.map (viewArticleR model) articleResults
         )
 
 
-viewArticleR : ArticleR -> Html msg
-viewArticleR articleR =
+viewArticleR : Model -> ArticleR -> Html msg
+viewArticleR model articleR =
     case articleR of
         ArticleR myArticle ->
-            -- TODO: add URLs for articles
             article []
-                [ a []
+                [ a
+                    [ href (urlForArticle model.bookmarks myArticle)
+                    ]
                     [ h3 [] [ myArticle.title |> P.getTexts |> text ]
-                    , em [] [ text "" ]
+                    , em [] [ text (urlForArticle model.bookmarks myArticle) ]
                     , p [] [ myArticle.content |> P.getTexts |> excerpt |> text ]
                     ]
                 ]
