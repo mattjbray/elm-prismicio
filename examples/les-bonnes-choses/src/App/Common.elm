@@ -1,11 +1,6 @@
 module App.Common exposing (..)
 
-import App.Blog.Types as Blog
-import App.Documents.Types as Documents
-import App.Navigation exposing (toHash)
-import App.Site.Products.Types as Products
-import App.Site.Search.Types as Search
-import App.Site.Selections.Types as Selections
+import App.Navigation exposing (toHash, linkResolver, urlForBlog, urlForSearch)
 import App.Site.Stores.Types as Stores
 import App.Site.Types as Site
 import App.Types as App
@@ -13,27 +8,6 @@ import Html exposing (..)
 import Html.Attributes exposing (classList, id, href)
 import Prismic.Types as P
 import Prismic.View as P
-
-
-linkResolver : P.LinkedDocument -> P.Url
-linkResolver linkedDoc =
-    let
-        page =
-            case linkedDoc.linkedDocumentType of
-                "blog-post" ->
-                    App.BlogP <| Blog.PostP linkedDoc.id linkedDoc.slug
-
-                "store" ->
-                    App.SiteP <| Site.StoresP <| Stores.ShowP linkedDoc.id linkedDoc.slug
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "Cannot resolve linkedDoc: " linkedDoc
-                    in
-                        App.SiteP <| Site.HomeP
-    in
-        P.Url (toHash page)
 
 
 structuredTextAsHtml : P.StructuredText -> List (Html msg)
@@ -83,33 +57,11 @@ viewHeader currentPage =
                 , ul []
                     [ li [] [ mkHeaderLink Site.JobsP "Jobs" ]
                     , li []
-                        [ a [ href (toHash (App.BlogP (Blog.IndexP Nothing))) ]
+                        [ a [ href urlForBlog ]
                             [ text "Blog" ]
                         ]
                     ]
-                , a [ href (toHash (App.SiteP (Site.SearchP Search.IndexP))) ]
+                , a [ href urlForSearch ]
                     [ span [] [ text "Search" ] ]
                 ]
             ]
-
-
-urlForProduct : Documents.Product -> String
-urlForProduct product =
-    let
-        slug =
-            product.slugs
-                |> List.head
-                |> Maybe.withDefault ""
-    in
-        (toHash (App.SiteP (Site.ProductsP (Products.ShowP product.id slug))))
-
-
-urlForSelection : Documents.Selection -> String
-urlForSelection selection =
-    let
-        slug =
-            selection.slugs
-                |> List.head
-                |> Maybe.withDefault ""
-    in
-        (toHash (App.SiteP (Site.SelectionsP (Selections.ShowP selection.id slug))))

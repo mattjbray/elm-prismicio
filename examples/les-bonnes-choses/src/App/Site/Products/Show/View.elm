@@ -2,12 +2,9 @@ module App.Site.Products.Show.View exposing (..)
 
 import App.Common exposing (structuredTextAsHtml)
 import App.Documents.Types as Documents
-import App.Navigation exposing (toHash)
-import App.Types as App
-import App.Site.Types as Site
-import App.Site.Products.Types as Products
-import App.Site.Products.Show.Types exposing (..)
+import App.Navigation exposing (urlForProducts, urlForProductsByFlavour)
 import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
+import App.Site.Products.Show.Types exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
 import Prismic.Types as P exposing (Url(Url))
@@ -41,7 +38,7 @@ view model =
                              ]
                                 ++ structuredTextAsHtml product.description
                                 ++ [ p []
-                                        [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP (Just primaryFlavour))))) ]
+                                        [ a [ href (urlForProductsByFlavour primaryFlavour) ]
                                             [ strong
                                                 [ class "color"
                                                 , style [ ( "background", product.color ) ]
@@ -52,7 +49,7 @@ view model =
                                    ]
                             )
                         , p []
-                            [ a [ href (toHash (App.SiteP (Site.ProductsP (Products.IndexP Nothing)))) ]
+                            [ a [ href urlForProducts ]
                                 [ text "Browse all our products" ]
                             ]
                         ]

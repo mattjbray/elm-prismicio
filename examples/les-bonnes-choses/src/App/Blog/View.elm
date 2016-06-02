@@ -1,11 +1,9 @@
 module App.Blog.View exposing (..)
 
-import App.Blog.Types exposing (..)
 import App.Blog.Index.View as Index
 import App.Blog.Post.View as Post
-import App.Navigation exposing (toHash)
-import App.Types as App
-import App.Site.Types as Site
+import App.Blog.Types exposing (..)
+import App.Navigation exposing (urlForHome, urlForBlog, urlForBlogCategory)
 import Html exposing (..)
 import Html.App exposing (map)
 import Html.Attributes exposing (rel, href, class)
@@ -22,24 +20,24 @@ view model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     header []
-        [ a [ href (toHash (App.SiteP Site.HomeP)) ]
+        [ a [ href urlForHome ]
             [ h1 [] [ text "Les Bonnes Choses" ] ]
         , nav []
             [ ul []
                 [ li []
-                    [ a [ href (toHash (App.BlogP (IndexP Nothing))) ]
+                    [ a [ href urlForBlog ]
                         [ text "Home" ]
                     ]
                 , li []
-                    [ a [ href (toHash (App.BlogP (IndexP (Just "Announcements")))) ]
+                    [ a [ href (urlForBlogCategory "Announcements") ]
                         [ text "Announcements" ]
                     ]
                 , li []
-                    [ a [ href (toHash (App.BlogP (IndexP (Just "Do it yourself")))) ]
+                    [ a [ href (urlForBlogCategory "Do it yourself") ]
                         [ text "Do it yourself" ]
                     ]
                 , li []
-                    [ a [ href (toHash (App.BlogP (IndexP (Just "Behind the scenes")))) ]
+                    [ a [ href (urlForBlogCategory "Behind the scenes") ]
                         [ text "Behind the scenes" ]
                     ]
                 ]

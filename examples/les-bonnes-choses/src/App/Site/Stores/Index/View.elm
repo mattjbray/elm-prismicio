@@ -1,10 +1,7 @@
 module App.Site.Stores.Index.View exposing (..)
 
-import App.Navigation exposing (toHash)
+import App.Navigation exposing (urlForStore)
 import App.Site.Stores.Index.Types exposing (..)
-import App.Types as App
-import App.Site.Types as Site
-import App.Site.Stores.Types as Stores
 import App.Site.Article.View as Article
 import App.Documents.Types as Documents
 import App.Common exposing (structuredTextAsHtml, toCssUrl)
@@ -49,16 +46,11 @@ viewStore store =
                 |> Dict.get "medium"
                 |> Maybe.map .url
                 |> Maybe.withDefault (Url "")
-
-        slug =
-            store.slugs
-                |> List.head
-                |> Maybe.withDefault ""
     in
         article
             [ class "store"
             , style [ ( "background-image", toCssUrl imageUrl ) ]
             ]
-            [ a [ href (toHash <| App.SiteP <| Site.StoresP <| Stores.ShowP store.id slug) ]
+            [ a [ href (urlForStore store) ]
                 [ h3 [] [ text (getTexts store.name) ] ]
             ]

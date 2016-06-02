@@ -1,18 +1,15 @@
 module App.Blog.Post.View exposing (..)
 
-import App.Common exposing (structuredTextAsHtml)
-import App.Navigation exposing (toHash)
-import App.Types as App
-import App.Site.Types as Site
-import App.Site.Products.Types as Products
+import App.Blog.Common.View exposing (viewPostInfo)
 import App.Blog.Post.Types exposing (..)
-import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
+import App.Common exposing (structuredTextAsHtml)
 import App.Documents.Types as Documents
+import App.Navigation exposing (urlForProduct, urlForBlogPost)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (id, href, src)
-import Prismic.View exposing (getText, getTexts, getTitle)
 import Prismic.Types exposing (Url(Url))
+import Prismic.View exposing (getText, getTexts, getTitle)
 
 
 view : Model -> Html Msg
@@ -39,7 +36,7 @@ viewDocumentBlogPostFull blogPost model =
                             getText heading
             in
                 li []
-                    [ a [ href (blogPostUrl post) ]
+                    [ a [ href (urlForBlogPost post) ]
                         [ text title ]
                     ]
 
@@ -49,15 +46,10 @@ viewDocumentBlogPostFull blogPost model =
                     Dict.get "icon" product.image.views
                         |> Maybe.map .url
                         |> Maybe.withDefault (Url "")
-
-                slug =
-                    product.slugs
-                        |> List.head
-                        |> Maybe.withDefault ""
             in
                 li []
                     [ a
-                        [ href (toHash <| App.SiteP <| Site.ProductsP <| Products.ShowP product.id slug)
+                        [ href (urlForProduct product)
                         ]
                         [ img [ src imgUrl ] []
                         , span [] [ text (getTexts product.name) ]

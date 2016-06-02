@@ -2,9 +2,8 @@ module App.View exposing (..)
 
 import App.Types exposing (..)
 import App.Site.View as Site
-import App.Site.Types as Site
 import App.Types as App
-import App.Navigation exposing (toHash)
+import App.Navigation exposing (urlForHome)
 import App.Blog.View as Blog
 import App.Common as Common
 import Html exposing (..)
@@ -56,7 +55,7 @@ viewNotFound =
         , section []
             [ p [] [ text "We can't seem to find what you are looking for." ]
             , p []
-                [ a [ href (toHash <| App.SiteP <| Site.HomeP) ]
+                [ a [ href urlForHome ]
                     [ text "Go to the home page" ]
                 ]
             ]

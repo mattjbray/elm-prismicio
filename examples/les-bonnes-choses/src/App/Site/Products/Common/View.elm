@@ -1,6 +1,6 @@
 module App.Site.Products.Common.View exposing (..)
 
-import App.Common exposing (urlForProduct)
+import App.Navigation exposing (urlForProduct)
 import App.Documents.Types as Documents
 import Dict
 import Html exposing (..)

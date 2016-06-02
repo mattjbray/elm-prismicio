@@ -1,8 +1,6 @@
 module App.Site.Products.Index.View exposing (..)
 
-import App.Navigation exposing (toHash)
-import App.Types as App
-import App.Site.Types as Site
+import App.Navigation exposing (urlForHome)
 import App.Site.Products.Index.Types exposing (..)
 import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
 import Html exposing (..)
@@ -21,7 +19,7 @@ view model =
                     (List.map viewProductShort (Maybe.withDefault [] model.products))
                 ]
             , p []
-                [ a [ href (toHash (App.SiteP (Site.HomeP))) ]
+                [ a [ href urlForHome ]
                     [ text "Close the products list" ]
                 ]
             ]

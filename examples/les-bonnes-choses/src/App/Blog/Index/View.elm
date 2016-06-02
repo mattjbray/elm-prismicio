@@ -1,7 +1,8 @@
 module App.Blog.Index.View exposing (..)
 
 import App.Blog.Index.Types exposing (..)
-import App.Blog.Common.View exposing (viewPostInfo, blogPostUrl)
+import App.Blog.Common.View exposing (viewPostInfo)
+import App.Navigation exposing (urlForBlogPost)
 import App.Documents.Types as Documents
 import Html exposing (..)
 import Html.Attributes exposing (class, id, href, style)
@@ -52,7 +53,7 @@ viewDocumentBlogPostShort blogPost =
                     ""
     in
         article []
-            [ a [ href (blogPostUrl blogPost) ]
+            [ a [ href (urlForBlogPost blogPost) ]
                 [ viewPostInfo blogPost
                 , h2 [] [ text title ]
                 , p [] [ text firstPara ]

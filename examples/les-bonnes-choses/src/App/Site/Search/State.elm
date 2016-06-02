@@ -1,8 +1,7 @@
 module App.Site.Search.State exposing (..)
 
-import App.Navigation exposing (toHash)
+import App.Navigation exposing (urlForSearchResults)
 import App.Types as App exposing (GlobalMsg)
-import App.Site.Types as Site
 import App.Site.Search.Types exposing (..)
 import App.Site.Search.Results.State as Results
 import Navigation
@@ -48,7 +47,7 @@ update msg model =
 
         Submit ->
             ( model
-            , Navigation.newUrl <| toHash <| App.SiteP <| Site.SearchP <| ResultsP model.query
+            , Navigation.newUrl <| urlForSearchResults model.query
             , []
             )
 

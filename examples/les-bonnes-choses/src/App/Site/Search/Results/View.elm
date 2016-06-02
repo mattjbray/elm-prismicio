@@ -1,7 +1,8 @@
 module App.Site.Search.Results.View exposing (..)
 
 import App.Site.Search.Results.Types exposing (..)
-import App.Common exposing (viewError, urlForProduct, urlForSelection)
+import App.Common exposing (viewError)
+import App.Navigation exposing (urlForSelection, urlForProduct)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, src)
