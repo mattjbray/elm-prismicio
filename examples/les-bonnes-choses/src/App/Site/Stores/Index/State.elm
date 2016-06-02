@@ -1,6 +1,7 @@
 module App.Site.Stores.Index.State exposing (..)
 
 import App.Site.Stores.Index.Types exposing (..)
+import App.Site.Article.State as Article
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
@@ -12,21 +13,19 @@ import Task
 init : P.Cache -> ( Model, Cmd Msg )
 init prismic =
     let
+        (article, articleCmd) =
+          Article.init prismic "stores"
+
         model =
             { article =
-                Ok Nothing
+                article
             , stores =
                 Ok []
             }
     in
         ( model
         , Cmd.batch
-            [ prismic
-                |> P.fetchApi
-                |> P.bookmark "stores"
-                |> P.submit Documents.decodeArticle
-                |> Task.toResult
-                |> Task.perform never SetArticle
+            [ Cmd.map ArticleMsg articleCmd
             , prismic
                 |> P.fetchApi
                 |> P.form "stores"
@@ -40,24 +39,16 @@ init prismic =
 update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
-        SetArticle (Err error) ->
+        ArticleMsg articleMsg ->
+          let
+            (newArticle, articleCmd, globalMsgs) =
+              Article.update articleMsg model.article
+          in
             ( { model
-                | article = Err error
+                | article = newArticle
               }
-            , Cmd.none
-            , []
-            )
-
-        SetArticle (Ok ( response, prismic )) ->
-            ( { model
-                | article =
-                    response.results
-                        |> List.head
-                        |> Maybe.map .data
-                        |> Ok
-              }
-            , Cmd.none
-            , [ SetPrismic prismic ]
+            , Cmd.map ArticleMsg articleCmd
+            , globalMsgs
             )
 
         SetStores (Err error) ->

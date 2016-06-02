@@ -5,24 +5,24 @@ import App.Site.Stores.Index.Types exposing (..)
 import App.Types as App
 import App.Site.Types as Site
 import App.Site.Stores.Types as Stores
+import App.Site.Article.View as Article
 import App.Documents.Types as Documents
 import App.Common exposing (structuredTextAsHtml, toCssUrl)
 import Dict
 import Html exposing (..)
+import Html.App as Html
 import Html.Attributes exposing (..)
 import Prismic.Types as P exposing (Url(Url))
 import Prismic.View exposing (getTexts)
 import Result.Extra as Result
 
 
-view : Model -> Html msg
+view : Model -> Html Msg
 view model =
     div [ class "main", id "stores" ]
-        ((model.article
-            |> Result.mapBoth viewError
-                (viewMArticle model))
-            ++ [ viewStores model ]
-        )
+        [ Html.map ArticleMsg (Article.view model.article)
+        , viewStores model
+        ]
 
 
 viewError : P.PrismicError -> List (Html msg)
@@ -30,49 +30,11 @@ viewError error =
     [ pre [] [ text (toString error) ] ]
 
 
-viewMArticle : Model -> Maybe Documents.Article -> List (Html msg)
-viewMArticle model mArticle =
-    case mArticle of
-        Nothing ->
-            [ viewLoading ]
-
-        Just article ->
-            viewArticle model article
-
-
-viewLoading : Html msg
-viewLoading =
-    section [ id "page-header" ]
-        [ div []
-            [ div []
-                [ h1 [] [ text "Loading article..." ]
-                ]
-            ]
-        ]
-
-
-viewArticle : Model -> Documents.Article -> List (Html msg)
-viewArticle model article =
-    let
-        (Url imgUrl) =
-            article.image.main.url
-    in
-        [ section [ id "page-header" ]
-            [ div [ style [ ( "background-image", "url(" ++ imgUrl ++ ")" ) ] ]
-                [ div []
-                    (structuredTextAsHtml article.title
-                        ++ structuredTextAsHtml article.shortLede
-                    )
-                ]
-            ]
-        , section [ id "page-body" ]
-            (structuredTextAsHtml article.content)
-        ]
-
-
 viewStores : Model -> Html msg
 viewStores model =
-    section [ id "page-body" ]
+    section [ id "page-body"
+            , style [("margin-top", "-120px")]
+            ]
         (model.stores
             |> Result.mapBoth viewError
                 (List.map viewStore << List.sortBy (getTexts << .name))
