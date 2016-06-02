@@ -41,6 +41,26 @@
 
                          var map = new google.maps.Map(mapDiv, mapOptions);
 
+                         map.setOptions({styles: [
+                             {
+                                 "featureType": "poi",
+                                 "stylers": [
+                                     { "saturation": -100 },
+                                     { "visibility": "off" }
+                                 ]
+                             },{
+                                 "stylers": [
+                                     { "saturation": -100 }
+                                 ]
+                             }
+                         ]});
+
+                         var marker = new google.maps.Marker({
+                             position: results[0].geometry.location,
+                             map: map,
+                             title: 'Les Bonnes Choses'
+                         });
+
                      }
 
                  });
