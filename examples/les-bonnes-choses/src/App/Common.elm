@@ -5,6 +5,7 @@ import App.Types as App
 import App.Blog.Types as Blog
 import App.Site.Types as Site
 import App.Site.Stores.Types as Stores
+import App.Site.Search.Types as Search
 import Html exposing (..)
 import Html.Attributes exposing (classList, id, href)
 import Prismic.Types as P
@@ -78,7 +79,7 @@ viewHeader currentPage =
                             [ text "Blog" ]
                         ]
                     ]
-                , a [ href (toHash (App.SiteP (Site.SearchP "everything"))) ]
+                , a [ href (toHash (App.SiteP (Site.SearchP Search.IndexP))) ]
                     [ span [] [ text "Search" ] ]
                 ]
             ]

@@ -4,6 +4,7 @@ import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
 import App.Site.Home.State as Home
 import App.Site.Products.State as Products
+import App.Site.Search.State as Search
 import App.Site.Selections.State as Selections
 import App.Site.Stores.State as Stores
 import App.Types exposing (GlobalMsg(SetPrismic))
@@ -41,9 +42,6 @@ init prismic page =
             JobsP as page ->
                 initWith "jobs"
 
-            (SearchP _) as page ->
-                initWith "about"
-
             (ProductsP productsPage) as page ->
                 let
                     ( products, productsCmd ) =
@@ -56,6 +54,19 @@ init prismic page =
                         }
                 in
                     newModel ! [ Cmd.map ProductsMsg productsCmd ]
+
+            (SearchP searchPage) as page ->
+                let
+                    ( search, searchCmd ) =
+                        Search.init prismic searchPage
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = SearchC search
+                        }
+                in
+                    newModel ! [ Cmd.map SearchMsg searchCmd ]
 
             (SelectionsP selectionsPage) as page ->
                 let
@@ -156,6 +167,26 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ProductsMsg productsCmd
+                        , globalMsgs
+                        )
+
+                _ ->
+                    ( model, Cmd.none, [] )
+
+        SearchMsg searchMsg ->
+            case model.content of
+                SearchC search ->
+                    let
+                        ( newSearch, searchCmd, globalMsgs ) =
+                            Search.update searchMsg search
+
+                        newModel =
+                            { model
+                                | content = SearchC newSearch
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map SearchMsg searchCmd
                         , globalMsgs
                         )
 

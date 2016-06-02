@@ -4,6 +4,7 @@ import App.Site.Types exposing (..)
 import App.Site.Article.View as Article
 import App.Site.Home.View as Home
 import App.Site.Products.View as Products
+import App.Site.Search.View as Search
 import App.Site.Selections.View as Selections
 import App.Site.Stores.View as Stores
 import App.Types as App
@@ -31,6 +32,9 @@ viewContent model =
 
         ProductsC products ->
             map ProductsMsg (Products.view products)
+
+        SearchC search ->
+            map SearchMsg (Search.view search)
 
         SelectionsC selections ->
             map SelectionsMsg (Selections.view selections)
