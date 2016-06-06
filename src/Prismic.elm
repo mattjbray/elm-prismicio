@@ -1,5 +1,20 @@
 module Prismic exposing (init, fetchApi, form, ref, query, bookmark, none, submit, any, at, atL, fulltext)
 
+{-| An Elm SDK for [Prismic.io](https://prismic.io).
+
+# Initialisation
+@docs init
+
+# Making a request
+@docs fetchApi, form, submit
+
+# Customising the request
+@docs ref, bookmark, query, none
+
+# Predicates
+@docs at, atL, any, fulltext
+-}
+
 import Dict
 import Json.Decode as Json exposing (Decoder)
 import Http
@@ -9,9 +24,16 @@ import Prismic.Decoders exposing (..)
 import Prismic.Internal.State exposing (..)
 
 
-{-| Initialise the Prismic model with the URL for your Prismic repository.
+{-| Initialise the Prismic model with the URL for your Prismic repository. Save
+this in your application's Model somewhere.
 
-    init (Url "https://lesbonneschoses.prismic.io/api")
+    type alias Model =
+        { prismic : Prismic.Model }
+
+    init =
+        { prismic =
+            Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
+        }
 -}
 init : Url -> Model
 init url =
@@ -23,6 +45,9 @@ init url =
     }
 
 
+{-| Go and fetch the Prismic API, if it has not already been fetched. You must
+start every Prismic request with this function.
+-}
 fetchApi : Model -> Task PrismicError ModelWithApi
 fetchApi cache =
     case cache.api of
@@ -40,6 +65,8 @@ fetchApi cache =
                     )
 
 
+{-| Choose a form on which to base the rest of the Prismic request.
+-}
 form :
     String
     -> Task PrismicError ModelWithApi
@@ -83,6 +110,8 @@ form formId apiTask =
         apiTask `Task.andThen` addForm
 
 
+{-| Override a Form's default ref
+-}
 ref :
     String
     -> Task PrismicError ( Request, ModelWithApi )
@@ -103,6 +132,10 @@ ref refId requestTask =
         requestTask `Task.andThen` addRef
 
 
+{-| Override a Form's default query.
+
+See the section on `Predicate`s below for how to construct a `Predicate`.
+-}
 query :
     List Predicate
     -> Task PrismicError ( Request, ModelWithApi )
@@ -118,6 +151,8 @@ query predicates requestTask =
         requestTask `Task.andThen` addQuery
 
 
+{-| Convenience function for fetching a bookmarked document.
+-}
 bookmark :
     String
     -> Task PrismicError (ModelWithApi)
@@ -140,6 +175,10 @@ bookmark bookmarkId cacheTask =
                        )
 
 
+{-| Pass the request through unmodified.
+
+Useful for conditionally adding a query.
+-}
 none :
     Task PrismicError ( Request, Model' api )
     -> Task PrismicError ( Request, Model' api )
@@ -147,6 +186,11 @@ none =
     Task.map identity
 
 
+{-| Submit the request.
+
+Pass this function a Json `Decoder` to decode each document in the response into
+your own Elm type, or use `decodeDefaultDocType`.
+-}
 submit :
     Decoder docType
     -> Task PrismicError ( Request, ModelWithApi )
@@ -195,21 +239,29 @@ submit decodeDocType requestTask =
 -- Predicates
 
 
+{-| Match documents having `value` at `fragment`.
+-}
 at : String -> String -> Predicate
 at fragment value =
     At fragment value
 
 
+{-| Match documents having a list of `values` at `fragment`.
+-}
 atL : String -> List String -> Predicate
 atL fragment values =
     AtL fragment values
 
 
+{-| Match documents having any of `values` at `fragment`.
+-}
 any : String -> List String -> Predicate
 any fragment values =
     Any fragment values
 
 
+{-| Match documents with a full text search at `fragment`.
+-}
 fulltext : String -> String -> Predicate
 fulltext fragment value =
     FullText fragment value
