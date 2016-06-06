@@ -67,7 +67,8 @@ processGlobalMsgs msgs model =
             case msg of
                 SetPrismic prismic ->
                     { mod
-                        | prismic = prismic
+                        | prismic =
+                            P.collectResponses model.prismic prismic
                     }
 
                 RenderNotFound ->

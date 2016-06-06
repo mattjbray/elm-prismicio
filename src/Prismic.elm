@@ -8,6 +8,7 @@ module Prismic
         , query
         , none
         , submit
+        , collectResponses
         , any
         , at
         , atL
@@ -62,7 +63,7 @@ module Prismic
 @docs init
 
 # Making a request
-@docs fetchApi, form, bookmark, submit
+@docs fetchApi, form, bookmark, submit, collectResponses
 
 # Customising the request
 @docs ref, query, none
@@ -690,6 +691,19 @@ submit decodeDocType requestTask =
                             fetchUrl `Task.andThen` decodeAndMkResult
     in
         requestTask `Task.andThen` doSubmit
+
+
+{-| The `submit` `Task` returns an updated Prismic `Model` with the request and
+response cached.
+
+In your app's `update` function, you should merge this with the existing cache
+using `collectResponses`.
+-}
+collectResponses : Model -> Model -> Model
+collectResponses model1 model2 =
+    { model2
+        | cache = Dict.union model2.cache model1.cache
+    }
 
 
 
