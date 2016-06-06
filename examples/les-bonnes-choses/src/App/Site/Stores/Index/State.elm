@@ -10,7 +10,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> ( Model, Cmd Msg )
+init : P.Model -> ( Model, Cmd Msg )
 init prismic =
     let
         (article, articleCmd) =

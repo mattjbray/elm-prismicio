@@ -5,7 +5,7 @@ import App.Blog.State as Blog
 import App.Site.State as Site
 import App.Site.Types as Site
 import Prismic.Types as P exposing (Url(Url))
-import Prismic.State as P
+import Prismic as P
 
 
 init : Result String Page -> ( Model, Cmd Msg )
@@ -17,7 +17,7 @@ init result =
             , content =
                 NoContent
             , prismic =
-                P.initCache (Url "https://lesbonneschoses.prismic.io/api")
+                P.init (Url "https://lesbonneschoses.prismic.io/api")
             }
     in
         urlUpdate result model

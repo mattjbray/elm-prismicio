@@ -21,9 +21,21 @@ getJson decoder url =
             }
     in
         Http.fromJson decoder (Http.send Http.defaultSettings request)
+{-| Initialise the Prismic model with the URL for your Prismic repository.
+
+    init (Url "https://lesbonneschoses.prismic.io/api")
+-}
+init : Url -> Model
+init url =
+  { api = Nothing
+  , url = url
+  , nextRequestId = 0
+  , requests = Dict.empty
+  , responses = Dict.empty
+  }
 
 
-fetchApi : Cache -> Task PrismicError CacheWithApi
+fetchApi : Model -> Task PrismicError ModelWithApi
 fetchApi cache =
     case cache.api of
         Just api ->
@@ -42,8 +54,8 @@ fetchApi cache =
 
 form :
     String
-    -> Task PrismicError CacheWithApi
-    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ModelWithApi
+    -> Task PrismicError ( Request, ModelWithApi )
 form formId apiTask =
     let
         addForm cache =
@@ -85,8 +97,8 @@ form formId apiTask =
 
 ref :
     String
-    -> Task PrismicError ( Request, CacheWithApi )
-    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError ( Request, ModelWithApi )
 ref refId requestTask =
     let
         addRef ( request, cache ) =
@@ -112,8 +124,8 @@ getRefById refId api =
 
 query :
     List Predicate
-    -> Task PrismicError ( Request, CacheWithApi )
-    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError ( Request, ModelWithApi )
 query predicates requestTask =
     let
         addQuery ( request, cache ) =
@@ -127,8 +139,8 @@ query predicates requestTask =
 
 bookmark :
     String
-    -> Task PrismicError (CacheWithApi)
-    -> Task PrismicError ( Request, CacheWithApi )
+    -> Task PrismicError (ModelWithApi)
+    -> Task PrismicError ( Request, ModelWithApi )
 bookmark bookmarkId cacheTask =
     cacheTask
         `Task.andThen` (\cacheWithApi ->
@@ -211,16 +223,16 @@ fulltext fragment value =
 
 
 none :
-    Task PrismicError ( Request, Cache' api )
-    -> Task PrismicError ( Request, Cache' api )
+    Task PrismicError ( Request, Model' api )
+    -> Task PrismicError ( Request, Model' api )
 none =
     Task.map identity
 
 
 submit :
     Decoder docType
-    -> Task PrismicError ( Request, CacheWithApi )
-    -> Task PrismicError ( Response docType, Cache )
+    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError ( Response docType, Model )
 submit decodeDocType requestTask =
     let
         doSubmit ( request, cache ) =
@@ -283,7 +295,7 @@ requestToUrl request =
 
 getFromCache :
     Request
-    -> Cache' api
+    -> Model' api
     -> Maybe Json.Value
 getFromCache request cache =
     let
@@ -305,8 +317,8 @@ getFromCache request cache =
 setInCache :
     Request
     -> Json.Value
-    -> Cache' api
-    -> Cache' api
+    -> Model' api
+    -> Model' api
 setInCache request response cache =
     let
         id =

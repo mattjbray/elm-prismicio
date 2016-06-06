@@ -13,7 +13,7 @@ type alias Model =
 
 
 type Msg
-    = SetResponse ( P.Response Documents.BlogPost, P.Cache )
-    | SetRelatedPosts ( P.Response Documents.BlogPost, P.Cache )
-    | SetRelatedProducts ( P.Response Documents.Product, P.Cache )
+    = SetResponse ( P.Response Documents.BlogPost, P.Model )
+    | SetRelatedPosts ( P.Response Documents.BlogPost, P.Model )
+    | SetRelatedProducts ( P.Response Documents.Product, P.Model )
     | SetError P.PrismicError

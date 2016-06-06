@@ -4,11 +4,11 @@ import Dict exposing (Dict)
 import Json.Decode as Json
 import Http
 
-type alias Cache = Cache' (Maybe Api)
+type alias Model = Model' (Maybe Api)
 
-type alias CacheWithApi = Cache' Api
+type alias ModelWithApi = Model' Api
 
-type alias Cache' api =
+type alias Model' api =
     { api : api
     , url : Url
     , nextRequestId : Int

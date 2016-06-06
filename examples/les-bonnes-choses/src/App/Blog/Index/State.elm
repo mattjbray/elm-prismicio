@@ -8,7 +8,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> Maybe String -> ( Model, Cmd Msg )
+init : P.Model -> Maybe String -> ( Model, Cmd Msg )
 init prismic mCategory =
     let
         model =

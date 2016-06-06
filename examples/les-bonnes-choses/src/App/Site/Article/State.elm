@@ -9,7 +9,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> String -> ( Model, Cmd Msg )
+init : P.Model -> String -> ( Model, Cmd Msg )
 init prismic bookmarkName =
     let
         model =

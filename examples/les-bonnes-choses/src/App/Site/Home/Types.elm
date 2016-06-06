@@ -18,6 +18,6 @@ type alias Model =
 
 
 type Msg
-    = SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Cache ))
-    | SetFeatured (Result P.PrismicError ( P.Response Featured, P.Cache ))
+    = SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Model ))
+    | SetFeatured (Result P.PrismicError ( P.Response Featured, P.Model ))
     | SetCategory Documents.Category

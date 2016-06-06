@@ -9,7 +9,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> String -> ( Model, Cmd Msg )
+init : P.Model -> String -> ( Model, Cmd Msg )
 init prismic docId =
     ( { product = Nothing
       , relatedProducts = []
@@ -60,7 +60,7 @@ update msg model =
             )
 
 
-fetchRelatedProducts : P.Cache -> Documents.Product -> Cmd Msg
+fetchRelatedProducts : P.Model -> Documents.Product -> Cmd Msg
 fetchRelatedProducts prismic product =
     let
         relatedDocIds =

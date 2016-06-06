@@ -8,7 +8,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> String -> ( Model, Cmd Msg )
+init : P.Model -> String -> ( Model, Cmd Msg )
 init prismic docId =
     let
         model =
@@ -67,7 +67,7 @@ update msg model =
             )
 
 
-fetchRelated : P.Cache -> Model -> ( Model, Cmd Msg, List GlobalMsg )
+fetchRelated : P.Model -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 fetchRelated prismic model =
     case model.doc of
         Just blogPost ->

@@ -10,4 +10,4 @@ type alias Model =
 
 
 type Msg
-    = SetArticle (Result P.PrismicError ( P.Response Documents.Article, P.Cache ))
+    = SetArticle (Result P.PrismicError ( P.Response Documents.Article, P.Model ))

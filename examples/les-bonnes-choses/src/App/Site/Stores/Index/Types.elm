@@ -13,4 +13,4 @@ type alias Model =
 
 type Msg
     = ArticleMsg Article.Msg
-    | SetStores (Result P.PrismicError ( P.Response Documents.Store, P.Cache ))
+    | SetStores (Result P.PrismicError ( P.Response Documents.Store, P.Model ))

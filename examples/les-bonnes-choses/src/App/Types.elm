@@ -8,7 +8,7 @@ import Prismic.Types as P
 type alias Model =
     { page : Page
     , content : Content
-    , prismic : P.Cache
+    , prismic : P.Model
     }
 
 
@@ -30,5 +30,5 @@ type Msg
 
 
 type GlobalMsg
-    = SetPrismic P.Cache
+    = SetPrismic P.Model
     | RenderNotFound

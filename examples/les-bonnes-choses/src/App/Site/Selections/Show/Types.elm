@@ -11,5 +11,5 @@ type alias Model =
 
 
 type Msg
-    = SetSelection (Result P.PrismicError ( P.Response Documents.Selection, P.Cache ))
-    | SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Cache ))
+    = SetSelection (Result P.PrismicError ( P.Response Documents.Selection, P.Model ))
+    | SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Model ))

@@ -10,7 +10,7 @@ import Prismic as P
 import Task
 
 
-init : P.Cache -> String -> ( Model, Cmd Msg )
+init : P.Model -> String -> ( Model, Cmd Msg )
 init prismic docId =
     ( { products = Ok []
       , selection = Ok Nothing
@@ -77,7 +77,7 @@ update msg model =
                     )
 
 
-fetchProducts : P.Cache -> Documents.Selection -> Cmd Msg
+fetchProducts : P.Model -> Documents.Selection -> Cmd Msg
 fetchProducts prismic selection =
     let
         productIds =

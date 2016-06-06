@@ -13,8 +13,8 @@ type alias Model =
 
 
 type Msg
-    = SetProducts (Result P.PrismicError ( P.Response ProductR, P.Cache ))
-    | SetArticles (Result P.PrismicError ( P.Response ArticleR, P.Cache ))
+    = SetProducts (Result P.PrismicError ( P.Response ProductR, P.Model ))
+    | SetArticles (Result P.PrismicError ( P.Response ArticleR, P.Model ))
 
 
 type ProductR

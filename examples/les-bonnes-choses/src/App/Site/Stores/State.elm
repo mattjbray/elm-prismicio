@@ -7,7 +7,7 @@ import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic.Types as P
 
 
-init : P.Cache -> Page -> ( Model, Cmd Msg )
+init : P.Model -> Page -> ( Model, Cmd Msg )
 init prismic page =
     case page of
         IndexP ->

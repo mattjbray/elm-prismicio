@@ -10,4 +10,4 @@ type alias Model =
 
 
 type Msg
-    = SetStore (Result P.PrismicError ( P.Response Documents.Store, P.Cache ))
+    = SetStore (Result P.PrismicError ( P.Response Documents.Store, P.Model ))

@@ -11,7 +11,7 @@ import Prismic.Types as P
 import Task
 
 
-init : P.Cache -> ( Model, Cmd Msg )
+init : P.Model -> ( Model, Cmd Msg )
 init prismic =
     ( { products = Ok []
       , featured = Ok []

@@ -12,6 +12,6 @@ type alias Model =
 
 
 type Msg
-    = SetResponse ( P.Response Documents.Product, P.Cache )
-    | SetRelatedProducts ( P.Response Documents.Product, P.Cache )
+    = SetResponse ( P.Response Documents.Product, P.Model )
+    | SetRelatedProducts ( P.Response Documents.Product, P.Model )
     | SetError P.PrismicError

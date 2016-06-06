@@ -10,5 +10,5 @@ type alias Model =
 
 
 type Msg
-    = SetResponse ( Prismic.Response Documents.BlogPost, Prismic.Cache )
+    = SetResponse ( Prismic.Response Documents.BlogPost, Prismic.Model )
     | SetError Prismic.PrismicError

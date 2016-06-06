@@ -11,7 +11,7 @@ import Task
 import String
 
 
-init : P.Cache -> String -> ( Model, Cmd Msg )
+init : P.Model -> String -> ( Model, Cmd Msg )
 init prismic docId =
     ( { store =
             Ok Nothing
