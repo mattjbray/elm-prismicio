@@ -1,22 +1,60 @@
-module Prismic exposing
-  (init, fetchApi, form, bookmark
-  , ref, query, none, submit
-  , any, at, atL, fulltext
-  , Url(Url), Model, ModelWithApi, Model'
-  , PrismicError(..)
-  , Api, RefProperties, Ref(Ref), Form, FormField, FieldType, Experiments
-  , Predicate, Request
-  , Response
-  , DefaultDocType, DocumentField(..), decodeDefaultDocType
-  , StructuredText, StructuredTextField(..), SimpleStructuredTextField, SimpleStructuredTextType(..), Span, SpanType(..)
-  , ImageViews, ImageProperties, ImageDimensions
-  , EmbedProperties(..), EmbedRichProperties, EmbedVideoProperties
-  , Link(DocumentLink, WebLink), DocumentReference
-  , decodeStructuredText, decodeImageField, decodeLink
-  , structuredTextAsHtml
-  , defaultLinkResolver
-  , getFirstImage, getFirstParagraph, getText, getTexts, getTitle
-  )
+module Prismic
+    exposing
+        ( init
+        , fetchApi
+        , form
+        , bookmark
+        , ref
+        , query
+        , none
+        , submit
+        , any
+        , at
+        , atL
+        , fulltext
+        , Url(Url)
+        , Model
+        , ModelWithApi
+        , Model'
+        , PrismicError(..)
+        , Api
+        , RefProperties
+        , Ref(Ref)
+        , Form
+        , FormField
+        , FieldType
+        , Experiments
+        , Predicate
+        , Request
+        , Response
+        , DefaultDocType
+        , DocumentField(..)
+        , decodeDefaultDocType
+        , StructuredText
+        , StructuredTextField(..)
+        , SimpleStructuredTextField
+        , SimpleStructuredTextType(..)
+        , Span
+        , SpanType(..)
+        , ImageViews
+        , ImageProperties
+        , ImageDimensions
+        , EmbedProperties(..)
+        , EmbedRichProperties
+        , EmbedVideoProperties
+        , Link(DocumentLink, WebLink)
+        , DocumentReference
+        , decodeStructuredText
+        , decodeImageField
+        , decodeLink
+        , structuredTextAsHtml
+        , defaultLinkResolver
+        , getFirstImage
+        , getFirstParagraph
+        , getText
+        , getTexts
+        , getTitle
+        )
 
 {-| An Elm SDK for [Prismic.io](https://prismic.io).
 
@@ -439,6 +477,7 @@ type alias DocumentReference =
     , tags : List String
     , linkedDocumentType : String
     }
+
 
 
 -- FUNCTIONS
@@ -1053,6 +1092,7 @@ decodeLink =
         ("type" := Json.string) `Json.andThen` decodeOnType
 
 
+
 -- Html
 
 
@@ -1347,6 +1387,7 @@ getTexts fields =
         |> String.join " "
 
 
+
 -- INTERNAL: State
 
 
@@ -1362,7 +1403,6 @@ getJson decoder url =
             }
     in
         Http.fromJson decoder (Http.send Http.defaultSettings request)
-
 
 
 requestToUrl : Request -> Url
