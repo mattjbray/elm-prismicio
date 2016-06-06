@@ -37,7 +37,7 @@ In practice, it will look something like this:
 
     type Msg
         = SetPrismicError P.PrismicError
-        | SetHomePage P.DefaultDocType
+        | SetHomePage ( P.DefaultDocType, P.Model )
 
     fetchHomePage prismic =
         P.fetchApi prismic
@@ -46,6 +46,9 @@ In practice, it will look something like this:
           |> P.submit P.decodeDefaultDocType
           |> Task.perform SetPrismicError SetHomePage
 
+
+When you handle `SetHomePage` in your app's `update` function, you should
+replace the `prismic` value in your model with the one returned in the tuple.
 
 ## Custom document types
 
