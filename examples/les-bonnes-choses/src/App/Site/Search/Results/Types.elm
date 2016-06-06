@@ -25,4 +25,5 @@ type ProductR
 type ArticleR
     = ArticleR Documents.Article
     | BlogPostR Documents.BlogPost
+    | JobR Documents.JobOffer
     | StoreR Documents.Store

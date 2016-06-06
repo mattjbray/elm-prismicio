@@ -19,6 +19,9 @@ decodeArticleR =
                 "store" ->
                     object1 StoreR Documents.decodeStore
 
+                "job-offer" ->
+                    object1 JobR Documents.decodeJobOffer
+
                 _ ->
                     fail ("Unexpected document type: " ++ typeStr)
     in

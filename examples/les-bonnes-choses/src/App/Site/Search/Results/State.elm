@@ -28,7 +28,12 @@ init prismic query =
         , P.fetchApi prismic
             |> P.form "everything"
             |> P.query
-                [ P.any "document.type" [ "blog-post", "article", "store" ]
+                [ P.any "document.type"
+                    [ "blog-post"
+                    , "article"
+                    , "job-offer"
+                    , "store"
+                    ]
                 , P.fulltext "document" query
                 ]
             |> P.submit decodeArticleR
@@ -80,8 +85,8 @@ update msg model =
                                 |> Ok
                         , bookmarks =
                             prismic.api
-                              |> Maybe.map .bookmarks
-                              |> Maybe.withDefault Dict.empty
+                                |> Maybe.map .bookmarks
+                                |> Maybe.withDefault Dict.empty
                       }
                     , Cmd.none
                     , [ SetPrismic prismic ]

@@ -2,7 +2,7 @@ module App.Site.Search.Results.View exposing (..)
 
 import App.Site.Search.Results.Types exposing (..)
 import App.Common exposing (viewError)
-import App.Navigation exposing (urlForArticle, urlForBlogPost, urlForProduct, urlForSelection, urlForStore)
+import App.Navigation exposing (urlForArticle, urlForBlogPost, urlForJob, urlForProduct, urlForSelection, urlForStore)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, src)
@@ -116,6 +116,24 @@ viewArticleR model articleR =
                                 |> P.getFirstParagraph
                                 |> Maybe.map (excerpt << P.getText)
                                 |> Maybe.withDefault "(no content)"
+                            )
+                        ]
+                    ]
+                ]
+
+        JobR job ->
+            article []
+                [ a [ href (urlForJob job) ]
+                    [ h3 []
+                        [ text "Join us - "
+                        , job.name |> P.getTexts |> text
+                        ]
+                    , em [] [ text (urlForJob job) ]
+                    , p []
+                        [ text
+                            (job.profile
+                                |> P.getTexts
+                                |> excerpt
                             )
                         ]
                     ]
