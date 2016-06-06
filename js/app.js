@@ -10411,9 +10411,9 @@ var _user$project$App_Documents_Types$BlogPost = function (a) {
 		};
 	};
 };
-var _user$project$App_Documents_Types$JobOffer = F6(
-	function (a, b, c, d, e, f) {
-		return {name: a, contractType: b, service: c, jobDescription: d, profile: e, locations: f};
+var _user$project$App_Documents_Types$JobOffer = F9(
+	function (a, b, c, d, e, f, g, h, i) {
+		return {id: a, slugs: b, tags: c, name: d, contractType: e, service: f, jobDescription: g, profile: h, locations: i};
 	});
 var _user$project$App_Documents_Types$Product = function (a) {
 	return function (b) {
@@ -10607,6 +10607,51 @@ var _user$project$App_Site_Home_Types$SetProducts = function (a) {
 	return {ctor: 'SetProducts', _0: a};
 };
 
+var _user$project$App_Site_Jobs_Index_Types$Model = F2(
+	function (a, b) {
+		return {article: a, jobs: b};
+	});
+var _user$project$App_Site_Jobs_Index_Types$SetJobs = function (a) {
+	return {ctor: 'SetJobs', _0: a};
+};
+var _user$project$App_Site_Jobs_Index_Types$ArticleMsg = function (a) {
+	return {ctor: 'ArticleMsg', _0: a};
+};
+
+var _user$project$App_Site_Jobs_Show_Types$Model = F2(
+	function (a, b) {
+		return {job: a, article: b};
+	});
+var _user$project$App_Site_Jobs_Show_Types$ArticleMsg = function (a) {
+	return {ctor: 'ArticleMsg', _0: a};
+};
+var _user$project$App_Site_Jobs_Show_Types$SetJob = function (a) {
+	return {ctor: 'SetJob', _0: a};
+};
+
+var _user$project$App_Site_Jobs_Types$Model = F2(
+	function (a, b) {
+		return {page: a, content: b};
+	});
+var _user$project$App_Site_Jobs_Types$ShowP = F2(
+	function (a, b) {
+		return {ctor: 'ShowP', _0: a, _1: b};
+	});
+var _user$project$App_Site_Jobs_Types$IndexP = {ctor: 'IndexP'};
+var _user$project$App_Site_Jobs_Types$ShowC = function (a) {
+	return {ctor: 'ShowC', _0: a};
+};
+var _user$project$App_Site_Jobs_Types$IndexC = function (a) {
+	return {ctor: 'IndexC', _0: a};
+};
+var _user$project$App_Site_Jobs_Types$NoContent = {ctor: 'NoContent'};
+var _user$project$App_Site_Jobs_Types$ShowMsg = function (a) {
+	return {ctor: 'ShowMsg', _0: a};
+};
+var _user$project$App_Site_Jobs_Types$IndexMsg = function (a) {
+	return {ctor: 'IndexMsg', _0: a};
+};
+
 var _user$project$App_Site_Products_Index_Types$Model = F2(
 	function (a, b) {
 		return {products: a, error: b};
@@ -10675,6 +10720,9 @@ var _user$project$App_Site_Search_Results_Types$ProductR = function (a) {
 };
 var _user$project$App_Site_Search_Results_Types$StoreR = function (a) {
 	return {ctor: 'StoreR', _0: a};
+};
+var _user$project$App_Site_Search_Results_Types$JobR = function (a) {
+	return {ctor: 'JobR', _0: a};
 };
 var _user$project$App_Site_Search_Results_Types$BlogPostR = function (a) {
 	return {ctor: 'BlogPostR', _0: a};
@@ -10788,7 +10836,9 @@ var _user$project$App_Site_Types$StoresP = function (a) {
 var _user$project$App_Site_Types$SearchP = function (a) {
 	return {ctor: 'SearchP', _0: a};
 };
-var _user$project$App_Site_Types$JobsP = {ctor: 'JobsP'};
+var _user$project$App_Site_Types$JobsP = function (a) {
+	return {ctor: 'JobsP', _0: a};
+};
 var _user$project$App_Site_Types$AboutP = {ctor: 'AboutP'};
 var _user$project$App_Site_Types$HomeC = function (a) {
 	return {ctor: 'HomeC', _0: a};
@@ -10804,6 +10854,9 @@ var _user$project$App_Site_Types$SearchC = function (a) {
 };
 var _user$project$App_Site_Types$ProductsC = function (a) {
 	return {ctor: 'ProductsC', _0: a};
+};
+var _user$project$App_Site_Types$JobsC = function (a) {
+	return {ctor: 'JobsC', _0: a};
 };
 var _user$project$App_Site_Types$ArticleC = function (a) {
 	return {ctor: 'ArticleC', _0: a};
@@ -10823,6 +10876,9 @@ var _user$project$App_Site_Types$SearchMsg = function (a) {
 };
 var _user$project$App_Site_Types$ProductsMsg = function (a) {
 	return {ctor: 'ProductsMsg', _0: a};
+};
+var _user$project$App_Site_Types$JobsMsg = function (a) {
+	return {ctor: 'JobsMsg', _0: a};
 };
 var _user$project$App_Site_Types$ArticleMsg = function (a) {
 	return {ctor: 'ArticleMsg', _0: a};
@@ -10932,9 +10988,7 @@ var _user$project$App_Documents_Decoders$decodeArticle = A2(
 			['data', 'article', 'title', 'value']),
 		_user$project$Prismic$decodeStructuredText));
 var _user$project$App_Documents_Decoders$decodeJobOffer = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['data', 'job-offer']),
+	_user$project$App_Documents_Decoders_ops['|:'],
 	A2(
 		_user$project$App_Documents_Decoders_ops['|:'],
 		A2(
@@ -10947,39 +11001,58 @@ var _user$project$App_Documents_Decoders$decodeJobOffer = A2(
 						_user$project$App_Documents_Decoders_ops['|:'],
 						A2(
 							_user$project$App_Documents_Decoders_ops['|:'],
-							_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$JobOffer),
+							A2(
+								_user$project$App_Documents_Decoders_ops['|:'],
+								A2(
+									_user$project$App_Documents_Decoders_ops['|:'],
+									_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$JobOffer),
+									A2(
+										_elm_lang$core$Json_Decode$at,
+										_elm_lang$core$Native_List.fromArray(
+											['id']),
+										_elm_lang$core$Json_Decode$string)),
+								A2(
+									_elm_lang$core$Json_Decode$at,
+									_elm_lang$core$Native_List.fromArray(
+										['slugs']),
+									_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
 							A2(
 								_elm_lang$core$Json_Decode$at,
 								_elm_lang$core$Native_List.fromArray(
-									['name', 'value']),
-								_user$project$Prismic$decodeStructuredText)),
-						_elm_lang$core$Json_Decode$maybe(
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['contract_type', 'value']),
-								_elm_lang$core$Json_Decode$string))),
+									['tags']),
+								_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+						A2(
+							_elm_lang$core$Json_Decode$at,
+							_elm_lang$core$Native_List.fromArray(
+								['data', 'job-offer', 'name', 'value']),
+							_user$project$Prismic$decodeStructuredText)),
 					_elm_lang$core$Json_Decode$maybe(
 						A2(
 							_elm_lang$core$Json_Decode$at,
 							_elm_lang$core$Native_List.fromArray(
-								['service', 'value']),
+								['data', 'job-offer', 'contract_type', 'value']),
 							_elm_lang$core$Json_Decode$string))),
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['job_description', 'value']),
-					_user$project$Prismic$decodeStructuredText)),
+				_elm_lang$core$Json_Decode$maybe(
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['data', 'job-offer', 'service', 'value']),
+						_elm_lang$core$Json_Decode$string))),
 			A2(
 				_elm_lang$core$Json_Decode$at,
 				_elm_lang$core$Native_List.fromArray(
-					['profile', 'value']),
+					['data', 'job-offer', 'job_description', 'value']),
 				_user$project$Prismic$decodeStructuredText)),
 		A2(
 			_elm_lang$core$Json_Decode$at,
 			_elm_lang$core$Native_List.fromArray(
-				['location']),
-			_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink))));
+				['data', 'job-offer', 'profile', 'value']),
+			_user$project$Prismic$decodeStructuredText)),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['data', 'job-offer', 'location']),
+		_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink)));
 var _user$project$App_Documents_Decoders$decodeBlogPost = function () {
 	var decodeAllowComments = function (str) {
 		var _p3 = str;
@@ -11506,6 +11579,31 @@ var _user$project$App_Blog_Navigation$toUrl = function (page) {
 	}
 };
 
+var _user$project$App_Site_Jobs_Navigation$pageParser = _evancz$url_parser$UrlParser$oneOf(
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_user$project$App_Site_Jobs_Types$ShowP,
+			A2(_evancz$url_parser$UrlParser_ops['</>'], _evancz$url_parser$UrlParser$string, _evancz$url_parser$UrlParser$string)),
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_user$project$App_Site_Jobs_Types$IndexP,
+			_evancz$url_parser$UrlParser$s(''))
+		]));
+var _user$project$App_Site_Jobs_Navigation$toUrl = function (page) {
+	var _p0 = page;
+	if (_p0.ctor === 'IndexP') {
+		return '';
+	} else {
+		return A2(
+			_elm_lang$core$String$join,
+			'/',
+			_elm_lang$core$Native_List.fromArray(
+				[_p0._0, _p0._1]));
+	}
+};
+
 var _user$project$App_Site_Products_Navigation$pageParser = _evancz$url_parser$UrlParser$oneOf(
 	_elm_lang$core$Native_List.fromArray(
 		[
@@ -11619,7 +11717,10 @@ var _user$project$App_Site_Navigation$pageParser = _evancz$url_parser$UrlParser$
 			A2(
 			_evancz$url_parser$UrlParser$format,
 			_user$project$App_Site_Types$JobsP,
-			_evancz$url_parser$UrlParser$s('jobs')),
+			A2(
+				_evancz$url_parser$UrlParser_ops['</>'],
+				_evancz$url_parser$UrlParser$s('jobs'),
+				_user$project$App_Site_Jobs_Navigation$pageParser)),
 			A2(
 			_evancz$url_parser$UrlParser$format,
 			_user$project$App_Site_Types$StoresP,
@@ -11659,7 +11760,10 @@ var _user$project$App_Site_Navigation$toUrl = function (page) {
 		case 'AboutP':
 			return 'about';
 		case 'JobsP':
-			return 'jobs';
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'jobs/',
+				_user$project$App_Site_Jobs_Navigation$toUrl(_p0._0));
 		case 'StoresP':
 			return A2(
 				_elm_lang$core$Basics_ops['++'],
@@ -11741,7 +11845,8 @@ var _user$project$App_Navigation$urlForArticle = F2(
 						case 'about':
 							return _user$project$App_Types$SiteP(_user$project$App_Site_Types$AboutP);
 						case 'jobs':
-							return _user$project$App_Types$SiteP(_user$project$App_Site_Types$JobsP);
+							return _user$project$App_Types$SiteP(
+								_user$project$App_Site_Types$JobsP(_user$project$App_Site_Jobs_Types$IndexP));
 						case 'stores':
 							return _user$project$App_Types$SiteP(
 								_user$project$App_Site_Types$StoresP(_user$project$App_Site_Stores_Types$IndexP));
@@ -11786,6 +11891,11 @@ var _user$project$App_Navigation$linkResolver = function (documentRef) {
 				return _user$project$App_Navigation$toHash(
 					_user$project$App_Types$BlogP(
 						A2(_user$project$App_Blog_Types$PostP, documentRef.id, documentRef.slug)));
+			case 'job-offer':
+				return _user$project$App_Navigation$toHash(
+					_user$project$App_Types$SiteP(
+						_user$project$App_Site_Types$JobsP(
+							A2(_user$project$App_Site_Jobs_Types$ShowP, documentRef.id, documentRef.slug))));
 			case 'store':
 				return _user$project$App_Navigation$toHash(
 					_user$project$App_Types$SiteP(
@@ -11797,6 +11907,16 @@ var _user$project$App_Navigation$linkResolver = function (documentRef) {
 		}
 	}();
 	return _user$project$Prismic$Url(url);
+};
+var _user$project$App_Navigation$urlForJob = function (job) {
+	var slug = A2(
+		_elm_lang$core$Maybe$withDefault,
+		'',
+		_elm_lang$core$List$head(job.slugs));
+	return _user$project$App_Navigation$toHash(
+		_user$project$App_Types$SiteP(
+			_user$project$App_Site_Types$JobsP(
+				A2(_user$project$App_Site_Jobs_Types$ShowP, job.id, slug))));
 };
 var _user$project$App_Navigation$urlForProduct = function (product) {
 	var slug = A2(
@@ -12237,7 +12357,10 @@ var _user$project$App_Common$viewHeader = function (currentPage) {
 									[]),
 								_elm_lang$core$Native_List.fromArray(
 									[
-										A2(mkHeaderLink, _user$project$App_Site_Types$JobsP, 'Jobs')
+										A2(
+										mkHeaderLink,
+										_user$project$App_Site_Types$JobsP(_user$project$App_Site_Jobs_Types$IndexP),
+										'Jobs')
 									])),
 								A2(
 								_elm_lang$html$Html$li,
@@ -12288,43 +12411,64 @@ var _user$project$App_Common$viewError = function (error) {
 				_elm_lang$core$Basics$toString(error))
 			]));
 };
-var _user$project$App_Common$viewLoading = A2(
-	_elm_lang$html$Html$section,
-	_elm_lang$core$Native_List.fromArray(
-		[
-			_elm_lang$html$Html_Attributes$id('page-header')
-		]),
-	_elm_lang$core$Native_List.fromArray(
-		[
-			A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(
-							_elm_lang$html$Html$h1,
-							_elm_lang$core$Native_List.fromArray(
-								[]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html$text('Loading...')
-								]))
-						]))
-				]))
-		]));
 var _user$project$App_Common$toCssUrl = function (_p0) {
 	var _p1 = _p0;
 	return A2(
 		_elm_lang$core$Basics_ops['++'],
 		'url(',
 		A2(_elm_lang$core$Basics_ops['++'], _p1._0, ')'));
+};
+var _user$project$App_Common$viewLoading = function (backgroundImageUrl) {
+	return A2(
+		_elm_lang$html$Html$section,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$id('page-header')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				A2(
+					_elm_lang$core$Maybe$withDefault,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					A2(
+						_elm_lang$core$Maybe$map,
+						function (url) {
+							return _elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html_Attributes$style(
+									_elm_lang$core$Native_List.fromArray(
+										[
+											{
+											ctor: '_Tuple2',
+											_0: 'background-image',
+											_1: _user$project$App_Common$toCssUrl(url)
+										}
+										]))
+								]);
+						},
+						backgroundImageUrl)),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$h1,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('Loading...')
+									]))
+							]))
+					]))
+			]));
 };
 var _user$project$App_Common$structuredTextAsHtml = _user$project$Prismic$structuredTextAsHtml(_user$project$App_Navigation$linkResolver);
 
@@ -12865,7 +13009,9 @@ var _user$project$App_Site_Article_View$viewMArticle = function (mArticle) {
 	var _p1 = mArticle;
 	if (_p1.ctor === 'Nothing') {
 		return _elm_lang$core$Native_List.fromArray(
-			[_user$project$App_Common$viewLoading]);
+			[
+				_user$project$App_Common$viewLoading(_elm_lang$core$Maybe$Nothing)
+			]);
 	} else {
 		return _user$project$App_Site_Article_View$viewArticle(_p1._0);
 	}
@@ -13626,6 +13772,603 @@ var _user$project$App_Site_Home_View$view = function (model) {
 			]));
 };
 
+var _user$project$App_Site_Jobs_Index_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		if (_p0.ctor === 'ArticleMsg') {
+			var _p1 = A2(_user$project$App_Site_Article_State$update, _p0._0, model.article);
+			var newArticle = _p1._0;
+			var articleCmd = _p1._1;
+			var globalMsgs = _p1._2;
+			return {
+				ctor: '_Tuple3',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{article: newArticle}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Index_Types$ArticleMsg, articleCmd),
+				_2: globalMsgs
+			};
+		} else {
+			if (_p0._0.ctor === 'Err') {
+				return {
+					ctor: '_Tuple3',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							jobs: _elm_lang$core$Result$Err(_p0._0._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			} else {
+				return {
+					ctor: '_Tuple3',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							jobs: _elm_lang$core$Result$Ok(
+								A2(
+									_elm_lang$core$List$map,
+									function (_) {
+										return _.data;
+									},
+									_p0._0._0._0.results))
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Native_List.fromArray(
+						[
+							_user$project$App_Types$SetPrismic(_p0._0._0._1)
+						])
+				};
+			}
+		}
+	});
+var _user$project$App_Site_Jobs_Index_State$init = function (prismic) {
+	var _p2 = A2(_user$project$App_Site_Article_State$init, prismic, 'jobs');
+	var article = _p2._0;
+	var articleCmd = _p2._1;
+	var model = {
+		article: article,
+		jobs: _elm_lang$core$Result$Ok(
+			_elm_lang$core$Native_List.fromArray(
+				[]))
+	};
+	return {
+		ctor: '_Tuple2',
+		_0: model,
+		_1: _elm_lang$core$Platform_Cmd$batch(
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Index_Types$ArticleMsg, articleCmd),
+					A3(
+					_elm_lang$core$Task$perform,
+					_elm_community$basics_extra$Basics_Extra$never,
+					_user$project$App_Site_Jobs_Index_Types$SetJobs,
+					_elm_lang$core$Task$toResult(
+						A2(
+							_user$project$Prismic$submit,
+							_user$project$App_Documents_Decoders$decodeJobOffer,
+							A2(
+								_user$project$Prismic$form,
+								'jobs',
+								_user$project$Prismic$fetchApi(prismic)))))
+				]))
+	};
+};
+
+var _user$project$App_Site_Jobs_Index_View$viewJob = function (job) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('job')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(
+						_user$project$App_Navigation$urlForJob(job))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$h3,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								_user$project$Prismic$getTexts(job.name))
+							])),
+						A2(
+						_elm_lang$html$Html$p,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								A2(
+									_elm_lang$core$Maybe$withDefault,
+									'No job profile',
+									A2(
+										_elm_lang$core$Maybe$map,
+										_user$project$Prismic$getText,
+										_user$project$Prismic$getFirstParagraph(job.profile))))
+							])),
+						A2(
+						_elm_lang$html$Html$strong,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Learn more')
+							]))
+					]))
+			]));
+};
+var _user$project$App_Site_Jobs_Index_View$viewJobsByService = F2(
+	function (jobs, _p0) {
+		var _p1 = _p0;
+		return _elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h2,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(_p1._1)
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('listing')
+					]),
+				A2(
+					_elm_lang$core$List$map,
+					_user$project$App_Site_Jobs_Index_View$viewJob,
+					A2(
+						_elm_lang$core$List$filter,
+						function (job) {
+							return _elm_lang$core$Native_Utils.eq(job.service, _p1._0);
+						},
+						jobs)))
+			]);
+	});
+var _user$project$App_Site_Jobs_Index_View$viewError = function (error) {
+	return _elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$pre,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(
+					_elm_lang$core$Basics$toString(error))
+				]))
+		]);
+};
+var _user$project$App_Site_Jobs_Index_View$viewJobs = function (model) {
+	return A2(
+		_elm_lang$html$Html$section,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$id('page-body'),
+				_elm_lang$html$Html_Attributes$style(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'margin-top', _1: '-120px'}
+					]))
+			]),
+		A3(
+			_elm_community$result_extra$Result_Extra$mapBoth,
+			_user$project$App_Site_Jobs_Index_View$viewError,
+			function (jobs) {
+				return A2(
+					_elm_lang$core$List$concatMap,
+					_user$project$App_Site_Jobs_Index_View$viewJobsByService(jobs),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Maybe$Just('Store'),
+							_1: 'Positions in our Stores'
+						},
+							{
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Maybe$Just('Office'),
+							_1: 'Positions in our Offices'
+						},
+							{
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Maybe$Just('Workshop'),
+							_1: 'Positions in our Workshops'
+						},
+							{ctor: '_Tuple2', _0: _elm_lang$core$Maybe$Nothing, _1: 'Other positions'}
+						]));
+			},
+			model.jobs));
+};
+var _user$project$App_Site_Jobs_Index_View$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('main'),
+				_elm_lang$html$Html_Attributes$id('jobs')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$App_Site_Jobs_Index_Types$ArticleMsg,
+				_user$project$App_Site_Article_View$view(model.article)),
+				_user$project$App_Site_Jobs_Index_View$viewJobs(model)
+			]));
+};
+
+var _user$project$App_Site_Jobs_Show_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		if (_p0.ctor === 'SetJob') {
+			var _p1 = _p0._0;
+			if (_p1.ctor === 'Err') {
+				return {
+					ctor: '_Tuple3',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							job: _elm_lang$core$Result$Err(_p1._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			} else {
+				var _p3 = _p1._0._1;
+				var _p2 = _elm_lang$core$List$head(_p1._0._0.results);
+				if (_p2.ctor === 'Nothing') {
+					return {
+						ctor: '_Tuple3',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								job: _elm_lang$core$Result$Ok(_elm_lang$core$Maybe$Nothing)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none,
+						_2: _elm_lang$core$Native_List.fromArray(
+							[
+								_user$project$App_Types$SetPrismic(_p3),
+								_user$project$App_Types$RenderNotFound
+							])
+					};
+				} else {
+					return {
+						ctor: '_Tuple3',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								job: _elm_lang$core$Result$Ok(
+									_elm_lang$core$Maybe$Just(_p2._0.data))
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none,
+						_2: _elm_lang$core$Native_List.fromArray(
+							[
+								_user$project$App_Types$SetPrismic(_p3)
+							])
+					};
+				}
+			}
+		} else {
+			var _p4 = A2(_user$project$App_Site_Article_State$update, _p0._0, model.article);
+			var newArticle = _p4._0;
+			var articleCmd = _p4._1;
+			var globalMsgs = _p4._2;
+			return {
+				ctor: '_Tuple3',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{article: newArticle}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Show_Types$ArticleMsg, articleCmd),
+				_2: globalMsgs
+			};
+		}
+	});
+var _user$project$App_Site_Jobs_Show_State$init = F2(
+	function (prismic, docId) {
+		var _p5 = A2(_user$project$App_Site_Article_State$init, prismic, 'jobs');
+		var article = _p5._0;
+		var articleCmd = _p5._1;
+		var model = {
+			article: article,
+			job: _elm_lang$core$Result$Ok(_elm_lang$core$Maybe$Nothing)
+		};
+		return {
+			ctor: '_Tuple2',
+			_0: model,
+			_1: _elm_lang$core$Platform_Cmd$batch(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Show_Types$ArticleMsg, articleCmd),
+						A3(
+						_elm_lang$core$Task$perform,
+						_elm_community$basics_extra$Basics_Extra$never,
+						_user$project$App_Site_Jobs_Show_Types$SetJob,
+						_elm_lang$core$Task$toResult(
+							A2(
+								_user$project$Prismic$submit,
+								_user$project$App_Documents_Decoders$decodeJobOffer,
+								A2(
+									_user$project$Prismic$query,
+									_elm_lang$core$Native_List.fromArray(
+										[
+											A2(_user$project$Prismic$at, 'document.id', docId)
+										]),
+									A2(
+										_user$project$Prismic$form,
+										'everything',
+										_user$project$Prismic$fetchApi(prismic))))))
+					]))
+		};
+	});
+
+var _user$project$App_Site_Jobs_Show_View$viewJob = F2(
+	function (backgroundImageUrl, job) {
+		return _elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$section,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$id('page-header')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{
+										ctor: '_Tuple2',
+										_0: 'background-image',
+										_1: _user$project$App_Common$toCssUrl(backgroundImageUrl)
+									}
+									]))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$h1,
+										_elm_lang$core$Native_List.fromArray(
+											[]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html$text(
+												_user$project$Prismic$getTexts(job.name))
+											]))
+									]))
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$section,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$id('page-body')
+					]),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$html$Html$h2,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html$text('About you')
+								]))
+						]),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_user$project$App_Common$structuredTextAsHtml(job.profile),
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Native_List.fromArray(
+								[
+									A2(
+									_elm_lang$html$Html$h2,
+									_elm_lang$core$Native_List.fromArray(
+										[]),
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html$text('Your responsibilities')
+										]))
+								]),
+							_user$project$App_Common$structuredTextAsHtml(job.jobDescription)))))
+			]);
+	});
+var _user$project$App_Site_Jobs_Show_View$viewMJob = F2(
+	function (backgroundImageUrl, mJob) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_user$project$App_Common$viewLoading(
+					_elm_lang$core$Maybe$Just(backgroundImageUrl))
+				]),
+			A2(
+				_elm_lang$core$Maybe$map,
+				_user$project$App_Site_Jobs_Show_View$viewJob(backgroundImageUrl),
+				mJob));
+	});
+var _user$project$App_Site_Jobs_Show_View$viewError = function (error) {
+	return _elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$pre,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(
+					_elm_lang$core$Basics$toString(error))
+				]))
+		]);
+};
+var _user$project$App_Site_Jobs_Show_View$getBackgroundImageUrl = function (model) {
+	return A2(
+		_elm_lang$core$Maybe$withDefault,
+		_user$project$Prismic$Url(''),
+		A2(
+			_elm_lang$core$Maybe$map,
+			function (article) {
+				return article.image.main.url;
+			},
+			A2(_elm_lang$core$Result$withDefault, _elm_lang$core$Maybe$Nothing, model.article.article)));
+};
+var _user$project$App_Site_Jobs_Show_View$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('main'),
+				_elm_lang$html$Html_Attributes$id('job')
+			]),
+		A3(
+			_elm_community$result_extra$Result_Extra$mapBoth,
+			_user$project$App_Site_Jobs_Show_View$viewError,
+			_user$project$App_Site_Jobs_Show_View$viewMJob(
+				_user$project$App_Site_Jobs_Show_View$getBackgroundImageUrl(model)),
+			model.job));
+};
+
+var _user$project$App_Site_Jobs_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		if (_p0.ctor === 'IndexMsg') {
+			var _p1 = model.content;
+			if (_p1.ctor === 'IndexC') {
+				var _p2 = A2(_user$project$App_Site_Jobs_Index_State$update, _p0._0, _p1._0);
+				var newIndex = _p2._0;
+				var indexCmd = _p2._1;
+				var globalMsgs = _p2._2;
+				return {
+					ctor: '_Tuple3',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							content: _user$project$App_Site_Jobs_Types$IndexC(newIndex)
+						}),
+					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Types$IndexMsg, indexCmd),
+					_2: globalMsgs
+				};
+			} else {
+				return {
+					ctor: '_Tuple3',
+					_0: model,
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			}
+		} else {
+			var _p3 = model.content;
+			if (_p3.ctor === 'ShowC') {
+				var _p4 = A2(_user$project$App_Site_Jobs_Show_State$update, _p0._0, _p3._0);
+				var newJob = _p4._0;
+				var showCmd = _p4._1;
+				var globalMsgs = _p4._2;
+				return {
+					ctor: '_Tuple3',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							content: _user$project$App_Site_Jobs_Types$ShowC(newJob)
+						}),
+					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Types$ShowMsg, showCmd),
+					_2: globalMsgs
+				};
+			} else {
+				return {
+					ctor: '_Tuple3',
+					_0: model,
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			}
+		}
+	});
+var _user$project$App_Site_Jobs_State$init = F2(
+	function (prismic, page) {
+		var _p5 = page;
+		if (_p5.ctor === 'IndexP') {
+			var _p6 = _user$project$App_Site_Jobs_Index_State$init(prismic);
+			var index = _p6._0;
+			var indexCmd = _p6._1;
+			return {
+				ctor: '_Tuple2',
+				_0: {
+					page: page,
+					content: _user$project$App_Site_Jobs_Types$IndexC(index)
+				},
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Types$IndexMsg, indexCmd)
+			};
+		} else {
+			var _p7 = A2(_user$project$App_Site_Jobs_Show_State$init, prismic, _p5._0);
+			var job = _p7._0;
+			var showCmd = _p7._1;
+			return {
+				ctor: '_Tuple2',
+				_0: {
+					page: page,
+					content: _user$project$App_Site_Jobs_Types$ShowC(job)
+				},
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Jobs_Types$ShowMsg, showCmd)
+			};
+		}
+	});
+
+var _user$project$App_Site_Jobs_View$view = function (model) {
+	var _p0 = model.content;
+	switch (_p0.ctor) {
+		case 'IndexC':
+			return A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$App_Site_Jobs_Types$IndexMsg,
+				_user$project$App_Site_Jobs_Index_View$view(_p0._0));
+		case 'ShowC':
+			return A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$App_Site_Jobs_Types$ShowMsg,
+				_user$project$App_Site_Jobs_Show_View$view(_p0._0));
+		default:
+			return A2(
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('No job content')
+					]));
+	}
+};
+
 var _user$project$App_Site_Products_Index_State$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
@@ -14291,6 +15034,8 @@ var _user$project$App_Site_Search_Results_Decoders$decodeArticleR = function () 
 				return A2(_elm_lang$core$Json_Decode$object1, _user$project$App_Site_Search_Results_Types$BlogPostR, _user$project$App_Documents_Decoders$decodeBlogPost);
 			case 'store':
 				return A2(_elm_lang$core$Json_Decode$object1, _user$project$App_Site_Search_Results_Types$StoreR, _user$project$App_Documents_Decoders$decodeStore);
+			case 'job-offer':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$App_Site_Search_Results_Types$JobR, _user$project$App_Documents_Decoders$decodeJobOffer);
 			default:
 				return _elm_lang$core$Json_Decode$fail(
 					A2(_elm_lang$core$Basics_ops['++'], 'Unexpected document type: ', typeStr));
@@ -14442,7 +15187,7 @@ var _user$project$App_Site_Search_Results_State$init = F2(
 											_user$project$Prismic$any,
 											'document.type',
 											_elm_lang$core$Native_List.fromArray(
-												['blog-post', 'article', 'store'])),
+												['blog-post', 'article', 'job-offer', 'store'])),
 											A2(_user$project$Prismic$fulltext, 'document', query)
 										]),
 									A2(
@@ -14586,7 +15331,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 										]))
 								]))
 						]));
-			default:
+			case 'JobR':
 				var _p4 = _p0._0;
 				return A2(
 					_elm_lang$html$Html$article,
@@ -14599,7 +15344,55 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 							_elm_lang$core$Native_List.fromArray(
 								[
 									_elm_lang$html$Html_Attributes$href(
-									_user$project$App_Navigation$urlForStore(_p4))
+									_user$project$App_Navigation$urlForJob(_p4))
+								]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									A2(
+									_elm_lang$html$Html$h3,
+									_elm_lang$core$Native_List.fromArray(
+										[]),
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html$text('Join us - '),
+											_elm_lang$html$Html$text(
+											_user$project$Prismic$getTexts(_p4.name))
+										])),
+									A2(
+									_elm_lang$html$Html$em,
+									_elm_lang$core$Native_List.fromArray(
+										[]),
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html$text(
+											_user$project$App_Navigation$urlForJob(_p4))
+										])),
+									A2(
+									_elm_lang$html$Html$p,
+									_elm_lang$core$Native_List.fromArray(
+										[]),
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html$text(
+											_user$project$App_Site_Search_Results_View$excerpt(
+												_user$project$Prismic$getTexts(_p4.profile)))
+										]))
+								]))
+						]));
+			default:
+				var _p5 = _p0._0;
+				return A2(
+					_elm_lang$html$Html$article,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$html$Html$a,
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html_Attributes$href(
+									_user$project$App_Navigation$urlForStore(_p5))
 								]),
 							_elm_lang$core$Native_List.fromArray(
 								[
@@ -14611,7 +15404,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 										[
 											_elm_lang$html$Html$text('Les Bonnes Choses Store - '),
 											_elm_lang$html$Html$text(
-											_user$project$Prismic$getTexts(_p4.name))
+											_user$project$Prismic$getTexts(_p5.name))
 										])),
 									A2(
 									_elm_lang$html$Html$em,
@@ -14620,7 +15413,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 									_elm_lang$core$Native_List.fromArray(
 										[
 											_elm_lang$html$Html$text(
-											_user$project$App_Navigation$urlForStore(_p4))
+											_user$project$App_Navigation$urlForStore(_p5))
 										])),
 									A2(
 									_elm_lang$html$Html$p,
@@ -14633,7 +15426,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 												_elm_lang$core$String$join,
 												' ',
 												_elm_lang$core$Native_List.fromArray(
-													[_p4.address, _p4.city, _p4.zipcode, _p4.country])))
+													[_p5.address, _p5.city, _p5.zipcode, _p5.country])))
 										]))
 								]))
 						]));
@@ -14677,7 +15470,7 @@ var _user$project$App_Site_Search_Results_View$viewArticles = F2(
 var _user$project$App_Site_Search_Results_View$viewProductR = function (productR) {
 	var viewItem = F2(
 		function (mkUrl, item) {
-			var _p5 = A2(
+			var _p6 = A2(
 				_elm_lang$core$Maybe$withDefault,
 				_user$project$Prismic$Url(''),
 				A2(
@@ -14686,7 +15479,7 @@ var _user$project$App_Site_Search_Results_View$viewProductR = function (productR
 						return _.url;
 					},
 					A2(_elm_lang$core$Dict$get, 'icon', item.image.views)));
-			var iconImage = _p5._0;
+			var iconImage = _p6._0;
 			return A2(
 				_elm_lang$html$Html$li,
 				_elm_lang$core$Native_List.fromArray(
@@ -14722,11 +15515,11 @@ var _user$project$App_Site_Search_Results_View$viewProductR = function (productR
 							]))
 					]));
 		});
-	var _p6 = productR;
-	if (_p6.ctor === 'ProductR') {
-		return A2(viewItem, _user$project$App_Navigation$urlForProduct, _p6._0);
+	var _p7 = productR;
+	if (_p7.ctor === 'ProductR') {
+		return A2(viewItem, _user$project$App_Navigation$urlForProduct, _p7._0);
 	} else {
-		return A2(viewItem, _user$project$App_Navigation$urlForSelection, _p6._0);
+		return A2(viewItem, _user$project$App_Navigation$urlForSelection, _p7._0);
 	}
 };
 var _user$project$App_Site_Search_Results_View$viewProducts = function (productResults) {
@@ -15630,13 +16423,40 @@ var _user$project$App_Site_State$update = F2(
 							[])
 					};
 				}
-			case 'ProductsMsg':
+			case 'JobsMsg':
 				var _p5 = model.content;
-				if (_p5.ctor === 'ProductsC') {
-					var _p6 = A2(_user$project$App_Site_Products_State$update, _p0._0, _p5._0);
-					var newProducts = _p6._0;
-					var productsCmd = _p6._1;
+				if (_p5.ctor === 'JobsC') {
+					var _p6 = A2(_user$project$App_Site_Jobs_State$update, _p0._0, _p5._0);
+					var newJobs = _p6._0;
+					var jobsCmd = _p6._1;
 					var globalMsgs = _p6._2;
+					var newModel = _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							content: _user$project$App_Site_Types$JobsC(newJobs)
+						});
+					return {
+						ctor: '_Tuple3',
+						_0: newModel,
+						_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Types$JobsMsg, jobsCmd),
+						_2: globalMsgs
+					};
+				} else {
+					return {
+						ctor: '_Tuple3',
+						_0: model,
+						_1: _elm_lang$core$Platform_Cmd$none,
+						_2: _elm_lang$core$Native_List.fromArray(
+							[])
+					};
+				}
+			case 'ProductsMsg':
+				var _p7 = model.content;
+				if (_p7.ctor === 'ProductsC') {
+					var _p8 = A2(_user$project$App_Site_Products_State$update, _p0._0, _p7._0);
+					var newProducts = _p8._0;
+					var productsCmd = _p8._1;
+					var globalMsgs = _p8._2;
 					var newModel = _elm_lang$core$Native_Utils.update(
 						model,
 						{
@@ -15658,12 +16478,12 @@ var _user$project$App_Site_State$update = F2(
 					};
 				}
 			case 'SearchMsg':
-				var _p7 = model.content;
-				if (_p7.ctor === 'SearchC') {
-					var _p8 = A2(_user$project$App_Site_Search_State$update, _p0._0, _p7._0);
-					var newSearch = _p8._0;
-					var searchCmd = _p8._1;
-					var globalMsgs = _p8._2;
+				var _p9 = model.content;
+				if (_p9.ctor === 'SearchC') {
+					var _p10 = A2(_user$project$App_Site_Search_State$update, _p0._0, _p9._0);
+					var newSearch = _p10._0;
+					var searchCmd = _p10._1;
+					var globalMsgs = _p10._2;
 					var newModel = _elm_lang$core$Native_Utils.update(
 						model,
 						{
@@ -15685,12 +16505,12 @@ var _user$project$App_Site_State$update = F2(
 					};
 				}
 			case 'SelectionsMsg':
-				var _p9 = model.content;
-				if (_p9.ctor === 'SelectionsC') {
-					var _p10 = A2(_user$project$App_Site_Selections_State$update, _p0._0, _p9._0);
-					var newSelections = _p10._0;
-					var selectionsCmd = _p10._1;
-					var globalMsgs = _p10._2;
+				var _p11 = model.content;
+				if (_p11.ctor === 'SelectionsC') {
+					var _p12 = A2(_user$project$App_Site_Selections_State$update, _p0._0, _p11._0);
+					var newSelections = _p12._0;
+					var selectionsCmd = _p12._1;
+					var globalMsgs = _p12._2;
 					var newModel = _elm_lang$core$Native_Utils.update(
 						model,
 						{
@@ -15712,12 +16532,12 @@ var _user$project$App_Site_State$update = F2(
 					};
 				}
 			default:
-				var _p11 = model.content;
-				if (_p11.ctor === 'StoresC') {
-					var _p12 = A2(_user$project$App_Site_Stores_State$update, _p0._0, _p11._0);
-					var newStores = _p12._0;
-					var storesCmd = _p12._1;
-					var globalMsgs = _p12._2;
+				var _p13 = model.content;
+				if (_p13.ctor === 'StoresC') {
+					var _p14 = A2(_user$project$App_Site_Stores_State$update, _p0._0, _p13._0);
+					var newStores = _p14._0;
+					var storesCmd = _p14._1;
+					var globalMsgs = _p14._2;
 					var newModel = _elm_lang$core$Native_Utils.update(
 						model,
 						{
@@ -15742,9 +16562,9 @@ var _user$project$App_Site_State$update = F2(
 	});
 var _user$project$App_Site_State$initArticle = F4(
 	function (prismic, page, bookmarkName, model) {
-		var _p13 = A2(_user$project$App_Site_Article_State$init, prismic, bookmarkName);
-		var article = _p13._0;
-		var articleCmd = _p13._1;
+		var _p15 = A2(_user$project$App_Site_Article_State$init, prismic, bookmarkName);
+		var article = _p15._0;
+		var articleCmd = _p15._1;
 		var newModel = _elm_lang$core$Native_Utils.update(
 			model,
 			{
@@ -15765,16 +16585,16 @@ var _user$project$App_Site_State$init = F2(
 		var initWith = function (bookmark) {
 			return A4(_user$project$App_Site_State$initArticle, prismic, page, bookmark, model);
 		};
-		var _p14 = page;
-		switch (_p14.ctor) {
+		var _p16 = page;
+		switch (_p16.ctor) {
 			case 'HomeP':
-				var _p15 = _user$project$App_Site_Home_State$init(prismic);
-				var home = _p15._0;
-				var homeCmd = _p15._1;
+				var _p17 = _user$project$App_Site_Home_State$init(prismic);
+				var home = _p17._0;
+				var homeCmd = _p17._1;
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{
-						page: _p14,
+						page: _p16,
 						content: _user$project$App_Site_Types$HomeC(home)
 					});
 				return A2(
@@ -15787,15 +16607,30 @@ var _user$project$App_Site_State$init = F2(
 			case 'AboutP':
 				return initWith('about');
 			case 'JobsP':
-				return initWith('jobs');
-			case 'ProductsP':
-				var _p16 = A2(_user$project$App_Site_Products_State$init, prismic, _p14._0);
-				var products = _p16._0;
-				var productsCmd = _p16._1;
+				var _p18 = A2(_user$project$App_Site_Jobs_State$init, prismic, _p16._0);
+				var jobs = _p18._0;
+				var jobsCmd = _p18._1;
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{
-						page: _p14,
+						page: _p16,
+						content: _user$project$App_Site_Types$JobsC(jobs)
+					});
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					newModel,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Types$JobsMsg, jobsCmd)
+						]));
+			case 'ProductsP':
+				var _p19 = A2(_user$project$App_Site_Products_State$init, prismic, _p16._0);
+				var products = _p19._0;
+				var productsCmd = _p19._1;
+				var newModel = _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						page: _p16,
 						content: _user$project$App_Site_Types$ProductsC(products)
 					});
 				return A2(
@@ -15806,13 +16641,13 @@ var _user$project$App_Site_State$init = F2(
 							A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Types$ProductsMsg, productsCmd)
 						]));
 			case 'SearchP':
-				var _p17 = A2(_user$project$App_Site_Search_State$init, prismic, _p14._0);
-				var search = _p17._0;
-				var searchCmd = _p17._1;
+				var _p20 = A2(_user$project$App_Site_Search_State$init, prismic, _p16._0);
+				var search = _p20._0;
+				var searchCmd = _p20._1;
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{
-						page: _p14,
+						page: _p16,
 						content: _user$project$App_Site_Types$SearchC(search)
 					});
 				return A2(
@@ -15823,13 +16658,13 @@ var _user$project$App_Site_State$init = F2(
 							A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Types$SearchMsg, searchCmd)
 						]));
 			case 'SelectionsP':
-				var _p18 = A2(_user$project$App_Site_Selections_State$init, prismic, _p14._0);
-				var selections = _p18._0;
-				var selectionsCmd = _p18._1;
+				var _p21 = A2(_user$project$App_Site_Selections_State$init, prismic, _p16._0);
+				var selections = _p21._0;
+				var selectionsCmd = _p21._1;
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{
-						page: _p14,
+						page: _p16,
 						content: _user$project$App_Site_Types$SelectionsC(selections)
 					});
 				return A2(
@@ -15840,13 +16675,13 @@ var _user$project$App_Site_State$init = F2(
 							A2(_elm_lang$core$Platform_Cmd$map, _user$project$App_Site_Types$SelectionsMsg, selectionsCmd)
 						]));
 			default:
-				var _p19 = A2(_user$project$App_Site_Stores_State$init, prismic, _p14._0);
-				var stores = _p19._0;
-				var storesCmd = _p19._1;
+				var _p22 = A2(_user$project$App_Site_Stores_State$init, prismic, _p16._0);
+				var stores = _p22._0;
+				var storesCmd = _p22._1;
 				var newModel = _elm_lang$core$Native_Utils.update(
 					model,
 					{
-						page: _p14,
+						page: _p16,
 						content: _user$project$App_Site_Types$StoresC(stores)
 					});
 				return A2(
@@ -16174,7 +17009,9 @@ var _user$project$App_Site_Stores_Show_View$viewMStore = function (mStore) {
 	return A2(
 		_elm_lang$core$Maybe$withDefault,
 		_elm_lang$core$Native_List.fromArray(
-			[_user$project$App_Common$viewLoading]),
+			[
+				_user$project$App_Common$viewLoading(_elm_lang$core$Maybe$Nothing)
+			]),
 		A2(_elm_lang$core$Maybe$map, _user$project$App_Site_Stores_Show_View$viewStore, mStore));
 };
 var _user$project$App_Site_Stores_Show_View$viewError = function (error) {
@@ -16240,6 +17077,11 @@ var _user$project$App_Site_View$viewContent = function (model) {
 				_elm_lang$html$Html_App$map,
 				_user$project$App_Site_Types$HomeMsg,
 				_user$project$App_Site_Home_View$view(_p0._0));
+		case 'JobsC':
+			return A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$App_Site_Types$JobsMsg,
+				_user$project$App_Site_Jobs_View$view(_p0._0));
 		case 'ProductsC':
 			return A2(
 				_elm_lang$html$Html_App$map,
