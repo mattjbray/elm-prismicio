@@ -8781,11 +8781,576 @@ var _evancz$url_parser$UrlParser$format = F2(
 				}));
 	});
 
-var _user$project$Prismic_Types$Cache$ = F5(
+var _user$project$Prismic$setInCache = F3(
+	function (request, response, cache) {
+		var id = cache.nextRequestId;
+		return _elm_lang$core$Native_Utils.update(
+			cache,
+			{
+				nextRequestId: id + 1,
+				requests: A3(_elm_lang$core$Dict$insert, id, request, cache.requests),
+				responses: A3(_elm_lang$core$Dict$insert, id, response, cache.responses)
+			});
+	});
+var _user$project$Prismic$getFromCache = F2(
+	function (request, cache) {
+		var mRequestId = _elm_lang$core$List$head(
+			A2(
+				_elm_lang$core$List$map,
+				_elm_lang$core$Basics$fst,
+				A2(
+					_elm_lang$core$List$filter,
+					function (_p0) {
+						var _p1 = _p0;
+						return _elm_lang$core$Native_Utils.eq(_p1._1, request);
+					},
+					_elm_lang$core$Dict$toList(cache.requests))));
+		var mResponse = A2(
+			_elm_lang$core$Maybe$andThen,
+			mRequestId,
+			function (id) {
+				return A2(_elm_lang$core$Dict$get, id, cache.responses);
+			});
+		return mResponse;
+	});
+var _user$project$Prismic$predicatesToStr = function (predicates) {
+	var wrapQuotes = function (value) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'\"',
+			A2(_elm_lang$core$Basics_ops['++'], value, '\"'));
+	};
+	var toStrList = function (values) {
+		var valueStrs = A2(
+			_elm_lang$core$String$join,
+			', ',
+			A2(_elm_lang$core$List$map, wrapQuotes, values));
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'[',
+			A2(_elm_lang$core$Basics_ops['++'], valueStrs, ']'));
+	};
+	var predicateToStr = function (predicate) {
+		var query = function () {
+			var _p2 = predicate;
+			switch (_p2.ctor) {
+				case 'At':
+					return A2(
+						_elm_lang$core$Basics_ops['++'],
+						'at(',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_p2._0,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								', ',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									wrapQuotes(_p2._1),
+									')'))));
+				case 'AtL':
+					return A2(
+						_elm_lang$core$Basics_ops['++'],
+						'at(',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_p2._0,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								', ',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									toStrList(_p2._1),
+									')'))));
+				case 'Any':
+					return A2(
+						_elm_lang$core$Basics_ops['++'],
+						'any(',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_p2._0,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								', ',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									toStrList(_p2._1),
+									')'))));
+				default:
+					return A2(
+						_elm_lang$core$Basics_ops['++'],
+						'fulltext(',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_p2._0,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								', ',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									wrapQuotes(_p2._1),
+									')'))));
+			}
+		}();
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'[:d = ',
+			A2(_elm_lang$core$Basics_ops['++'], query, ']'));
+	};
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		'[',
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			_elm_lang$core$String$concat(
+				A2(_elm_lang$core$List$map, predicateToStr, predicates)),
+			']'));
+};
+var _user$project$Prismic$getRefById = F2(
+	function (refId, api) {
+		return _elm_lang$core$List$head(
+			A2(
+				_elm_lang$core$List$filter,
+				function (r) {
+					return _elm_lang$core$Native_Utils.eq(r.id, refId);
+				},
+				api.refs));
+	});
+var _user$project$Prismic$getJson = F2(
+	function (decoder, url) {
+		var request = {
+			verb: 'GET',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Accept', _1: 'application/json'}
+				]),
+			url: url,
+			body: _evancz$elm_http$Http$empty
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+var _user$project$Prismic$getText = function (field) {
+	var _p3 = field;
+	switch (_p3.ctor) {
+		case 'SSimple':
+			return _p3._0.text;
+		case 'SImage':
+			return A2(_elm_lang$core$Maybe$withDefault, '<image>', _p3._0.alt);
+		default:
+			return '';
+	}
+};
+var _user$project$Prismic$getTexts = function (fields) {
+	return A2(
+		_elm_lang$core$String$join,
+		' ',
+		A2(_elm_lang$core$List$map, _user$project$Prismic$getText, fields));
+};
+var _user$project$Prismic$getFirstImage = function (structuredText) {
+	var getImage = function (field) {
+		var _p4 = field;
+		if (_p4.ctor === 'SImage') {
+			return _elm_lang$core$Maybe$Just(_p4._0);
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	};
+	return _elm_lang$core$List$head(
+		A2(_elm_lang$core$List$filterMap, getImage, structuredText));
+};
+var _user$project$Prismic$getFirstParagraph = function (structuredText) {
+	var isParagraph = function (field) {
+		var _p5 = field;
+		if (_p5.ctor === 'SSimple') {
+			var _p6 = _p5._0.fieldType;
+			if (_p6.ctor === 'Paragraph') {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	};
+	return _elm_lang$core$List$head(
+		A2(_elm_lang$core$List$filter, isParagraph, structuredText));
+};
+var _user$project$Prismic$getTitle = function (structuredText) {
+	var isTitle = function (field) {
+		var _p7 = field;
+		if (_p7.ctor === 'SSimple') {
+			var _p8 = _p7._0.fieldType;
+			switch (_p8.ctor) {
+				case 'Heading1':
+					return true;
+				case 'Heading2':
+					return true;
+				case 'Heading3':
+					return true;
+				default:
+					return false;
+			}
+		} else {
+			return false;
+		}
+	};
+	return _elm_lang$core$List$head(
+		A2(_elm_lang$core$List$filter, isTitle, structuredText));
+};
+var _user$project$Prismic$linkAsHtmlWith = F3(
+	function (linkResolver, link, childs) {
+		var _p9 = link;
+		if (_p9.ctor === 'DocumentLink') {
+			var _p10 = linkResolver(_p9._0);
+			var url = _p10._0;
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(url)
+					]),
+				childs);
+		} else {
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(_p9._0._0)
+					]),
+				childs);
+		}
+	});
+var _user$project$Prismic$linkAsHtml = F2(
+	function (linkResolver, link) {
+		var _p11 = link;
+		if (_p11.ctor === 'DocumentLink') {
+			var _p13 = _p11._0;
+			var _p12 = linkResolver(_p13);
+			var url = _p12._0;
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(url)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(_p13.slug))
+					]));
+		} else {
+			var _p14 = _p11._0._0;
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(_p14)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(_p14)
+					]));
+		}
+	});
+var _user$project$Prismic$embedAsHtml = function (embed) {
+	var _p15 = embed;
+	if (_p15.ctor === 'EmbedVideo') {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html_Attributes$property,
+					'innerHTML',
+					_elm_lang$core$Json_Encode$string(_p15._0.html))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html_Attributes$property,
+					'innerHTML',
+					_elm_lang$core$Json_Encode$string(_p15._0.html))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	}
+};
+var _user$project$Prismic$imageAsHtml = function (image) {
+	var _p16 = image.url;
+	var urlStr = _p16._0;
+	return A2(
+		_elm_lang$html$Html$img,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$src(urlStr)
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _user$project$Prismic$simpleFieldAsHtml = F2(
+	function (linkResolver, field) {
+		var spanEl = function (span) {
+			var _p17 = span.spanType;
+			switch (_p17.ctor) {
+				case 'Em':
+					return _elm_lang$html$Html$em(
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				case 'Strong':
+					return _elm_lang$html$Html$strong(
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				default:
+					return A2(_user$project$Prismic$linkAsHtmlWith, linkResolver, _p17._0);
+			}
+		};
+		var foldFn = F2(
+			function (span, _p18) {
+				var _p19 = _p18;
+				var middle = A3(_elm_lang$core$String$slice, span.start, span.end, field.text);
+				var beginning = A3(_elm_lang$core$String$slice, _p19._1, span.start, field.text);
+				return {
+					ctor: '_Tuple2',
+					_0: A2(
+						_elm_lang$core$Basics_ops['++'],
+						_p19._0,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(beginning),
+								A2(
+								spanEl,
+								span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(middle)
+									]))
+							])),
+					_1: span.end
+				};
+			});
+		var el = function () {
+			var _p20 = field.fieldType;
+			switch (_p20.ctor) {
+				case 'Heading1':
+					return _elm_lang$html$Html$h1;
+				case 'Heading2':
+					return _elm_lang$html$Html$h2;
+				case 'Heading3':
+					return _elm_lang$html$Html$h3;
+				case 'Paragraph':
+					return _elm_lang$html$Html$p;
+				default:
+					return F2(
+						function (attrs, childs) {
+							return A2(
+								_elm_lang$html$Html$ul,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(_elm_lang$html$Html$li, attrs, childs)
+									]));
+						});
+			}
+		}();
+		return A2(
+			el,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			function (_p21) {
+				var _p22 = _p21;
+				return A2(
+					_elm_lang$core$Basics_ops['++'],
+					_p22._0,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$String$dropLeft, _p22._1, field.text))
+						]));
+			}(
+				A3(
+					_elm_lang$core$List$foldl,
+					foldFn,
+					{
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_List.fromArray(
+							[]),
+						_1: 0
+					},
+					A2(
+						_elm_lang$core$List$sortBy,
+						function (_) {
+							return _.start;
+						},
+						field.spans))));
+	});
+var _user$project$Prismic$structuredTextFieldAsHtml = F2(
+	function (linkResolver, field) {
+		var _p23 = field;
+		switch (_p23.ctor) {
+			case 'SSimple':
+				return A2(_user$project$Prismic$simpleFieldAsHtml, linkResolver, _p23._0);
+			case 'SImage':
+				return _user$project$Prismic$imageAsHtml(_p23._0);
+			default:
+				return _user$project$Prismic$embedAsHtml(_p23._0);
+		}
+	});
+var _user$project$Prismic$structuredTextAsHtml = function (linkResolver) {
+	return _elm_lang$core$List$map(
+		_user$project$Prismic$structuredTextFieldAsHtml(linkResolver));
+};
+var _user$project$Prismic$asHtml = F2(
+	function (linkResolver, field) {
+		var _p24 = field;
+		switch (_p24.ctor) {
+			case 'Text':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p24._0)
+						]));
+			case 'Date':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p24._0)
+						]));
+			case 'Number':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							_elm_lang$core$Basics$toString(_p24._0))
+						]));
+			case 'Select':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(_p24._0)
+						]));
+			case 'Color':
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p24._0))
+						]));
+			case 'Link':
+				return A2(_user$project$Prismic$linkAsHtml, linkResolver, _p24._0);
+			case 'Image':
+				return _user$project$Prismic$imageAsHtml(_p24._0.main);
+			default:
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					A2(_user$project$Prismic$structuredTextAsHtml, linkResolver, _p24._0));
+		}
+	});
+var _user$project$Prismic$asHtmlWithDefault = F5(
+	function (linkResolver, $default, documentType, fieldName, data) {
+		return A2(
+			_elm_lang$core$Maybe$withDefault,
+			$default,
+			A2(
+				_elm_lang$core$Maybe$andThen,
+				A2(
+					_elm_lang$core$Maybe$andThen,
+					A2(_elm_lang$core$Dict$get, documentType, data),
+					_elm_lang$core$Dict$get(fieldName)),
+				function (docs) {
+					return _elm_lang$core$Maybe$Just(
+						function () {
+							var _p25 = docs;
+							if ((_p25.ctor === '::') && (_p25._1.ctor === '[]')) {
+								return A2(_user$project$Prismic$asHtml, linkResolver, _p25._0);
+							} else {
+								return A2(
+									_elm_lang$html$Html$div,
+									_elm_lang$core$Native_List.fromArray(
+										[]),
+									A2(
+										_elm_lang$core$List$map,
+										_user$project$Prismic$asHtml(linkResolver),
+										docs));
+							}
+						}());
+				}));
+	});
+var _user$project$Prismic$nullOr = function (decoder) {
+	return _elm_lang$core$Json_Decode$oneOf(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
+				A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Maybe$Just, decoder)
+			]));
+};
+var _user$project$Prismic$maybeWithDefault = F2(
+	function ($default, decoder) {
+		return A2(
+			_elm_lang$core$Json_Decode$andThen,
+			_elm_lang$core$Json_Decode$maybe(decoder),
+			function (_p26) {
+				return _elm_lang$core$Json_Decode$succeed(
+					A2(_elm_lang$core$Maybe$withDefault, $default, _p26));
+			});
+	});
+var _user$project$Prismic_ops = _user$project$Prismic_ops || {};
+_user$project$Prismic_ops['|:'] = _elm_lang$core$Json_Decode$object2(
+	F2(
+		function (x, y) {
+			return x(y);
+		}));
+var _user$project$Prismic$none = _elm_lang$core$Task$map(_elm_lang$core$Basics$identity);
+var _user$project$Prismic$query = F2(
+	function (predicates, requestTask) {
+		var addQuery = function (_p27) {
+			var _p28 = _p27;
+			return _elm_lang$core$Task$succeed(
+				{
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						_p28._0,
+						{
+							q: _user$project$Prismic$predicatesToStr(predicates)
+						}),
+					_1: _p28._1
+				});
+		};
+		return A2(_elm_lang$core$Task$andThen, requestTask, addQuery);
+	});
+var _user$project$Prismic$init = function (url) {
+	return {api: _elm_lang$core$Maybe$Nothing, url: url, nextRequestId: 0, requests: _elm_lang$core$Dict$empty, responses: _elm_lang$core$Dict$empty};
+};
+var _user$project$Prismic$Model$ = F5(
 	function (a, b, c, d, e) {
 		return {api: a, url: b, nextRequestId: c, requests: d, responses: e};
 	});
-var _user$project$Prismic_Types$Api = function (a) {
+var _user$project$Prismic$Api = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -8806,27 +9371,40 @@ var _user$project$Prismic_Types$Api = function (a) {
 		};
 	};
 };
-var _user$project$Prismic_Types$RefProperties = F4(
+var _user$project$Prismic$RefProperties = F4(
 	function (a, b, c, d) {
 		return {id: a, ref: b, label: c, isMasterRef: d};
 	});
-var _user$project$Prismic_Types$Form = F6(
+var _user$project$Prismic$Form = F6(
 	function (a, b, c, d, e, f) {
 		return {method: a, enctype: b, action: c, fields: d, rel: e, name: f};
 	});
-var _user$project$Prismic_Types$FormField = F3(
+var _user$project$Prismic$FormField = F3(
 	function (a, b, c) {
 		return {fieldType: a, multiple: b, $default: c};
 	});
-var _user$project$Prismic_Types$Experiments = F2(
+var _user$project$Prismic$Experiments = F2(
 	function (a, b) {
 		return {draft: a, running: b};
 	});
-var _user$project$Prismic_Types$Request = F3(
+var _user$project$Prismic$decodeExperiments = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Experiments),
+		A2(
+			_elm_lang$core$Json_Decode_ops[':='],
+			'draft',
+			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+	A2(
+		_elm_lang$core$Json_Decode_ops[':='],
+		'running',
+		_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string)));
+var _user$project$Prismic$Request = F3(
 	function (a, b, c) {
 		return {action: a, ref: b, q: c};
 	});
-var _user$project$Prismic_Types$Response = function (a) {
+var _user$project$Prismic$Response = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -8847,35 +9425,38 @@ var _user$project$Prismic_Types$Response = function (a) {
 		};
 	};
 };
-var _user$project$Prismic_Types$SearchResult = F8(
+var _user$project$Prismic$SearchResult = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {data: a, href: b, id: c, linkedDocuments: d, slugs: e, tags: f, resultType: g, uid: h};
 	});
-var _user$project$Prismic_Types$LinkedDocument = F4(
-	function (a, b, c, d) {
-		return {id: a, slug: b, tags: c, linkedDocumentType: d};
-	});
-var _user$project$Prismic_Types$SimpleStructuredTextField = F3(
+var _user$project$Prismic$SimpleStructuredTextField = F3(
 	function (a, b, c) {
 		return {fieldType: a, text: b, spans: c};
 	});
-var _user$project$Prismic_Types$Span = F3(
+var _user$project$Prismic$Span = F3(
 	function (a, b, c) {
 		return {start: a, end: b, spanType: c};
 	});
-var _user$project$Prismic_Types$ImageField = F2(
+var _user$project$Prismic$ImageViews = F2(
 	function (a, b) {
 		return {main: a, views: b};
 	});
-var _user$project$Prismic_Types$ImageProperties = F4(
+var _user$project$Prismic$ImageProperties = F4(
 	function (a, b, c, d) {
 		return {alt: a, copyright: b, url: c, dimensions: d};
 	});
-var _user$project$Prismic_Types$ImageDimensions = F2(
+var _user$project$Prismic$ImageDimensions = F2(
 	function (a, b) {
 		return {width: a, height: b};
 	});
-var _user$project$Prismic_Types$EmbedVideoProperties = function (a) {
+var _user$project$Prismic$decodeImageDimensions = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageDimensions),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int)),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'height', _elm_lang$core$Json_Decode$int));
+var _user$project$Prismic$EmbedVideoProperties = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -8902,7 +9483,7 @@ var _user$project$Prismic_Types$EmbedVideoProperties = function (a) {
 		};
 	};
 };
-var _user$project$Prismic_Types$EmbedRichProperties = function (a) {
+var _user$project$Prismic$EmbedRichProperties = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -8927,85 +9508,883 @@ var _user$project$Prismic_Types$EmbedRichProperties = function (a) {
 		};
 	};
 };
-var _user$project$Prismic_Types$Ref = function (a) {
-	return {ctor: 'Ref', _0: a};
-};
-var _user$project$Prismic_Types$Integer = {ctor: 'Integer'};
-var _user$project$Prismic_Types$String = {ctor: 'String'};
-var _user$project$Prismic_Types$SubmitRequestError = function (a) {
-	return {ctor: 'SubmitRequestError', _0: a};
-};
-var _user$project$Prismic_Types$FetchApiError = function (a) {
-	return {ctor: 'FetchApiError', _0: a};
-};
-var _user$project$Prismic_Types$BookmarkDoesNotExist = function (a) {
-	return {ctor: 'BookmarkDoesNotExist', _0: a};
-};
-var _user$project$Prismic_Types$RefDoesNotExist = function (a) {
-	return {ctor: 'RefDoesNotExist', _0: a};
-};
-var _user$project$Prismic_Types$FormDoesNotExist = function (a) {
-	return {ctor: 'FormDoesNotExist', _0: a};
-};
-var _user$project$Prismic_Types$Url = function (a) {
+var _user$project$Prismic$DocumentReference = F4(
+	function (a, b, c, d) {
+		return {id: a, slug: b, tags: c, linkedDocumentType: d};
+	});
+var _user$project$Prismic$decodeDocumentReference = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$DocumentReference),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'slug', _elm_lang$core$Json_Decode$string)),
+		A2(
+			_elm_lang$core$Json_Decode_ops[':='],
+			'tags',
+			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string));
+var _user$project$Prismic$Url = function (a) {
 	return {ctor: 'Url', _0: a};
 };
-var _user$project$Prismic_Types$Link = function (a) {
+var _user$project$Prismic$decodeUrl = A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Url, _elm_lang$core$Json_Decode$string);
+var _user$project$Prismic$decodeSearchResult = function (decodeDocType) {
+	return A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						A2(
+							_user$project$Prismic_ops['|:'],
+							A2(
+								_user$project$Prismic_ops['|:'],
+								A2(
+									_user$project$Prismic_ops['|:'],
+									_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$SearchResult),
+									decodeDocType),
+								A2(_elm_lang$core$Json_Decode_ops[':='], 'href', _user$project$Prismic$decodeUrl)),
+							A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
+						A2(
+							_elm_lang$core$Json_Decode_ops[':='],
+							'linked_documents',
+							_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeDocumentReference))),
+					A2(
+						_elm_lang$core$Json_Decode_ops[':='],
+						'slugs',
+						_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+				A2(
+					_elm_lang$core$Json_Decode_ops[':='],
+					'tags',
+					_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string)),
+		A2(
+			_elm_lang$core$Json_Decode_ops[':='],
+			'uid',
+			_user$project$Prismic$nullOr(_elm_lang$core$Json_Decode$string)));
+};
+var _user$project$Prismic$decodeResponse = function (decodeDocType) {
+	return A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						A2(
+							_user$project$Prismic_ops['|:'],
+							A2(
+								_user$project$Prismic_ops['|:'],
+								A2(
+									_user$project$Prismic_ops['|:'],
+									A2(
+										_user$project$Prismic_ops['|:'],
+										A2(
+											_user$project$Prismic_ops['|:'],
+											_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Response),
+											A2(_elm_lang$core$Json_Decode_ops[':='], 'license', _elm_lang$core$Json_Decode$string)),
+										A2(
+											_elm_lang$core$Json_Decode_ops[':='],
+											'next_page',
+											_user$project$Prismic$nullOr(_user$project$Prismic$decodeUrl))),
+									A2(_elm_lang$core$Json_Decode_ops[':='], 'page', _elm_lang$core$Json_Decode$int)),
+								A2(
+									_elm_lang$core$Json_Decode_ops[':='],
+									'prev_page',
+									_user$project$Prismic$nullOr(_user$project$Prismic$decodeUrl))),
+							A2(
+								_elm_lang$core$Json_Decode_ops[':='],
+								'results',
+								_elm_lang$core$Json_Decode$list(
+									_user$project$Prismic$decodeSearchResult(decodeDocType)))),
+						A2(_elm_lang$core$Json_Decode_ops[':='], 'results_per_page', _elm_lang$core$Json_Decode$int)),
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'results_size', _elm_lang$core$Json_Decode$int)),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'total_pages', _elm_lang$core$Json_Decode$int)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'total_results_size', _elm_lang$core$Json_Decode$int)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string));
+};
+var _user$project$Prismic$decodeImageProperties = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageProperties),
+				A2(
+					_elm_lang$core$Json_Decode_ops[':='],
+					'alt',
+					_user$project$Prismic$nullOr(_elm_lang$core$Json_Decode$string))),
+			A2(
+				_elm_lang$core$Json_Decode_ops[':='],
+				'copyright',
+				_user$project$Prismic$nullOr(_elm_lang$core$Json_Decode$string))),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'url', _user$project$Prismic$decodeUrl)),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'dimensions', _user$project$Prismic$decodeImageDimensions));
+var _user$project$Prismic$decodeImageField = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageViews),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'main', _user$project$Prismic$decodeImageProperties)),
+	A2(
+		_elm_lang$core$Json_Decode_ops[':='],
+		'views',
+		_elm_lang$core$Json_Decode$dict(_user$project$Prismic$decodeImageProperties)));
+var _user$project$Prismic$decodeEmbedVideoProperties = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						A2(
+							_user$project$Prismic_ops['|:'],
+							A2(
+								_user$project$Prismic_ops['|:'],
+								A2(
+									_user$project$Prismic_ops['|:'],
+									A2(
+										_user$project$Prismic_ops['|:'],
+										A2(
+											_user$project$Prismic_ops['|:'],
+											A2(
+												_user$project$Prismic_ops['|:'],
+												A2(
+													_user$project$Prismic_ops['|:'],
+													_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedVideoProperties),
+													A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
+												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic$decodeUrl)),
+											A2(_elm_lang$core$Json_Decode_ops[':='], 'embed_url', _user$project$Prismic$decodeUrl)),
+										A2(_elm_lang$core$Json_Decode_ops[':='], 'height', _elm_lang$core$Json_Decode$int)),
+									A2(_elm_lang$core$Json_Decode_ops[':='], 'html', _elm_lang$core$Json_Decode$string)),
+								A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_name', _elm_lang$core$Json_Decode$string)),
+							A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_url', _user$project$Prismic$decodeUrl)),
+						A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_height', _elm_lang$core$Json_Decode$int)),
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_url', _user$project$Prismic$decodeUrl)),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_width', _elm_lang$core$Json_Decode$int)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'title', _elm_lang$core$Json_Decode$string)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int));
+var _user$project$Prismic$decodeEmbedRichProperties = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						A2(
+							_user$project$Prismic_ops['|:'],
+							A2(
+								_user$project$Prismic_ops['|:'],
+								A2(
+									_user$project$Prismic_ops['|:'],
+									A2(
+										_user$project$Prismic_ops['|:'],
+										A2(
+											_user$project$Prismic_ops['|:'],
+											A2(
+												_user$project$Prismic_ops['|:'],
+												_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedRichProperties),
+												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
+											A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic$decodeUrl)),
+										A2(_elm_lang$core$Json_Decode_ops[':='], 'cache_age', _elm_lang$core$Json_Decode$string)),
+									A2(_elm_lang$core$Json_Decode_ops[':='], 'embed_url', _user$project$Prismic$decodeUrl)),
+								A2(
+									_elm_lang$core$Json_Decode_ops[':='],
+									'height',
+									_elm_lang$core$Json_Decode$maybe(_elm_lang$core$Json_Decode$int))),
+							A2(_elm_lang$core$Json_Decode_ops[':='], 'html', _elm_lang$core$Json_Decode$string)),
+						A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_name', _elm_lang$core$Json_Decode$string)),
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_url', _user$project$Prismic$decodeUrl)),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'title', _elm_lang$core$Json_Decode$string)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'url', _user$project$Prismic$decodeUrl)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int));
+var _user$project$Prismic$defaultLinkResolver = function (linkedDoc) {
+	return _user$project$Prismic$Url(
+		A2(
+			_elm_lang$core$String$join,
+			'/',
+			_elm_lang$core$Native_List.fromArray(
+				['documents', linkedDoc.id, linkedDoc.slug])));
+};
+var _user$project$Prismic$viewDefaultDocType = function (doc) {
+	var allDocFields = function () {
+		var fieldsPerType = _elm_lang$core$Dict$values(doc);
+		var fieldsPerField = A2(_elm_lang$core$List$concatMap, _elm_lang$core$Dict$values, fieldsPerType);
+		return _elm_lang$core$List$concat(fieldsPerField);
+	}();
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$h2,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					A2(
+						_elm_lang$core$List$map,
+						_elm_lang$html$Html$text,
+						_elm_lang$core$Dict$keys(doc)))
+				]),
+			A2(
+				_elm_lang$core$List$map,
+				_user$project$Prismic$asHtml(_user$project$Prismic$defaultLinkResolver),
+				allDocFields)));
+};
+var _user$project$Prismic$requestToUrl = function (request) {
+	var _p29 = request.action;
+	var urlStr = _p29._0;
+	var _p30 = request.ref;
+	var refStr = _p30._0;
+	return _user$project$Prismic$Url(
+		A2(
+			_evancz$elm_http$Http$url,
+			urlStr,
+			A2(
+				_elm_lang$core$List_ops['::'],
+				{ctor: '_Tuple2', _0: 'ref', _1: refStr},
+				_elm_lang$core$String$isEmpty(request.q) ? _elm_lang$core$Native_List.fromArray(
+					[]) : _elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'q', _1: request.q}
+					]))));
+};
+var _user$project$Prismic$SubmitRequestError = function (a) {
+	return {ctor: 'SubmitRequestError', _0: a};
+};
+var _user$project$Prismic$submit = F2(
+	function (decodeDocType, requestTask) {
+		var doSubmit = function (_p31) {
+			var _p32 = _p31;
+			var _p36 = _p32._0;
+			var _p35 = _p32._1;
+			var decodeResponseValue = function (responseValue) {
+				return A2(
+					_elm_lang$core$Task$mapError,
+					function (msg) {
+						return _user$project$Prismic$SubmitRequestError(
+							_evancz$elm_http$Http$UnexpectedPayload(msg));
+					},
+					_elm_lang$core$Task$fromResult(
+						A2(
+							_elm_lang$core$Json_Decode$decodeValue,
+							_user$project$Prismic$decodeResponse(decodeDocType),
+							responseValue)));
+			};
+			var cacheWithApi = _elm_lang$core$Native_Utils.update(
+				_p35,
+				{
+					api: _elm_lang$core$Maybe$Just(_p35.api)
+				});
+			var _p33 = _user$project$Prismic$requestToUrl(_p36);
+			var url = _p33._0;
+			var _p34 = A2(_user$project$Prismic$getFromCache, _p36, _p35);
+			if (_p34.ctor === 'Just') {
+				return A2(
+					_elm_lang$core$Task$map,
+					function (response) {
+						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
+					},
+					decodeResponseValue(_p34._0));
+			} else {
+				var mkResultTuple = F2(
+					function (responseValue, response) {
+						return {
+							ctor: '_Tuple2',
+							_0: response,
+							_1: A3(_user$project$Prismic$setInCache, _p36, responseValue, cacheWithApi)
+						};
+					});
+				var decodeAndMkResult = function (responseValue) {
+					return A2(
+						_elm_lang$core$Task$map,
+						mkResultTuple(responseValue),
+						decodeResponseValue(responseValue));
+				};
+				var fetchUrl = A2(
+					_elm_lang$core$Task$mapError,
+					_user$project$Prismic$SubmitRequestError,
+					A2(_user$project$Prismic$getJson, _elm_lang$core$Json_Decode$value, url));
+				return A2(_elm_lang$core$Task$andThen, fetchUrl, decodeAndMkResult);
+			}
+		};
+		return A2(_elm_lang$core$Task$andThen, requestTask, doSubmit);
+	});
+var _user$project$Prismic$FetchApiError = function (a) {
+	return {ctor: 'FetchApiError', _0: a};
+};
+var _user$project$Prismic$BookmarkDoesNotExist = function (a) {
+	return {ctor: 'BookmarkDoesNotExist', _0: a};
+};
+var _user$project$Prismic$RefDoesNotExist = function (a) {
+	return {ctor: 'RefDoesNotExist', _0: a};
+};
+var _user$project$Prismic$ref = F2(
+	function (refId, requestTask) {
+		var addRef = function (_p37) {
+			var _p38 = _p37;
+			var _p40 = _p38._1;
+			var _p39 = A2(_user$project$Prismic$getRefById, refId, _p40.api);
+			if (_p39.ctor === 'Nothing') {
+				return _elm_lang$core$Task$fail(
+					_user$project$Prismic$RefDoesNotExist(refId));
+			} else {
+				return _elm_lang$core$Task$succeed(
+					{
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							_p38._0,
+							{ref: _p39._0.ref}),
+						_1: _p40
+					});
+			}
+		};
+		return A2(_elm_lang$core$Task$andThen, requestTask, addRef);
+	});
+var _user$project$Prismic$FormDoesNotExist = function (a) {
+	return {ctor: 'FormDoesNotExist', _0: a};
+};
+var _user$project$Prismic$form = F2(
+	function (formId, apiTask) {
+		var addForm = function (cache) {
+			var defaultRefId = 'master';
+			var mRef = A2(_user$project$Prismic$getRefById, defaultRefId, cache.api);
+			var mForm = A2(_elm_lang$core$Dict$get, formId, cache.api.forms);
+			var _p41 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
+			if (_p41._0.ctor === 'Nothing') {
+				return _elm_lang$core$Task$fail(
+					_user$project$Prismic$FormDoesNotExist(formId));
+			} else {
+				if (_p41._1.ctor === 'Nothing') {
+					return _elm_lang$core$Task$fail(
+						_user$project$Prismic$RefDoesNotExist(defaultRefId));
+				} else {
+					var _p42 = _p41._0._0;
+					var q = A2(
+						_elm_lang$core$Maybe$withDefault,
+						'',
+						A2(
+							_elm_lang$core$Maybe$andThen,
+							A2(_elm_lang$core$Dict$get, 'q', _p42.fields),
+							function (_) {
+								return _.$default;
+							}));
+					return _elm_lang$core$Task$succeed(
+						{
+							ctor: '_Tuple2',
+							_0: {action: _p42.action, ref: _p41._1._0.ref, q: q},
+							_1: cache
+						});
+				}
+			}
+		};
+		return A2(_elm_lang$core$Task$andThen, apiTask, addForm);
+	});
+var _user$project$Prismic$Ref = function (a) {
+	return {ctor: 'Ref', _0: a};
+};
+var _user$project$Prismic$decodeRef = A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Ref, _elm_lang$core$Json_Decode$string);
+var _user$project$Prismic$decodeRefProperties = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$RefProperties),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'ref', _user$project$Prismic$decodeRef)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'label', _elm_lang$core$Json_Decode$string)),
+	A2(
+		_user$project$Prismic$maybeWithDefault,
+		false,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'isMasterRef', _elm_lang$core$Json_Decode$bool)));
+var _user$project$Prismic$Integer = {ctor: 'Integer'};
+var _user$project$Prismic$String = {ctor: 'String'};
+var _user$project$Prismic$decodeFieldType = function () {
+	var decodeOnType = function (str) {
+		var _p43 = str;
+		switch (_p43) {
+			case 'String':
+				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$String);
+			case 'Integer':
+				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Integer);
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown field type: ', str));
+		}
+	};
+	return A2(_elm_lang$core$Json_Decode$andThen, _elm_lang$core$Json_Decode$string, decodeOnType);
+}();
+var _user$project$Prismic$decodeFormField = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$FormField),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _user$project$Prismic$decodeFieldType)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'multiple', _elm_lang$core$Json_Decode$bool)),
+	_elm_lang$core$Json_Decode$maybe(
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'default', _elm_lang$core$Json_Decode$string)));
+var _user$project$Prismic$decodeForm = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Form),
+						A2(_elm_lang$core$Json_Decode_ops[':='], 'method', _elm_lang$core$Json_Decode$string)),
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'enctype', _elm_lang$core$Json_Decode$string)),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'action', _user$project$Prismic$decodeUrl)),
+			A2(
+				_elm_lang$core$Json_Decode_ops[':='],
+				'fields',
+				_elm_lang$core$Json_Decode$dict(_user$project$Prismic$decodeFormField))),
+		_elm_lang$core$Json_Decode$maybe(
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'rel', _elm_lang$core$Json_Decode$string))),
+	_elm_lang$core$Json_Decode$maybe(
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string)));
+var _user$project$Prismic$decodeApi = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			A2(
+				_user$project$Prismic_ops['|:'],
+				A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						A2(
+							_user$project$Prismic_ops['|:'],
+							A2(
+								_user$project$Prismic_ops['|:'],
+								A2(
+									_user$project$Prismic_ops['|:'],
+									A2(
+										_user$project$Prismic_ops['|:'],
+										_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Api),
+										A2(
+											_elm_lang$core$Json_Decode_ops[':='],
+											'refs',
+											_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeRefProperties))),
+									A2(
+										_elm_lang$core$Json_Decode_ops[':='],
+										'bookmarks',
+										_elm_lang$core$Json_Decode$dict(_elm_lang$core$Json_Decode$string))),
+								A2(
+									_elm_lang$core$Json_Decode_ops[':='],
+									'types',
+									_elm_lang$core$Json_Decode$dict(_elm_lang$core$Json_Decode$string))),
+							A2(
+								_elm_lang$core$Json_Decode_ops[':='],
+								'tags',
+								_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+						A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
+					A2(
+						_elm_lang$core$Json_Decode_ops[':='],
+						'forms',
+						_elm_lang$core$Json_Decode$dict(_user$project$Prismic$decodeForm))),
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'oauth_initiate', _elm_lang$core$Json_Decode$string)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'oauth_token', _elm_lang$core$Json_Decode$string)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'license', _elm_lang$core$Json_Decode$string)),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'experiments', _user$project$Prismic$decodeExperiments));
+var _user$project$Prismic$fetchApi = function (cache) {
+	var _p44 = cache.api;
+	if (_p44.ctor === 'Just') {
+		return _elm_lang$core$Task$succeed(
+			_elm_lang$core$Native_Utils.update(
+				cache,
+				{api: _p44._0}));
+	} else {
+		var _p45 = cache.url;
+		var url = _p45._0;
+		return A2(
+			_elm_lang$core$Task$map,
+			function (api) {
+				return _elm_lang$core$Native_Utils.update(
+					cache,
+					{api: api});
+			},
+			A2(
+				_elm_lang$core$Task$mapError,
+				_user$project$Prismic$FetchApiError,
+				A2(_user$project$Prismic$getJson, _user$project$Prismic$decodeApi, url)));
+	}
+};
+var _user$project$Prismic$FullText = F2(
+	function (a, b) {
+		return {ctor: 'FullText', _0: a, _1: b};
+	});
+var _user$project$Prismic$fulltext = F2(
+	function (fragment, value) {
+		return A2(_user$project$Prismic$FullText, fragment, value);
+	});
+var _user$project$Prismic$Any = F2(
+	function (a, b) {
+		return {ctor: 'Any', _0: a, _1: b};
+	});
+var _user$project$Prismic$any = F2(
+	function (fragment, values) {
+		return A2(_user$project$Prismic$Any, fragment, values);
+	});
+var _user$project$Prismic$AtL = F2(
+	function (a, b) {
+		return {ctor: 'AtL', _0: a, _1: b};
+	});
+var _user$project$Prismic$atL = F2(
+	function (fragment, values) {
+		return A2(_user$project$Prismic$AtL, fragment, values);
+	});
+var _user$project$Prismic$At = F2(
+	function (a, b) {
+		return {ctor: 'At', _0: a, _1: b};
+	});
+var _user$project$Prismic$at = F2(
+	function (fragment, value) {
+		return A2(_user$project$Prismic$At, fragment, value);
+	});
+var _user$project$Prismic$bookmark = F2(
+	function (bookmarkId, cacheTask) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			cacheTask,
+			function (cacheWithApi) {
+				var mDocId = A2(_elm_lang$core$Dict$get, bookmarkId, cacheWithApi.api.bookmarks);
+				var _p46 = mDocId;
+				if (_p46.ctor === 'Nothing') {
+					return _elm_lang$core$Task$fail(
+						_user$project$Prismic$BookmarkDoesNotExist(bookmarkId));
+				} else {
+					return A2(
+						_user$project$Prismic$query,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(_user$project$Prismic$at, 'document.id', _p46._0)
+							]),
+						A2(
+							_user$project$Prismic$form,
+							'everything',
+							_elm_lang$core$Task$succeed(cacheWithApi)));
+				}
+			});
+	});
+var _user$project$Prismic$Link = function (a) {
 	return {ctor: 'Link', _0: a};
 };
-var _user$project$Prismic_Types$Date = function (a) {
+var _user$project$Prismic$Date = function (a) {
 	return {ctor: 'Date', _0: a};
 };
-var _user$project$Prismic_Types$Number = function (a) {
+var _user$project$Prismic$Number = function (a) {
 	return {ctor: 'Number', _0: a};
 };
-var _user$project$Prismic_Types$Image = function (a) {
+var _user$project$Prismic$Image = function (a) {
 	return {ctor: 'Image', _0: a};
 };
-var _user$project$Prismic_Types$Color = function (a) {
+var _user$project$Prismic$Color = function (a) {
 	return {ctor: 'Color', _0: a};
 };
-var _user$project$Prismic_Types$Select = function (a) {
+var _user$project$Prismic$Select = function (a) {
 	return {ctor: 'Select', _0: a};
 };
-var _user$project$Prismic_Types$StructuredText = function (a) {
+var _user$project$Prismic$StructuredText = function (a) {
 	return {ctor: 'StructuredText', _0: a};
 };
-var _user$project$Prismic_Types$Text = function (a) {
+var _user$project$Prismic$Text = function (a) {
 	return {ctor: 'Text', _0: a};
 };
-var _user$project$Prismic_Types$SEmbed = function (a) {
+var _user$project$Prismic$SEmbed = function (a) {
 	return {ctor: 'SEmbed', _0: a};
 };
-var _user$project$Prismic_Types$SImage = function (a) {
+var _user$project$Prismic$SImage = function (a) {
 	return {ctor: 'SImage', _0: a};
 };
-var _user$project$Prismic_Types$SSimple = function (a) {
+var _user$project$Prismic$SSimple = function (a) {
 	return {ctor: 'SSimple', _0: a};
 };
-var _user$project$Prismic_Types$ListItem = {ctor: 'ListItem'};
-var _user$project$Prismic_Types$Paragraph = {ctor: 'Paragraph'};
-var _user$project$Prismic_Types$Heading3 = {ctor: 'Heading3'};
-var _user$project$Prismic_Types$Heading2 = {ctor: 'Heading2'};
-var _user$project$Prismic_Types$Heading1 = {ctor: 'Heading1'};
-var _user$project$Prismic_Types$Hyperlink = function (a) {
+var _user$project$Prismic$ListItem = {ctor: 'ListItem'};
+var _user$project$Prismic$Paragraph = {ctor: 'Paragraph'};
+var _user$project$Prismic$Heading3 = {ctor: 'Heading3'};
+var _user$project$Prismic$Heading2 = {ctor: 'Heading2'};
+var _user$project$Prismic$Heading1 = {ctor: 'Heading1'};
+var _user$project$Prismic$Hyperlink = function (a) {
 	return {ctor: 'Hyperlink', _0: a};
 };
-var _user$project$Prismic_Types$Strong = {ctor: 'Strong'};
-var _user$project$Prismic_Types$Em = {ctor: 'Em'};
-var _user$project$Prismic_Types$EmbedRich = function (a) {
+var _user$project$Prismic$Strong = {ctor: 'Strong'};
+var _user$project$Prismic$Em = {ctor: 'Em'};
+var _user$project$Prismic$EmbedRich = function (a) {
 	return {ctor: 'EmbedRich', _0: a};
 };
-var _user$project$Prismic_Types$EmbedVideo = function (a) {
+var _user$project$Prismic$EmbedVideo = function (a) {
 	return {ctor: 'EmbedVideo', _0: a};
 };
-var _user$project$Prismic_Types$WebLink = function (a) {
+var _user$project$Prismic$decodeEmbedProperties = function () {
+	var decodeOnType = function (typeStr) {
+		var _p47 = typeStr;
+		switch (_p47) {
+			case 'video':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$EmbedVideo, _user$project$Prismic$decodeEmbedVideoProperties);
+			case 'rich':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$EmbedRich, _user$project$Prismic$decodeEmbedRichProperties);
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown embed type: ', typeStr));
+		}
+	};
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
+		decodeOnType);
+}();
+var _user$project$Prismic$WebLink = function (a) {
 	return {ctor: 'WebLink', _0: a};
 };
-var _user$project$Prismic_Types$DocumentLink = F2(
+var _user$project$Prismic$DocumentLink = F2(
 	function (a, b) {
 		return {ctor: 'DocumentLink', _0: a, _1: b};
 	});
+var _user$project$Prismic$decodeLink = function () {
+	var decodeOnType = function (typeStr) {
+		var _p48 = typeStr;
+		switch (_p48) {
+			case 'Link.document':
+				return A2(
+					_user$project$Prismic_ops['|:'],
+					A2(
+						_user$project$Prismic_ops['|:'],
+						_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$DocumentLink),
+						A2(
+							_elm_lang$core$Json_Decode$at,
+							_elm_lang$core$Native_List.fromArray(
+								['value', 'document']),
+							_user$project$Prismic$decodeDocumentReference)),
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['value', 'isBroken']),
+						_elm_lang$core$Json_Decode$bool));
+			case 'Link.web':
+				return A2(
+					_user$project$Prismic_ops['|:'],
+					_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$WebLink),
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['value', 'url']),
+						_user$project$Prismic$decodeUrl));
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown link type: ', typeStr));
+		}
+	};
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
+		decodeOnType);
+}();
+var _user$project$Prismic$decodeSpanType = function () {
+	var decodeOnType = function (typeStr) {
+		var _p49 = typeStr;
+		switch (_p49) {
+			case 'em':
+				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Em);
+			case 'strong':
+				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Strong);
+			case 'hyperlink':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Hyperlink,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'data', _user$project$Prismic$decodeLink));
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown span type: ', typeStr));
+		}
+	};
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
+		decodeOnType);
+}();
+var _user$project$Prismic$decodeSpan = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Span),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'start', _elm_lang$core$Json_Decode$int)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'end', _elm_lang$core$Json_Decode$int)),
+	_user$project$Prismic$decodeSpanType);
+var _user$project$Prismic$decodeSimpleStructuredTextField = function (tag) {
+	return A2(
+		_user$project$Prismic_ops['|:'],
+		A2(
+			_user$project$Prismic_ops['|:'],
+			_elm_lang$core$Json_Decode$succeed(
+				_user$project$Prismic$SimpleStructuredTextField(tag)),
+			A2(_elm_lang$core$Json_Decode_ops[':='], 'text', _elm_lang$core$Json_Decode$string)),
+		A2(
+			_elm_lang$core$Json_Decode_ops[':='],
+			'spans',
+			_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeSpan)));
+};
+var _user$project$Prismic$decodeStructuredTextField = function () {
+	var decodeOnType = function (typeStr) {
+		var _p50 = typeStr;
+		switch (_p50) {
+			case 'heading1':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SSimple,
+					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading1));
+			case 'heading2':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SSimple,
+					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading2));
+			case 'heading3':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SSimple,
+					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading3));
+			case 'paragraph':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SSimple,
+					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Paragraph));
+			case 'list-item':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SSimple,
+					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$ListItem));
+			case 'image':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$SImage, _user$project$Prismic$decodeImageProperties);
+			case 'embed':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$SEmbed,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'oembed', _user$project$Prismic$decodeEmbedProperties));
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'Unknown structured field type: ',
+						_elm_lang$core$Basics$toString(typeStr)));
+		}
+	};
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
+		decodeOnType);
+}();
+var _user$project$Prismic$decodeStructuredText = _elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeStructuredTextField);
+var _user$project$Prismic$decodeDocumentField = function () {
+	var decodeOnType = function (typeStr) {
+		var _p51 = typeStr;
+		switch (_p51) {
+			case 'Text':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Text,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
+			case 'Select':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Select,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
+			case 'Color':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Color,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
+			case 'Number':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Number,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$float));
+			case 'Date':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Date,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
+			case 'Image':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$Image,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageField));
+			case 'StructuredText':
+				return A2(
+					_elm_lang$core$Json_Decode$object1,
+					_user$project$Prismic$StructuredText,
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeStructuredText));
+			case 'Link.document':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Link, _user$project$Prismic$decodeLink);
+			case 'Link.web':
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Link, _user$project$Prismic$decodeLink);
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown document field type: ', typeStr));
+		}
+	};
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
+		decodeOnType);
+}();
+var _user$project$Prismic$decodeDefaultDocType = A2(
+	_elm_lang$core$Json_Decode_ops[':='],
+	'data',
+	_elm_lang$core$Json_Decode$dict(
+		_elm_lang$core$Json_Decode$dict(
+			_elm_lang$core$Json_Decode$oneOf(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$core$Json_Decode$object1,
+						function (x) {
+							return _elm_lang$core$Native_List.fromArray(
+								[x]);
+						},
+						_user$project$Prismic$decodeDocumentField),
+						_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeDocumentField)
+					])))));
 
 var _user$project$App_Documents_Types$Article = F5(
 	function (a, b, c, d, e) {
@@ -9478,629 +10857,449 @@ var _user$project$App_Types$SetPrismic = function (a) {
 	return {ctor: 'SetPrismic', _0: a};
 };
 
-var _user$project$Prismic_Decoders$decodeFieldType = function () {
-	var decodeOnType = function (str) {
+var _user$project$App_Documents_Decoders$decodeCategories = function () {
+	var strToCategory = function (str) {
 		var _p0 = str;
 		switch (_p0) {
-			case 'String':
-				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$String);
-			case 'Integer':
-				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Integer);
+			case 'Pie':
+				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Pie);
+			case 'Macaron':
+				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Macaron);
+			case 'Cupcake':
+				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Cupcake);
 			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown field type: ', str));
+				return _elm_lang$core$Maybe$Nothing;
 		}
 	};
-	return A2(_elm_lang$core$Json_Decode$andThen, _elm_lang$core$Json_Decode$string, decodeOnType);
+	return A2(
+		_elm_lang$core$Json_Decode$andThen,
+		_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string),
+		function (_p1) {
+			return _elm_lang$core$Json_Decode$succeed(
+				A2(_elm_lang$core$List$filterMap, strToCategory, _p1));
+		});
 }();
-var _user$project$Prismic_Decoders$decodeUrl = A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$Url, _elm_lang$core$Json_Decode$string);
-var _user$project$Prismic_Decoders$decodeRef = A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$Ref, _elm_lang$core$Json_Decode$string);
-var _user$project$Prismic_Decoders$nullOr = function (decoder) {
-	return _elm_lang$core$Json_Decode$oneOf(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
-				A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Maybe$Just, decoder)
-			]));
-};
-var _user$project$Prismic_Decoders$maybeWithDefault = F2(
+var _user$project$App_Documents_Decoders$maybeWithDefault = F2(
 	function ($default, decoder) {
 		return A2(
 			_elm_lang$core$Json_Decode$andThen,
 			_elm_lang$core$Json_Decode$maybe(decoder),
-			function (_p1) {
+			function (_p2) {
 				return _elm_lang$core$Json_Decode$succeed(
-					A2(_elm_lang$core$Maybe$withDefault, $default, _p1));
+					A2(_elm_lang$core$Maybe$withDefault, $default, _p2));
 			});
 	});
-var _user$project$Prismic_Decoders_ops = _user$project$Prismic_Decoders_ops || {};
-_user$project$Prismic_Decoders_ops['|:'] = _elm_lang$core$Json_Decode$object2(
+var _user$project$App_Documents_Decoders_ops = _user$project$App_Documents_Decoders_ops || {};
+_user$project$App_Documents_Decoders_ops['|:'] = _elm_lang$core$Json_Decode$object2(
 	F2(
 		function (x, y) {
 			return x(y);
 		}));
-var _user$project$Prismic_Decoders$decodeRefProperties = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
+var _user$project$App_Documents_Decoders$decodeArticle = A2(
+	_user$project$App_Documents_Decoders_ops['|:'],
 	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
+		_user$project$App_Documents_Decoders_ops['|:'],
 		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
+			_user$project$App_Documents_Decoders_ops['|:'],
 			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$RefProperties),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'ref', _user$project$Prismic_Decoders$decodeRef)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'label', _elm_lang$core$Json_Decode$string)),
-	A2(
-		_user$project$Prismic_Decoders$maybeWithDefault,
-		false,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'isMasterRef', _elm_lang$core$Json_Decode$bool)));
-var _user$project$Prismic_Decoders$decodeFormField = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$FormField),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _user$project$Prismic_Decoders$decodeFieldType)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'multiple', _elm_lang$core$Json_Decode$bool)),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'default', _elm_lang$core$Json_Decode$string)));
-var _user$project$Prismic_Decoders$decodeForm = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
+				_user$project$App_Documents_Decoders_ops['|:'],
 				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
+					_user$project$App_Documents_Decoders_ops['|:'],
+					_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Article),
 					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Form),
-						A2(_elm_lang$core$Json_Decode_ops[':='], 'method', _elm_lang$core$Json_Decode$string)),
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'enctype', _elm_lang$core$Json_Decode$string)),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'action', _user$project$Prismic_Decoders$decodeUrl)),
-			A2(
-				_elm_lang$core$Json_Decode_ops[':='],
-				'fields',
-				_elm_lang$core$Json_Decode$dict(_user$project$Prismic_Decoders$decodeFormField))),
-		_elm_lang$core$Json_Decode$maybe(
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'rel', _elm_lang$core$Json_Decode$string))),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string)));
-var _user$project$Prismic_Decoders$decodeExperiments = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Experiments),
-		A2(
-			_elm_lang$core$Json_Decode_ops[':='],
-			'draft',
-			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-	A2(
-		_elm_lang$core$Json_Decode_ops[':='],
-		'running',
-		_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string)));
-var _user$project$Prismic_Decoders$decodeApi = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['id']),
+						_elm_lang$core$Json_Decode$string)),
 				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
+					_elm_lang$core$Json_Decode$at,
+					_elm_lang$core$Native_List.fromArray(
+						['data', 'article', 'content', 'value']),
+					_user$project$Prismic$decodeStructuredText)),
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				_elm_lang$core$Native_List.fromArray(
+					['data', 'article', 'image', 'value']),
+				_user$project$Prismic$decodeImageField)),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			_elm_lang$core$Native_List.fromArray(
+				['data', 'article', 'short_lede', 'value']),
+			_user$project$Prismic$decodeStructuredText)),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['data', 'article', 'title', 'value']),
+		_user$project$Prismic$decodeStructuredText));
+var _user$project$App_Documents_Decoders$decodeJobOffer = A2(
+	_elm_lang$core$Json_Decode$at,
+	_elm_lang$core$Native_List.fromArray(
+		['data', 'job-offer']),
+	A2(
+		_user$project$App_Documents_Decoders_ops['|:'],
+		A2(
+			_user$project$App_Documents_Decoders_ops['|:'],
+			A2(
+				_user$project$App_Documents_Decoders_ops['|:'],
+				A2(
+					_user$project$App_Documents_Decoders_ops['|:'],
 					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
+						_user$project$App_Documents_Decoders_ops['|:'],
 						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
+							_user$project$App_Documents_Decoders_ops['|:'],
+							_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$JobOffer),
 							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Api),
-										A2(
-											_elm_lang$core$Json_Decode_ops[':='],
-											'refs',
-											_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeRefProperties))),
-									A2(
-										_elm_lang$core$Json_Decode_ops[':='],
-										'bookmarks',
-										_elm_lang$core$Json_Decode$dict(_elm_lang$core$Json_Decode$string))),
-								A2(
-									_elm_lang$core$Json_Decode_ops[':='],
-									'types',
-									_elm_lang$core$Json_Decode$dict(_elm_lang$core$Json_Decode$string))),
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['name', 'value']),
+								_user$project$Prismic$decodeStructuredText)),
+						_elm_lang$core$Json_Decode$maybe(
 							A2(
-								_elm_lang$core$Json_Decode_ops[':='],
-								'tags',
-								_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-						A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
-					A2(
-						_elm_lang$core$Json_Decode_ops[':='],
-						'forms',
-						_elm_lang$core$Json_Decode$dict(_user$project$Prismic_Decoders$decodeForm))),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'oauth_initiate', _elm_lang$core$Json_Decode$string)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'oauth_token', _elm_lang$core$Json_Decode$string)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'license', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'experiments', _user$project$Prismic_Decoders$decodeExperiments));
-var _user$project$Prismic_Decoders$decodeLinkedDocument = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$LinkedDocument),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'slug', _elm_lang$core$Json_Decode$string)),
-		A2(
-			_elm_lang$core$Json_Decode_ops[':='],
-			'tags',
-			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string));
-var _user$project$Prismic_Decoders$decodeSearchResult = function (decodeDocType) {
-	return A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$SearchResult),
-									decodeDocType),
-								A2(_elm_lang$core$Json_Decode_ops[':='], 'href', _user$project$Prismic_Decoders$decodeUrl)),
-							A2(_elm_lang$core$Json_Decode_ops[':='], 'id', _elm_lang$core$Json_Decode$string)),
-						A2(
-							_elm_lang$core$Json_Decode_ops[':='],
-							'linked_documents',
-							_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLinkedDocument))),
-					A2(
-						_elm_lang$core$Json_Decode_ops[':='],
-						'slugs',
-						_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-				A2(
-					_elm_lang$core$Json_Decode_ops[':='],
-					'tags',
-					_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string)),
-		A2(
-			_elm_lang$core$Json_Decode_ops[':='],
-			'uid',
-			_user$project$Prismic_Decoders$nullOr(_elm_lang$core$Json_Decode$string)));
-};
-var _user$project$Prismic_Decoders$decodeResponse = function (decodeDocType) {
-	return A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
-											_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Response),
-											A2(_elm_lang$core$Json_Decode_ops[':='], 'license', _elm_lang$core$Json_Decode$string)),
-										A2(
-											_elm_lang$core$Json_Decode_ops[':='],
-											'next_page',
-											_user$project$Prismic_Decoders$nullOr(_user$project$Prismic_Decoders$decodeUrl))),
-									A2(_elm_lang$core$Json_Decode_ops[':='], 'page', _elm_lang$core$Json_Decode$int)),
-								A2(
-									_elm_lang$core$Json_Decode_ops[':='],
-									'prev_page',
-									_user$project$Prismic_Decoders$nullOr(_user$project$Prismic_Decoders$decodeUrl))),
-							A2(
-								_elm_lang$core$Json_Decode_ops[':='],
-								'results',
-								_elm_lang$core$Json_Decode$list(
-									_user$project$Prismic_Decoders$decodeSearchResult(decodeDocType)))),
-						A2(_elm_lang$core$Json_Decode_ops[':='], 'results_per_page', _elm_lang$core$Json_Decode$int)),
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'results_size', _elm_lang$core$Json_Decode$int)),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'total_pages', _elm_lang$core$Json_Decode$int)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'total_results_size', _elm_lang$core$Json_Decode$int)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string));
-};
-var _user$project$Prismic_Decoders$decodeImageDimensions = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$ImageDimensions),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'height', _elm_lang$core$Json_Decode$int));
-var _user$project$Prismic_Decoders$decodeImageProperties = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$ImageProperties),
-				A2(
-					_elm_lang$core$Json_Decode_ops[':='],
-					'alt',
-					_user$project$Prismic_Decoders$nullOr(_elm_lang$core$Json_Decode$string))),
-			A2(
-				_elm_lang$core$Json_Decode_ops[':='],
-				'copyright',
-				_user$project$Prismic_Decoders$nullOr(_elm_lang$core$Json_Decode$string))),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'url', _user$project$Prismic_Decoders$decodeUrl)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'dimensions', _user$project$Prismic_Decoders$decodeImageDimensions));
-var _user$project$Prismic_Decoders$decodeImageField = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$ImageField),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'main', _user$project$Prismic_Decoders$decodeImageProperties)),
-	A2(
-		_elm_lang$core$Json_Decode_ops[':='],
-		'views',
-		_elm_lang$core$Json_Decode$dict(_user$project$Prismic_Decoders$decodeImageProperties)));
-var _user$project$Prismic_Decoders$decodeEmbedVideoProperties = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
-											A2(
-												_user$project$Prismic_Decoders_ops['|:'],
-												A2(
-													_user$project$Prismic_Decoders_ops['|:'],
-													_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$EmbedVideoProperties),
-													A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
-												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic_Decoders$decodeUrl)),
-											A2(_elm_lang$core$Json_Decode_ops[':='], 'embed_url', _user$project$Prismic_Decoders$decodeUrl)),
-										A2(_elm_lang$core$Json_Decode_ops[':='], 'height', _elm_lang$core$Json_Decode$int)),
-									A2(_elm_lang$core$Json_Decode_ops[':='], 'html', _elm_lang$core$Json_Decode$string)),
-								A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_name', _elm_lang$core$Json_Decode$string)),
-							A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_url', _user$project$Prismic_Decoders$decodeUrl)),
-						A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_height', _elm_lang$core$Json_Decode$int)),
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_url', _user$project$Prismic_Decoders$decodeUrl)),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'thumbnail_width', _elm_lang$core$Json_Decode$int)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'title', _elm_lang$core$Json_Decode$string)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int));
-var _user$project$Prismic_Decoders$decodeEmbedRichProperties = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
-											A2(
-												_user$project$Prismic_Decoders_ops['|:'],
-												_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$EmbedRichProperties),
-												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
-											A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic_Decoders$decodeUrl)),
-										A2(_elm_lang$core$Json_Decode_ops[':='], 'cache_age', _elm_lang$core$Json_Decode$string)),
-									A2(_elm_lang$core$Json_Decode_ops[':='], 'embed_url', _user$project$Prismic_Decoders$decodeUrl)),
-								A2(
-									_elm_lang$core$Json_Decode_ops[':='],
-									'height',
-									_elm_lang$core$Json_Decode$maybe(_elm_lang$core$Json_Decode$int))),
-							A2(_elm_lang$core$Json_Decode_ops[':='], 'html', _elm_lang$core$Json_Decode$string)),
-						A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_name', _elm_lang$core$Json_Decode$string)),
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'provider_url', _user$project$Prismic_Decoders$decodeUrl)),
-				A2(_elm_lang$core$Json_Decode_ops[':='], 'title', _elm_lang$core$Json_Decode$string)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'url', _user$project$Prismic_Decoders$decodeUrl)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int));
-var _user$project$Prismic_Decoders$decodeEmbedProperties = function () {
-	var decodeOnType = function (typeStr) {
-		var _p2 = typeStr;
-		switch (_p2) {
-			case 'video':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$EmbedVideo, _user$project$Prismic_Decoders$decodeEmbedVideoProperties);
-			case 'rich':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$EmbedRich, _user$project$Prismic_Decoders$decodeEmbedRichProperties);
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown embed type: ', typeStr));
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
-		decodeOnType);
-}();
-var _user$project$Prismic_Decoders$decodeLink = function () {
-	var decodeOnType = function (typeStr) {
-		var _p3 = typeStr;
-		switch (_p3) {
-			case 'Link.document':
-				return A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$DocumentLink),
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['contract_type', 'value']),
+								_elm_lang$core$Json_Decode$string))),
+					_elm_lang$core$Json_Decode$maybe(
 						A2(
 							_elm_lang$core$Json_Decode$at,
 							_elm_lang$core$Native_List.fromArray(
-								['value', 'document']),
-							_user$project$Prismic_Decoders$decodeLinkedDocument)),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['value', 'isBroken']),
-						_elm_lang$core$Json_Decode$bool));
-			case 'Link.web':
-				return A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$WebLink),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['value', 'url']),
-						_user$project$Prismic_Decoders$decodeUrl));
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown link type: ', typeStr));
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
-		decodeOnType);
-}();
-var _user$project$Prismic_Decoders$decodeSpanType = function () {
-	var decodeOnType = function (typeStr) {
-		var _p4 = typeStr;
-		switch (_p4) {
-			case 'em':
-				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Em);
-			case 'strong':
-				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Strong);
-			case 'hyperlink':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Hyperlink,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'data', _user$project$Prismic_Decoders$decodeLink));
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown span type: ', typeStr));
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
-		decodeOnType);
-}();
-var _user$project$Prismic_Decoders$decodeSpan = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			_elm_lang$core$Json_Decode$succeed(_user$project$Prismic_Types$Span),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'start', _elm_lang$core$Json_Decode$int)),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'end', _elm_lang$core$Json_Decode$int)),
-	_user$project$Prismic_Decoders$decodeSpanType);
-var _user$project$Prismic_Decoders$decodeSimpleStructuredTextField = function (tag) {
-	return A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			_elm_lang$core$Json_Decode$succeed(
-				_user$project$Prismic_Types$SimpleStructuredTextField(tag)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'text', _elm_lang$core$Json_Decode$string)),
-		A2(
-			_elm_lang$core$Json_Decode_ops[':='],
-			'spans',
-			_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeSpan)));
-};
-var _user$project$Prismic_Decoders$decodeStructuredTextField = function () {
-	var decodeOnType = function (typeStr) {
-		var _p5 = typeStr;
-		switch (_p5) {
-			case 'heading1':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SSimple,
-					_user$project$Prismic_Decoders$decodeSimpleStructuredTextField(_user$project$Prismic_Types$Heading1));
-			case 'heading2':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SSimple,
-					_user$project$Prismic_Decoders$decodeSimpleStructuredTextField(_user$project$Prismic_Types$Heading2));
-			case 'heading3':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SSimple,
-					_user$project$Prismic_Decoders$decodeSimpleStructuredTextField(_user$project$Prismic_Types$Heading3));
-			case 'paragraph':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SSimple,
-					_user$project$Prismic_Decoders$decodeSimpleStructuredTextField(_user$project$Prismic_Types$Paragraph));
-			case 'list-item':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SSimple,
-					_user$project$Prismic_Decoders$decodeSimpleStructuredTextField(_user$project$Prismic_Types$ListItem));
-			case 'image':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$SImage, _user$project$Prismic_Decoders$decodeImageProperties);
-			case 'embed':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$SEmbed,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'oembed', _user$project$Prismic_Decoders$decodeEmbedProperties));
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'Unknown structured field type: ',
-						_elm_lang$core$Basics$toString(typeStr)));
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
-		decodeOnType);
-}();
-var _user$project$Prismic_Decoders$decodeStructuredText = _elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeStructuredTextField);
-var _user$project$Prismic_Decoders$decodeDocumentField = function () {
-	var decodeOnType = function (typeStr) {
-		var _p6 = typeStr;
-		switch (_p6) {
-			case 'Text':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Text,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
-			case 'Select':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Select,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
-			case 'Color':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Color,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
-			case 'Number':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Number,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$float));
-			case 'Date':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Date,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string));
-			case 'Image':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$Image,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic_Decoders$decodeImageField));
-			case 'StructuredText':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic_Types$StructuredText,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic_Decoders$decodeStructuredText));
-			case 'Link.document':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$Link, _user$project$Prismic_Decoders$decodeLink);
-			case 'Link.web':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic_Types$Link, _user$project$Prismic_Decoders$decodeLink);
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown document field type: ', typeStr));
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
-		decodeOnType);
-}();
-var _user$project$Prismic_Decoders$decodeDefaultDocType = A2(
-	_elm_lang$core$Json_Decode_ops[':='],
-	'data',
-	_elm_lang$core$Json_Decode$dict(
-		_elm_lang$core$Json_Decode$dict(
-			_elm_lang$core$Json_Decode$oneOf(
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$core$Json_Decode$object1,
-						function (x) {
-							return _elm_lang$core$Native_List.fromArray(
-								[x]);
-						},
-						_user$project$Prismic_Decoders$decodeDocumentField),
-						_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeDocumentField)
-					])))));
-
-var _user$project$App_Documents_Decoders$decodeStore = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
+								['service', 'value']),
+							_elm_lang$core$Json_Decode$string))),
 				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
+					_elm_lang$core$Json_Decode$at,
+					_elm_lang$core$Native_List.fromArray(
+						['job_description', 'value']),
+					_user$project$Prismic$decodeStructuredText)),
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				_elm_lang$core$Native_List.fromArray(
+					['profile', 'value']),
+				_user$project$Prismic$decodeStructuredText)),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			_elm_lang$core$Native_List.fromArray(
+				['location']),
+			_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink))));
+var _user$project$App_Documents_Decoders$decodeBlogPost = function () {
+	var decodeAllowComments = function (str) {
+		var _p3 = str;
+		switch (_p3) {
+			case 'Yes':
+				return _elm_lang$core$Json_Decode$succeed(true);
+			case 'No':
+				return _elm_lang$core$Json_Decode$succeed(false);
+			default:
+				return _elm_lang$core$Json_Decode$fail(
+					A2(_elm_lang$core$Basics_ops['++'], 'Unknown allow_comments value: ', str));
+		}
+	};
+	return A2(
+		_user$project$App_Documents_Decoders_ops['|:'],
+		A2(
+			_user$project$App_Documents_Decoders_ops['|:'],
+			A2(
+				_user$project$App_Documents_Decoders_ops['|:'],
+				A2(
+					_user$project$App_Documents_Decoders_ops['|:'],
 					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
+						_user$project$App_Documents_Decoders_ops['|:'],
 						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
+							_user$project$App_Documents_Decoders_ops['|:'],
 							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
+								_user$project$App_Documents_Decoders_ops['|:'],
 								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
+									_user$project$App_Documents_Decoders_ops['|:'],
 									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
+										_user$project$App_Documents_Decoders_ops['|:'],
 										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
+											_user$project$App_Documents_Decoders_ops['|:'],
+											_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$BlogPost),
 											A2(
-												_user$project$Prismic_Decoders_ops['|:'],
+												_elm_lang$core$Json_Decode$at,
+												_elm_lang$core$Native_List.fromArray(
+													['id']),
+												_elm_lang$core$Json_Decode$string)),
+										A2(
+											_elm_lang$core$Json_Decode$at,
+											_elm_lang$core$Native_List.fromArray(
+												['slugs']),
+											_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+									A2(
+										_elm_lang$core$Json_Decode$at,
+										_elm_lang$core$Native_List.fromArray(
+											['data', 'blog-post', 'body', 'value']),
+										_user$project$Prismic$decodeStructuredText)),
+								A2(
+									_elm_lang$core$Json_Decode$at,
+									_elm_lang$core$Native_List.fromArray(
+										['data', 'blog-post', 'author', 'value']),
+									_elm_lang$core$Json_Decode$string)),
+							A2(
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['data', 'blog-post', 'category', 'value']),
+								_elm_lang$core$Json_Decode$string)),
+						A2(
+							_elm_lang$core$Json_Decode$at,
+							_elm_lang$core$Native_List.fromArray(
+								['data', 'blog-post', 'date', 'value']),
+							_elm_lang$core$Json_Decode$string)),
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['data', 'blog-post', 'shortlede', 'value']),
+						_user$project$Prismic$decodeStructuredText)),
+				A2(
+					_elm_lang$core$Json_Decode$at,
+					_elm_lang$core$Native_List.fromArray(
+						['data', 'blog-post', 'relatedpost']),
+					_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink))),
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				_elm_lang$core$Native_List.fromArray(
+					['data', 'blog-post', 'relatedproduct']),
+				_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink))),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			_elm_lang$core$Native_List.fromArray(
+				['data', 'blog-post', 'allow_comments', 'value']),
+			A2(_elm_lang$core$Json_Decode$andThen, _elm_lang$core$Json_Decode$string, decodeAllowComments)));
+}();
+var _user$project$App_Documents_Decoders$decodeProduct = A2(
+	_user$project$App_Documents_Decoders_ops['|:'],
+	A2(
+		_user$project$App_Documents_Decoders_ops['|:'],
+		A2(
+			_user$project$App_Documents_Decoders_ops['|:'],
+			A2(
+				_user$project$App_Documents_Decoders_ops['|:'],
+				A2(
+					_user$project$App_Documents_Decoders_ops['|:'],
+					A2(
+						_user$project$App_Documents_Decoders_ops['|:'],
+						A2(
+							_user$project$App_Documents_Decoders_ops['|:'],
+							A2(
+								_user$project$App_Documents_Decoders_ops['|:'],
+								A2(
+									_user$project$App_Documents_Decoders_ops['|:'],
+									A2(
+										_user$project$App_Documents_Decoders_ops['|:'],
+										A2(
+											_user$project$App_Documents_Decoders_ops['|:'],
+											A2(
+												_user$project$App_Documents_Decoders_ops['|:'],
 												A2(
-													_user$project$Prismic_Decoders_ops['|:'],
+													_user$project$App_Documents_Decoders_ops['|:'],
 													A2(
-														_user$project$Prismic_Decoders_ops['|:'],
+														_user$project$App_Documents_Decoders_ops['|:'],
 														A2(
-															_user$project$Prismic_Decoders_ops['|:'],
+															_user$project$App_Documents_Decoders_ops['|:'],
 															A2(
-																_user$project$Prismic_Decoders_ops['|:'],
+																_user$project$App_Documents_Decoders_ops['|:'],
+																_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Product),
 																A2(
-																	_user$project$Prismic_Decoders_ops['|:'],
+																	_elm_lang$core$Json_Decode$at,
+																	_elm_lang$core$Native_List.fromArray(
+																		['id']),
+																	_elm_lang$core$Json_Decode$string)),
+															A2(
+																_elm_lang$core$Json_Decode$at,
+																_elm_lang$core$Native_List.fromArray(
+																	['slugs']),
+																_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+														_elm_lang$core$Json_Decode$maybe(
+															A2(
+																_elm_lang$core$Json_Decode$at,
+																_elm_lang$core$Native_List.fromArray(
+																	['data', 'product', 'allergens', 'value']),
+																_elm_lang$core$Json_Decode$string))),
+													A2(
+														_elm_lang$core$Json_Decode$at,
+														_elm_lang$core$Native_List.fromArray(
+															['data', 'product', 'color', 'value']),
+														_elm_lang$core$Json_Decode$string)),
+												A2(
+													_elm_lang$core$Json_Decode$at,
+													_elm_lang$core$Native_List.fromArray(
+														['data', 'product', 'description', 'value']),
+													_user$project$Prismic$decodeStructuredText)),
+											A2(
+												_user$project$App_Documents_Decoders$maybeWithDefault,
+												_elm_lang$core$Native_List.fromArray(
+													[]),
+												A2(
+													_elm_lang$core$Json_Decode$at,
+													_elm_lang$core$Native_List.fromArray(
+														['data', 'product', 'flavour']),
+													_elm_lang$core$Json_Decode$list(
+														A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string))))),
+										A2(
+											_user$project$App_Documents_Decoders$maybeWithDefault,
+											_elm_lang$core$Native_List.fromArray(
+												[]),
+											A2(
+												_elm_lang$core$Json_Decode$at,
+												_elm_lang$core$Native_List.fromArray(
+													['data', 'product', 'gallery']),
+												_elm_lang$core$Json_Decode$list(
+													A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageField))))),
+									A2(
+										_elm_lang$core$Json_Decode$at,
+										_elm_lang$core$Native_List.fromArray(
+											['data', 'product', 'image', 'value']),
+										_user$project$Prismic$decodeImageField)),
+								A2(
+									_elm_lang$core$Json_Decode$at,
+									_elm_lang$core$Native_List.fromArray(
+										['data', 'product', 'name', 'value']),
+									_user$project$Prismic$decodeStructuredText)),
+							A2(
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['data', 'product', 'price', 'value']),
+								_elm_lang$core$Json_Decode$float)),
+						A2(
+							_user$project$App_Documents_Decoders$maybeWithDefault,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							A2(
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['data', 'product', 'related']),
+								_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink)))),
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['data', 'product', 'short_lede', 'value']),
+						_user$project$Prismic$decodeStructuredText)),
+				_elm_lang$core$Json_Decode$maybe(
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['data', 'product', 'testimonial_author', 'value']),
+						_user$project$Prismic$decodeStructuredText))),
+			_elm_lang$core$Json_Decode$maybe(
+				A2(
+					_elm_lang$core$Json_Decode$at,
+					_elm_lang$core$Native_List.fromArray(
+						['data', 'product', 'testimonial_quote', 'value']),
+					_user$project$Prismic$decodeStructuredText))),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			_elm_lang$core$Native_List.fromArray(
+				['tags']),
+			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['tags']),
+		_user$project$App_Documents_Decoders$decodeCategories));
+var _user$project$App_Documents_Decoders$decodeSelection = A2(
+	_user$project$App_Documents_Decoders_ops['|:'],
+	A2(
+		_user$project$App_Documents_Decoders_ops['|:'],
+		A2(
+			_user$project$App_Documents_Decoders_ops['|:'],
+			A2(
+				_user$project$App_Documents_Decoders_ops['|:'],
+				A2(
+					_user$project$App_Documents_Decoders_ops['|:'],
+					A2(
+						_user$project$App_Documents_Decoders_ops['|:'],
+						A2(
+							_user$project$App_Documents_Decoders_ops['|:'],
+							A2(
+								_user$project$App_Documents_Decoders_ops['|:'],
+								A2(
+									_user$project$App_Documents_Decoders_ops['|:'],
+									A2(
+										_user$project$App_Documents_Decoders_ops['|:'],
+										_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Selection),
+										A2(
+											_elm_lang$core$Json_Decode$at,
+											_elm_lang$core$Native_List.fromArray(
+												['id']),
+											_elm_lang$core$Json_Decode$string)),
+									A2(
+										_elm_lang$core$Json_Decode$at,
+										_elm_lang$core$Native_List.fromArray(
+											['slugs']),
+										_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+								A2(
+									_elm_lang$core$Json_Decode$at,
+									_elm_lang$core$Native_List.fromArray(
+										['tags']),
+									_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
+							A2(
+								_elm_lang$core$Json_Decode$at,
+								_elm_lang$core$Native_List.fromArray(
+									['data', 'selection', 'name', 'value']),
+								_user$project$Prismic$decodeStructuredText)),
+						A2(
+							_elm_lang$core$Json_Decode$at,
+							_elm_lang$core$Native_List.fromArray(
+								['data', 'selection', 'catcher_image', 'value']),
+							_user$project$Prismic$decodeImageField)),
+					A2(
+						_elm_lang$core$Json_Decode$at,
+						_elm_lang$core$Native_List.fromArray(
+							['data', 'selection', 'description', 'value']),
+						_user$project$Prismic$decodeStructuredText)),
+				A2(
+					_elm_lang$core$Json_Decode$at,
+					_elm_lang$core$Native_List.fromArray(
+						['data', 'selection', 'image', 'value']),
+					_user$project$Prismic$decodeImageField)),
+			A2(
+				_elm_lang$core$Json_Decode$at,
+				_elm_lang$core$Native_List.fromArray(
+					['data', 'selection', 'price', 'value']),
+				_elm_lang$core$Json_Decode$float)),
+		A2(
+			_elm_lang$core$Json_Decode$at,
+			_elm_lang$core$Native_List.fromArray(
+				['data', 'selection', 'product']),
+			_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeLink))),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['data', 'selection', 'short_lede', 'value']),
+		_user$project$Prismic$decodeStructuredText));
+var _user$project$App_Documents_Decoders$decodeStore = A2(
+	_user$project$App_Documents_Decoders_ops['|:'],
+	A2(
+		_user$project$App_Documents_Decoders_ops['|:'],
+		A2(
+			_user$project$App_Documents_Decoders_ops['|:'],
+			A2(
+				_user$project$App_Documents_Decoders_ops['|:'],
+				A2(
+					_user$project$App_Documents_Decoders_ops['|:'],
+					A2(
+						_user$project$App_Documents_Decoders_ops['|:'],
+						A2(
+							_user$project$App_Documents_Decoders_ops['|:'],
+							A2(
+								_user$project$App_Documents_Decoders_ops['|:'],
+								A2(
+									_user$project$App_Documents_Decoders_ops['|:'],
+									A2(
+										_user$project$App_Documents_Decoders_ops['|:'],
+										A2(
+											_user$project$App_Documents_Decoders_ops['|:'],
+											A2(
+												_user$project$App_Documents_Decoders_ops['|:'],
+												A2(
+													_user$project$App_Documents_Decoders_ops['|:'],
+													A2(
+														_user$project$App_Documents_Decoders_ops['|:'],
+														A2(
+															_user$project$App_Documents_Decoders_ops['|:'],
+															A2(
+																_user$project$App_Documents_Decoders_ops['|:'],
+																A2(
+																	_user$project$App_Documents_Decoders_ops['|:'],
 																	_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Store),
 																	A2(
 																		_elm_lang$core$Json_Decode$at,
@@ -10141,17 +11340,17 @@ var _user$project$App_Documents_Decoders$decodeStore = A2(
 											_elm_lang$core$Json_Decode$at,
 											_elm_lang$core$Native_List.fromArray(
 												['data', 'store', 'description', 'value']),
-											_user$project$Prismic_Decoders$decodeStructuredText)),
+											_user$project$Prismic$decodeStructuredText)),
 									A2(
 										_elm_lang$core$Json_Decode$at,
 										_elm_lang$core$Native_List.fromArray(
 											['data', 'store', 'name', 'value']),
-										_user$project$Prismic_Decoders$decodeStructuredText)),
+										_user$project$Prismic$decodeStructuredText)),
 								A2(
 									_elm_lang$core$Json_Decode$at,
 									_elm_lang$core$Native_List.fromArray(
 										['data', 'store', 'image', 'value']),
-									_user$project$Prismic_Decoders$decodeImageField)),
+									_user$project$Prismic$decodeImageField)),
 							A2(
 								_elm_lang$core$Json_Decode$at,
 								_elm_lang$core$Native_List.fromArray(
@@ -10194,783 +11393,6 @@ var _user$project$App_Documents_Decoders$decodeStore = A2(
 			['data', 'store', 'sunday']),
 		_elm_lang$core$Json_Decode$list(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string))));
-var _user$project$App_Documents_Decoders$decodeSelection = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Selection),
-										A2(
-											_elm_lang$core$Json_Decode$at,
-											_elm_lang$core$Native_List.fromArray(
-												['id']),
-											_elm_lang$core$Json_Decode$string)),
-									A2(
-										_elm_lang$core$Json_Decode$at,
-										_elm_lang$core$Native_List.fromArray(
-											['slugs']),
-										_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-								A2(
-									_elm_lang$core$Json_Decode$at,
-									_elm_lang$core$Native_List.fromArray(
-										['tags']),
-									_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['data', 'selection', 'name', 'value']),
-								_user$project$Prismic_Decoders$decodeStructuredText)),
-						A2(
-							_elm_lang$core$Json_Decode$at,
-							_elm_lang$core$Native_List.fromArray(
-								['data', 'selection', 'catcher_image', 'value']),
-							_user$project$Prismic_Decoders$decodeImageField)),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['data', 'selection', 'description', 'value']),
-						_user$project$Prismic_Decoders$decodeStructuredText)),
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['data', 'selection', 'image', 'value']),
-					_user$project$Prismic_Decoders$decodeImageField)),
-			A2(
-				_elm_lang$core$Json_Decode$at,
-				_elm_lang$core$Native_List.fromArray(
-					['data', 'selection', 'price', 'value']),
-				_elm_lang$core$Json_Decode$float)),
-		A2(
-			_elm_lang$core$Json_Decode$at,
-			_elm_lang$core$Native_List.fromArray(
-				['data', 'selection', 'product']),
-			_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLink))),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['data', 'selection', 'short_lede', 'value']),
-		_user$project$Prismic_Decoders$decodeStructuredText));
-var _user$project$App_Documents_Decoders$decodeCategories = function () {
-	var strToCategory = function (str) {
-		var _p0 = str;
-		switch (_p0) {
-			case 'Pie':
-				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Pie);
-			case 'Macaron':
-				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Macaron);
-			case 'Cupcake':
-				return _elm_lang$core$Maybe$Just(_user$project$App_Documents_Types$Cupcake);
-			default:
-				return _elm_lang$core$Maybe$Nothing;
-		}
-	};
-	return A2(
-		_elm_lang$core$Json_Decode$andThen,
-		_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string),
-		function (_p1) {
-			return _elm_lang$core$Json_Decode$succeed(
-				A2(_elm_lang$core$List$filterMap, strToCategory, _p1));
-		});
-}();
-var _user$project$App_Documents_Decoders$decodeProduct = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
-											A2(
-												_user$project$Prismic_Decoders_ops['|:'],
-												A2(
-													_user$project$Prismic_Decoders_ops['|:'],
-													A2(
-														_user$project$Prismic_Decoders_ops['|:'],
-														A2(
-															_user$project$Prismic_Decoders_ops['|:'],
-															A2(
-																_user$project$Prismic_Decoders_ops['|:'],
-																_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Product),
-																A2(
-																	_elm_lang$core$Json_Decode$at,
-																	_elm_lang$core$Native_List.fromArray(
-																		['id']),
-																	_elm_lang$core$Json_Decode$string)),
-															A2(
-																_elm_lang$core$Json_Decode$at,
-																_elm_lang$core$Native_List.fromArray(
-																	['slugs']),
-																_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-														_elm_lang$core$Json_Decode$maybe(
-															A2(
-																_elm_lang$core$Json_Decode$at,
-																_elm_lang$core$Native_List.fromArray(
-																	['data', 'product', 'allergens', 'value']),
-																_elm_lang$core$Json_Decode$string))),
-													A2(
-														_elm_lang$core$Json_Decode$at,
-														_elm_lang$core$Native_List.fromArray(
-															['data', 'product', 'color', 'value']),
-														_elm_lang$core$Json_Decode$string)),
-												A2(
-													_elm_lang$core$Json_Decode$at,
-													_elm_lang$core$Native_List.fromArray(
-														['data', 'product', 'description', 'value']),
-													_user$project$Prismic_Decoders$decodeStructuredText)),
-											A2(
-												_user$project$Prismic_Decoders$maybeWithDefault,
-												_elm_lang$core$Native_List.fromArray(
-													[]),
-												A2(
-													_elm_lang$core$Json_Decode$at,
-													_elm_lang$core$Native_List.fromArray(
-														['data', 'product', 'flavour']),
-													_elm_lang$core$Json_Decode$list(
-														A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _elm_lang$core$Json_Decode$string))))),
-										A2(
-											_user$project$Prismic_Decoders$maybeWithDefault,
-											_elm_lang$core$Native_List.fromArray(
-												[]),
-											A2(
-												_elm_lang$core$Json_Decode$at,
-												_elm_lang$core$Native_List.fromArray(
-													['data', 'product', 'gallery']),
-												_elm_lang$core$Json_Decode$list(
-													A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic_Decoders$decodeImageField))))),
-									A2(
-										_elm_lang$core$Json_Decode$at,
-										_elm_lang$core$Native_List.fromArray(
-											['data', 'product', 'image', 'value']),
-										_user$project$Prismic_Decoders$decodeImageField)),
-								A2(
-									_elm_lang$core$Json_Decode$at,
-									_elm_lang$core$Native_List.fromArray(
-										['data', 'product', 'name', 'value']),
-									_user$project$Prismic_Decoders$decodeStructuredText)),
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['data', 'product', 'price', 'value']),
-								_elm_lang$core$Json_Decode$float)),
-						A2(
-							_user$project$Prismic_Decoders$maybeWithDefault,
-							_elm_lang$core$Native_List.fromArray(
-								[]),
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['data', 'product', 'related']),
-								_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLink)))),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['data', 'product', 'short_lede', 'value']),
-						_user$project$Prismic_Decoders$decodeStructuredText)),
-				_elm_lang$core$Json_Decode$maybe(
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['data', 'product', 'testimonial_author', 'value']),
-						_user$project$Prismic_Decoders$decodeStructuredText))),
-			_elm_lang$core$Json_Decode$maybe(
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['data', 'product', 'testimonial_quote', 'value']),
-					_user$project$Prismic_Decoders$decodeStructuredText))),
-		A2(
-			_elm_lang$core$Json_Decode$at,
-			_elm_lang$core$Native_List.fromArray(
-				['tags']),
-			_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['tags']),
-		_user$project$App_Documents_Decoders$decodeCategories));
-var _user$project$App_Documents_Decoders$decodeBlogPost = function () {
-	var decodeAllowComments = function (str) {
-		var _p2 = str;
-		switch (_p2) {
-			case 'Yes':
-				return _elm_lang$core$Json_Decode$succeed(true);
-			case 'No':
-				return _elm_lang$core$Json_Decode$succeed(false);
-			default:
-				return _elm_lang$core$Json_Decode$fail(
-					A2(_elm_lang$core$Basics_ops['++'], 'Unknown allow_comments value: ', str));
-		}
-	};
-	return A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							A2(
-								_user$project$Prismic_Decoders_ops['|:'],
-								A2(
-									_user$project$Prismic_Decoders_ops['|:'],
-									A2(
-										_user$project$Prismic_Decoders_ops['|:'],
-										A2(
-											_user$project$Prismic_Decoders_ops['|:'],
-											_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$BlogPost),
-											A2(
-												_elm_lang$core$Json_Decode$at,
-												_elm_lang$core$Native_List.fromArray(
-													['id']),
-												_elm_lang$core$Json_Decode$string)),
-										A2(
-											_elm_lang$core$Json_Decode$at,
-											_elm_lang$core$Native_List.fromArray(
-												['slugs']),
-											_elm_lang$core$Json_Decode$list(_elm_lang$core$Json_Decode$string))),
-									A2(
-										_elm_lang$core$Json_Decode$at,
-										_elm_lang$core$Native_List.fromArray(
-											['data', 'blog-post', 'body', 'value']),
-										_user$project$Prismic_Decoders$decodeStructuredText)),
-								A2(
-									_elm_lang$core$Json_Decode$at,
-									_elm_lang$core$Native_List.fromArray(
-										['data', 'blog-post', 'author', 'value']),
-									_elm_lang$core$Json_Decode$string)),
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['data', 'blog-post', 'category', 'value']),
-								_elm_lang$core$Json_Decode$string)),
-						A2(
-							_elm_lang$core$Json_Decode$at,
-							_elm_lang$core$Native_List.fromArray(
-								['data', 'blog-post', 'date', 'value']),
-							_elm_lang$core$Json_Decode$string)),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['data', 'blog-post', 'shortlede', 'value']),
-						_user$project$Prismic_Decoders$decodeStructuredText)),
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['data', 'blog-post', 'relatedpost']),
-					_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLink))),
-			A2(
-				_elm_lang$core$Json_Decode$at,
-				_elm_lang$core$Native_List.fromArray(
-					['data', 'blog-post', 'relatedproduct']),
-				_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLink))),
-		A2(
-			_elm_lang$core$Json_Decode$at,
-			_elm_lang$core$Native_List.fromArray(
-				['data', 'blog-post', 'allow_comments', 'value']),
-			A2(_elm_lang$core$Json_Decode$andThen, _elm_lang$core$Json_Decode$string, decodeAllowComments)));
-}();
-var _user$project$App_Documents_Decoders$decodeJobOffer = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['data', 'job-offer']),
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					A2(
-						_user$project$Prismic_Decoders_ops['|:'],
-						A2(
-							_user$project$Prismic_Decoders_ops['|:'],
-							_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$JobOffer),
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['name', 'value']),
-								_user$project$Prismic_Decoders$decodeStructuredText)),
-						_elm_lang$core$Json_Decode$maybe(
-							A2(
-								_elm_lang$core$Json_Decode$at,
-								_elm_lang$core$Native_List.fromArray(
-									['contract_type', 'value']),
-								_elm_lang$core$Json_Decode$string))),
-					_elm_lang$core$Json_Decode$maybe(
-						A2(
-							_elm_lang$core$Json_Decode$at,
-							_elm_lang$core$Native_List.fromArray(
-								['service', 'value']),
-							_elm_lang$core$Json_Decode$string))),
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['job_description', 'value']),
-					_user$project$Prismic_Decoders$decodeStructuredText)),
-			A2(
-				_elm_lang$core$Json_Decode$at,
-				_elm_lang$core$Native_List.fromArray(
-					['profile', 'value']),
-				_user$project$Prismic_Decoders$decodeStructuredText)),
-		A2(
-			_elm_lang$core$Json_Decode$at,
-			_elm_lang$core$Native_List.fromArray(
-				['location']),
-			_elm_lang$core$Json_Decode$list(_user$project$Prismic_Decoders$decodeLink))));
-var _user$project$App_Documents_Decoders$decodeArticle = A2(
-	_user$project$Prismic_Decoders_ops['|:'],
-	A2(
-		_user$project$Prismic_Decoders_ops['|:'],
-		A2(
-			_user$project$Prismic_Decoders_ops['|:'],
-			A2(
-				_user$project$Prismic_Decoders_ops['|:'],
-				A2(
-					_user$project$Prismic_Decoders_ops['|:'],
-					_elm_lang$core$Json_Decode$succeed(_user$project$App_Documents_Types$Article),
-					A2(
-						_elm_lang$core$Json_Decode$at,
-						_elm_lang$core$Native_List.fromArray(
-							['id']),
-						_elm_lang$core$Json_Decode$string)),
-				A2(
-					_elm_lang$core$Json_Decode$at,
-					_elm_lang$core$Native_List.fromArray(
-						['data', 'article', 'content', 'value']),
-					_user$project$Prismic_Decoders$decodeStructuredText)),
-			A2(
-				_elm_lang$core$Json_Decode$at,
-				_elm_lang$core$Native_List.fromArray(
-					['data', 'article', 'image', 'value']),
-				_user$project$Prismic_Decoders$decodeImageField)),
-		A2(
-			_elm_lang$core$Json_Decode$at,
-			_elm_lang$core$Native_List.fromArray(
-				['data', 'article', 'short_lede', 'value']),
-			_user$project$Prismic_Decoders$decodeStructuredText)),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['data', 'article', 'title', 'value']),
-		_user$project$Prismic_Decoders$decodeStructuredText));
-
-var _user$project$Prismic$setInCache = F3(
-	function (request, response, cache) {
-		var id = cache.nextRequestId;
-		return _elm_lang$core$Native_Utils.update(
-			cache,
-			{
-				nextRequestId: id + 1,
-				requests: A3(_elm_lang$core$Dict$insert, id, request, cache.requests),
-				responses: A3(_elm_lang$core$Dict$insert, id, response, cache.responses)
-			});
-	});
-var _user$project$Prismic$getFromCache = F2(
-	function (request, cache) {
-		var mRequestId = _elm_lang$core$List$head(
-			A2(
-				_elm_lang$core$List$map,
-				_elm_lang$core$Basics$fst,
-				A2(
-					_elm_lang$core$List$filter,
-					function (_p0) {
-						var _p1 = _p0;
-						return _elm_lang$core$Native_Utils.eq(_p1._1, request);
-					},
-					_elm_lang$core$Dict$toList(cache.requests))));
-		var mResponse = A2(
-			_elm_lang$core$Maybe$andThen,
-			mRequestId,
-			function (id) {
-				return A2(_elm_lang$core$Dict$get, id, cache.responses);
-			});
-		return mResponse;
-	});
-var _user$project$Prismic$requestToUrl = function (request) {
-	var _p2 = request.action;
-	var urlStr = _p2._0;
-	var _p3 = request.ref;
-	var refStr = _p3._0;
-	return _user$project$Prismic_Types$Url(
-		A2(
-			_evancz$elm_http$Http$url,
-			urlStr,
-			A2(
-				_elm_lang$core$List_ops['::'],
-				{ctor: '_Tuple2', _0: 'ref', _1: refStr},
-				_elm_lang$core$String$isEmpty(request.q) ? _elm_lang$core$Native_List.fromArray(
-					[]) : _elm_lang$core$Native_List.fromArray(
-					[
-						{ctor: '_Tuple2', _0: 'q', _1: request.q}
-					]))));
-};
-var _user$project$Prismic$none = _elm_lang$core$Task$map(_elm_lang$core$Basics$identity);
-var _user$project$Prismic$predicatesToStr = function (predicates) {
-	var wrapQuotes = function (value) {
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'\"',
-			A2(_elm_lang$core$Basics_ops['++'], value, '\"'));
-	};
-	var toStrList = function (values) {
-		var valueStrs = A2(
-			_elm_lang$core$String$join,
-			', ',
-			A2(_elm_lang$core$List$map, wrapQuotes, values));
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'[',
-			A2(_elm_lang$core$Basics_ops['++'], valueStrs, ']'));
-	};
-	var predicateToStr = function (predicate) {
-		var query = function () {
-			var _p4 = predicate;
-			switch (_p4.ctor) {
-				case 'At':
-					return A2(
-						_elm_lang$core$Basics_ops['++'],
-						'at(',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_p4._0,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								', ',
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									wrapQuotes(_p4._1),
-									')'))));
-				case 'AtL':
-					return A2(
-						_elm_lang$core$Basics_ops['++'],
-						'at(',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_p4._0,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								', ',
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p4._1),
-									')'))));
-				case 'Any':
-					return A2(
-						_elm_lang$core$Basics_ops['++'],
-						'any(',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_p4._0,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								', ',
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p4._1),
-									')'))));
-				default:
-					return A2(
-						_elm_lang$core$Basics_ops['++'],
-						'fulltext(',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_p4._0,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								', ',
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									wrapQuotes(_p4._1),
-									')'))));
-			}
-		}();
-		return A2(
-			_elm_lang$core$Basics_ops['++'],
-			'[:d = ',
-			A2(_elm_lang$core$Basics_ops['++'], query, ']'));
-	};
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		'[',
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			_elm_lang$core$String$concat(
-				A2(_elm_lang$core$List$map, predicateToStr, predicates)),
-			']'));
-};
-var _user$project$Prismic$query = F2(
-	function (predicates, requestTask) {
-		var addQuery = function (_p5) {
-			var _p6 = _p5;
-			return _elm_lang$core$Task$succeed(
-				{
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						_p6._0,
-						{
-							q: _user$project$Prismic$predicatesToStr(predicates)
-						}),
-					_1: _p6._1
-				});
-		};
-		return A2(_elm_lang$core$Task$andThen, requestTask, addQuery);
-	});
-var _user$project$Prismic$getRefById = F2(
-	function (refId, api) {
-		return _elm_lang$core$List$head(
-			A2(
-				_elm_lang$core$List$filter,
-				function (r) {
-					return _elm_lang$core$Native_Utils.eq(r.id, refId);
-				},
-				api.refs));
-	});
-var _user$project$Prismic$ref = F2(
-	function (refId, requestTask) {
-		var addRef = function (_p7) {
-			var _p8 = _p7;
-			var _p10 = _p8._1;
-			var _p9 = A2(_user$project$Prismic$getRefById, refId, _p10.api);
-			if (_p9.ctor === 'Nothing') {
-				return _elm_lang$core$Task$fail(
-					_user$project$Prismic_Types$RefDoesNotExist(refId));
-			} else {
-				return _elm_lang$core$Task$succeed(
-					{
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							_p8._0,
-							{ref: _p9._0.ref}),
-						_1: _p10
-					});
-			}
-		};
-		return A2(_elm_lang$core$Task$andThen, requestTask, addRef);
-	});
-var _user$project$Prismic$form = F2(
-	function (formId, apiTask) {
-		var addForm = function (cache) {
-			var defaultRefId = 'master';
-			var mRef = A2(_user$project$Prismic$getRefById, defaultRefId, cache.api);
-			var mForm = A2(_elm_lang$core$Dict$get, formId, cache.api.forms);
-			var _p11 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
-			if (_p11._0.ctor === 'Nothing') {
-				return _elm_lang$core$Task$fail(
-					_user$project$Prismic_Types$FormDoesNotExist(formId));
-			} else {
-				if (_p11._1.ctor === 'Nothing') {
-					return _elm_lang$core$Task$fail(
-						_user$project$Prismic_Types$RefDoesNotExist(defaultRefId));
-				} else {
-					var _p12 = _p11._0._0;
-					var q = A2(
-						_elm_lang$core$Maybe$withDefault,
-						'',
-						A2(
-							_elm_lang$core$Maybe$andThen,
-							A2(_elm_lang$core$Dict$get, 'q', _p12.fields),
-							function (_) {
-								return _.$default;
-							}));
-					return _elm_lang$core$Task$succeed(
-						{
-							ctor: '_Tuple2',
-							_0: {action: _p12.action, ref: _p11._1._0.ref, q: q},
-							_1: cache
-						});
-				}
-			}
-		};
-		return A2(_elm_lang$core$Task$andThen, apiTask, addForm);
-	});
-var _user$project$Prismic$getJson = F2(
-	function (decoder, url) {
-		var request = {
-			verb: 'GET',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Accept', _1: 'application/json'}
-				]),
-			url: url,
-			body: _evancz$elm_http$Http$empty
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-var _user$project$Prismic$fetchApi = function (cache) {
-	var _p13 = cache.api;
-	if (_p13.ctor === 'Just') {
-		return _elm_lang$core$Task$succeed(
-			_elm_lang$core$Native_Utils.update(
-				cache,
-				{api: _p13._0}));
-	} else {
-		var _p14 = cache.url;
-		var url = _p14._0;
-		return A2(
-			_elm_lang$core$Task$map,
-			function (api) {
-				return _elm_lang$core$Native_Utils.update(
-					cache,
-					{api: api});
-			},
-			A2(
-				_elm_lang$core$Task$mapError,
-				_user$project$Prismic_Types$FetchApiError,
-				A2(_user$project$Prismic$getJson, _user$project$Prismic_Decoders$decodeApi, url)));
-	}
-};
-var _user$project$Prismic$submit = F2(
-	function (decodeDocType, requestTask) {
-		var doSubmit = function (_p15) {
-			var _p16 = _p15;
-			var _p20 = _p16._0;
-			var _p19 = _p16._1;
-			var decodeResponseValue = function (responseValue) {
-				return A2(
-					_elm_lang$core$Task$mapError,
-					function (msg) {
-						return _user$project$Prismic_Types$SubmitRequestError(
-							_evancz$elm_http$Http$UnexpectedPayload(msg));
-					},
-					_elm_lang$core$Task$fromResult(
-						A2(
-							_elm_lang$core$Json_Decode$decodeValue,
-							_user$project$Prismic_Decoders$decodeResponse(decodeDocType),
-							responseValue)));
-			};
-			var cacheWithApi = _elm_lang$core$Native_Utils.update(
-				_p19,
-				{
-					api: _elm_lang$core$Maybe$Just(_p19.api)
-				});
-			var _p17 = _user$project$Prismic$requestToUrl(_p20);
-			var url = _p17._0;
-			var _p18 = A2(_user$project$Prismic$getFromCache, _p20, _p19);
-			if (_p18.ctor === 'Just') {
-				return A2(
-					_elm_lang$core$Task$map,
-					function (response) {
-						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
-					},
-					decodeResponseValue(_p18._0));
-			} else {
-				var mkResultTuple = F2(
-					function (responseValue, response) {
-						return {
-							ctor: '_Tuple2',
-							_0: response,
-							_1: A3(_user$project$Prismic$setInCache, _p20, responseValue, cacheWithApi)
-						};
-					});
-				var decodeAndMkResult = function (responseValue) {
-					return A2(
-						_elm_lang$core$Task$map,
-						mkResultTuple(responseValue),
-						decodeResponseValue(responseValue));
-				};
-				var fetchUrl = A2(
-					_elm_lang$core$Task$mapError,
-					_user$project$Prismic_Types$SubmitRequestError,
-					A2(_user$project$Prismic$getJson, _elm_lang$core$Json_Decode$value, url));
-				return A2(_elm_lang$core$Task$andThen, fetchUrl, decodeAndMkResult);
-			}
-		};
-		return A2(_elm_lang$core$Task$andThen, requestTask, doSubmit);
-	});
-var _user$project$Prismic$FullText = F2(
-	function (a, b) {
-		return {ctor: 'FullText', _0: a, _1: b};
-	});
-var _user$project$Prismic$fulltext = F2(
-	function (fragment, value) {
-		return A2(_user$project$Prismic$FullText, fragment, value);
-	});
-var _user$project$Prismic$Any = F2(
-	function (a, b) {
-		return {ctor: 'Any', _0: a, _1: b};
-	});
-var _user$project$Prismic$any = F2(
-	function (fragment, values) {
-		return A2(_user$project$Prismic$Any, fragment, values);
-	});
-var _user$project$Prismic$AtL = F2(
-	function (a, b) {
-		return {ctor: 'AtL', _0: a, _1: b};
-	});
-var _user$project$Prismic$atL = F2(
-	function (fragment, values) {
-		return A2(_user$project$Prismic$AtL, fragment, values);
-	});
-var _user$project$Prismic$At = F2(
-	function (a, b) {
-		return {ctor: 'At', _0: a, _1: b};
-	});
-var _user$project$Prismic$at = F2(
-	function (fragment, value) {
-		return A2(_user$project$Prismic$At, fragment, value);
-	});
-var _user$project$Prismic$bookmark = F2(
-	function (bookmarkId, cacheTask) {
-		return A2(
-			_elm_lang$core$Task$andThen,
-			cacheTask,
-			function (cacheWithApi) {
-				var mDocId = A2(_elm_lang$core$Dict$get, bookmarkId, cacheWithApi.api.bookmarks);
-				var _p21 = mDocId;
-				if (_p21.ctor === 'Nothing') {
-					return _elm_lang$core$Task$fail(
-						_user$project$Prismic_Types$BookmarkDoesNotExist(bookmarkId));
-				} else {
-					return A2(
-						_user$project$Prismic$query,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(_user$project$Prismic$at, 'document.id', _p21._0)
-							]),
-						A2(
-							_user$project$Prismic$form,
-							'everything',
-							_elm_lang$core$Task$succeed(cacheWithApi)));
-				}
-			});
-	});
 
 var _user$project$App_Blog_Index_State$update = F2(
 	function (msg, model) {
@@ -11356,25 +11778,25 @@ var _user$project$App_Navigation$urlForBlogPost = function (blogPost) {
 };
 var _user$project$App_Navigation$urlForHome = _user$project$App_Navigation$toHash(
 	_user$project$App_Types$SiteP(_user$project$App_Site_Types$HomeP));
-var _user$project$App_Navigation$linkResolver = function (linkedDoc) {
+var _user$project$App_Navigation$linkResolver = function (documentRef) {
 	var url = function () {
-		var _p4 = linkedDoc.linkedDocumentType;
+		var _p4 = documentRef.linkedDocumentType;
 		switch (_p4) {
 			case 'blog-post':
 				return _user$project$App_Navigation$toHash(
 					_user$project$App_Types$BlogP(
-						A2(_user$project$App_Blog_Types$PostP, linkedDoc.id, linkedDoc.slug)));
+						A2(_user$project$App_Blog_Types$PostP, documentRef.id, documentRef.slug)));
 			case 'store':
 				return _user$project$App_Navigation$toHash(
 					_user$project$App_Types$SiteP(
 						_user$project$App_Site_Types$StoresP(
-							A2(_user$project$App_Site_Stores_Types$ShowP, linkedDoc.id, linkedDoc.slug))));
+							A2(_user$project$App_Site_Stores_Types$ShowP, documentRef.id, documentRef.slug))));
 			default:
-				var _p5 = A2(_elm_lang$core$Debug$log, 'Cannot resolve linkedDoc: ', linkedDoc);
+				var _p5 = A2(_elm_lang$core$Debug$log, 'Cannot resolve documentRef: ', documentRef);
 				return _user$project$App_Navigation$urlForHome;
 		}
 	}();
-	return _user$project$Prismic_Types$Url(url);
+	return _user$project$Prismic$Url(url);
 };
 var _user$project$App_Navigation$urlForProduct = function (product) {
 	var slug = A2(
@@ -11427,415 +11849,9 @@ var _user$project$App_Navigation$urlForStore = function (store) {
 				A2(_user$project$App_Site_Stores_Types$ShowP, store.id, slug))));
 };
 
-var _user$project$Prismic_View$getText = function (field) {
-	var _p0 = field;
-	switch (_p0.ctor) {
-		case 'SSimple':
-			return _p0._0.text;
-		case 'SImage':
-			return A2(_elm_lang$core$Maybe$withDefault, '<image>', _p0._0.alt);
-		default:
-			return '';
-	}
-};
-var _user$project$Prismic_View$getTexts = function (fields) {
-	return A2(
-		_elm_lang$core$String$join,
-		' ',
-		A2(_elm_lang$core$List$map, _user$project$Prismic_View$getText, fields));
-};
-var _user$project$Prismic_View$getFirstImage = function (structuredText) {
-	var getImage = function (field) {
-		var _p1 = field;
-		if (_p1.ctor === 'SImage') {
-			return _elm_lang$core$Maybe$Just(_p1._0);
-		} else {
-			return _elm_lang$core$Maybe$Nothing;
-		}
-	};
-	return _elm_lang$core$List$head(
-		A2(_elm_lang$core$List$filterMap, getImage, structuredText));
-};
-var _user$project$Prismic_View$getFirstParagraph = function (structuredText) {
-	var isParagraph = function (field) {
-		var _p2 = field;
-		if (_p2.ctor === 'SSimple') {
-			var _p3 = _p2._0.fieldType;
-			if (_p3.ctor === 'Paragraph') {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	};
-	return _elm_lang$core$List$head(
-		A2(_elm_lang$core$List$filter, isParagraph, structuredText));
-};
-var _user$project$Prismic_View$getTitle = function (structuredText) {
-	var isTitle = function (field) {
-		var _p4 = field;
-		if (_p4.ctor === 'SSimple') {
-			var _p5 = _p4._0.fieldType;
-			switch (_p5.ctor) {
-				case 'Heading1':
-					return true;
-				case 'Heading2':
-					return true;
-				case 'Heading3':
-					return true;
-				default:
-					return false;
-			}
-		} else {
-			return false;
-		}
-	};
-	return _elm_lang$core$List$head(
-		A2(_elm_lang$core$List$filter, isTitle, structuredText));
-};
-var _user$project$Prismic_View$defaultLinkResolver = function (linkedDoc) {
-	return _user$project$Prismic_Types$Url(
-		A2(
-			_elm_lang$core$String$join,
-			'/',
-			_elm_lang$core$Native_List.fromArray(
-				['documents', linkedDoc.id, linkedDoc.slug])));
-};
-var _user$project$Prismic_View$linkAsHtmlWith = F3(
-	function (linkResolver, link, childs) {
-		var _p6 = link;
-		if (_p6.ctor === 'DocumentLink') {
-			var _p7 = linkResolver(_p6._0);
-			var url = _p7._0;
-			return A2(
-				_elm_lang$html$Html$a,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$href(url)
-					]),
-				childs);
-		} else {
-			return A2(
-				_elm_lang$html$Html$a,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$href(_p6._0._0)
-					]),
-				childs);
-		}
-	});
-var _user$project$Prismic_View$linkAsHtml = F2(
-	function (linkResolver, link) {
-		var _p8 = link;
-		if (_p8.ctor === 'DocumentLink') {
-			var _p10 = _p8._0;
-			var _p9 = linkResolver(_p10);
-			var url = _p9._0;
-			return A2(
-				_elm_lang$html$Html$a,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$href(url)
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(_p10.slug))
-					]));
-		} else {
-			var _p11 = _p8._0._0;
-			return A2(
-				_elm_lang$html$Html$a,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$href(_p11)
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(_p11)
-					]));
-		}
-	});
-var _user$project$Prismic_View$embedAsHtml = function (embed) {
-	var _p12 = embed;
-	if (_p12.ctor === 'EmbedVideo') {
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html_Attributes$property,
-					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p12._0.html))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	} else {
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html_Attributes$property,
-					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p12._0.html))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	}
-};
-var _user$project$Prismic_View$imageAsHtml = function (image) {
-	var _p13 = image.url;
-	var urlStr = _p13._0;
-	return A2(
-		_elm_lang$html$Html$img,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$src(urlStr)
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[]));
-};
-var _user$project$Prismic_View$simpleFieldAsHtml = F2(
-	function (linkResolver, field) {
-		var spanEl = function (span) {
-			var _p14 = span.spanType;
-			switch (_p14.ctor) {
-				case 'Em':
-					return _elm_lang$html$Html$em(
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				case 'Strong':
-					return _elm_lang$html$Html$strong(
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				default:
-					return A2(_user$project$Prismic_View$linkAsHtmlWith, linkResolver, _p14._0);
-			}
-		};
-		var foldFn = F2(
-			function (span, _p15) {
-				var _p16 = _p15;
-				var middle = A3(_elm_lang$core$String$slice, span.start, span.end, field.text);
-				var beginning = A3(_elm_lang$core$String$slice, _p16._1, span.start, field.text);
-				return {
-					ctor: '_Tuple2',
-					_0: A2(
-						_elm_lang$core$Basics_ops['++'],
-						_p16._0,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(beginning),
-								A2(
-								spanEl,
-								span,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text(middle)
-									]))
-							])),
-					_1: span.end
-				};
-			});
-		var el = function () {
-			var _p17 = field.fieldType;
-			switch (_p17.ctor) {
-				case 'Heading1':
-					return _elm_lang$html$Html$h1;
-				case 'Heading2':
-					return _elm_lang$html$Html$h2;
-				case 'Heading3':
-					return _elm_lang$html$Html$h3;
-				case 'Paragraph':
-					return _elm_lang$html$Html$p;
-				default:
-					return F2(
-						function (attrs, childs) {
-							return A2(
-								_elm_lang$html$Html$ul,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(_elm_lang$html$Html$li, attrs, childs)
-									]));
-						});
-			}
-		}();
-		return A2(
-			el,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			function (_p18) {
-				var _p19 = _p18;
-				return A2(
-					_elm_lang$core$Basics_ops['++'],
-					_p19._0,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$String$dropLeft, _p19._1, field.text))
-						]));
-			}(
-				A3(
-					_elm_lang$core$List$foldl,
-					foldFn,
-					{
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_List.fromArray(
-							[]),
-						_1: 0
-					},
-					A2(
-						_elm_lang$core$List$sortBy,
-						function (_) {
-							return _.start;
-						},
-						field.spans))));
-	});
-var _user$project$Prismic_View$structuredTextFieldAsHtml = F2(
-	function (linkResolver, field) {
-		var _p20 = field;
-		switch (_p20.ctor) {
-			case 'SSimple':
-				return A2(_user$project$Prismic_View$simpleFieldAsHtml, linkResolver, _p20._0);
-			case 'SImage':
-				return _user$project$Prismic_View$imageAsHtml(_p20._0);
-			default:
-				return _user$project$Prismic_View$embedAsHtml(_p20._0);
-		}
-	});
-var _user$project$Prismic_View$structuredTextAsHtml = function (linkResolver) {
-	return _elm_lang$core$List$map(
-		_user$project$Prismic_View$structuredTextFieldAsHtml(linkResolver));
-};
-var _user$project$Prismic_View$asHtml = F2(
-	function (linkResolver, field) {
-		var _p21 = field;
-		switch (_p21.ctor) {
-			case 'Text':
-				return A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(_p21._0)
-						]));
-			case 'Date':
-				return A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(_p21._0)
-						]));
-			case 'Number':
-				return A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(_p21._0))
-						]));
-			case 'Select':
-				return A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(_p21._0)
-						]));
-			case 'Color':
-				return A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p21._0))
-						]));
-			case 'Link':
-				return A2(_user$project$Prismic_View$linkAsHtml, linkResolver, _p21._0);
-			case 'Image':
-				return _user$project$Prismic_View$imageAsHtml(_p21._0.main);
-			default:
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					A2(_user$project$Prismic_View$structuredTextAsHtml, linkResolver, _p21._0));
-		}
-	});
-var _user$project$Prismic_View$viewDefaultDocType = function (doc) {
-	var allDocFields = function () {
-		var fieldsPerType = _elm_lang$core$Dict$values(doc);
-		var fieldsPerField = A2(_elm_lang$core$List$concatMap, _elm_lang$core$Dict$values, fieldsPerType);
-		return _elm_lang$core$List$concat(fieldsPerField);
-	}();
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$h2,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					A2(
-						_elm_lang$core$List$map,
-						_elm_lang$html$Html$text,
-						_elm_lang$core$Dict$keys(doc)))
-				]),
-			A2(
-				_elm_lang$core$List$map,
-				_user$project$Prismic_View$asHtml(_user$project$Prismic_View$defaultLinkResolver),
-				allDocFields)));
-};
-var _user$project$Prismic_View$asHtmlWithDefault = F5(
-	function (linkResolver, $default, documentType, fieldName, data) {
-		return A2(
-			_elm_lang$core$Maybe$withDefault,
-			$default,
-			A2(
-				_elm_lang$core$Maybe$andThen,
-				A2(
-					_elm_lang$core$Maybe$andThen,
-					A2(_elm_lang$core$Dict$get, documentType, data),
-					_elm_lang$core$Dict$get(fieldName)),
-				function (docs) {
-					return _elm_lang$core$Maybe$Just(
-						function () {
-							var _p22 = docs;
-							if ((_p22.ctor === '::') && (_p22._1.ctor === '[]')) {
-								return A2(_user$project$Prismic_View$asHtml, linkResolver, _p22._0);
-							} else {
-								return A2(
-									_elm_lang$html$Html$div,
-									_elm_lang$core$Native_List.fromArray(
-										[]),
-									A2(
-										_elm_lang$core$List$map,
-										_user$project$Prismic_View$asHtml(linkResolver),
-										docs));
-							}
-						}());
-				}));
-	});
-
 var _user$project$App_Blog_Index_View$viewDocumentBlogPostShort = function (blogPost) {
 	var imageUrl = function () {
-		var _p0 = _user$project$Prismic_View$getFirstImage(blogPost.body);
+		var _p0 = _user$project$Prismic$getFirstImage(blogPost.body);
 		if (_p0.ctor === 'Just') {
 			var _p1 = _p0._0.url;
 			var url = _p1._0;
@@ -11845,19 +11861,19 @@ var _user$project$App_Blog_Index_View$viewDocumentBlogPostShort = function (blog
 		}
 	}();
 	var firstPara = function () {
-		var _p2 = _user$project$Prismic_View$getFirstParagraph(blogPost.body);
+		var _p2 = _user$project$Prismic$getFirstParagraph(blogPost.body);
 		if (_p2.ctor === 'Nothing') {
 			return 'No text';
 		} else {
-			return _user$project$Prismic_View$getText(_p2._0);
+			return _user$project$Prismic$getText(_p2._0);
 		}
 	}();
 	var title = function () {
-		var _p3 = _user$project$Prismic_View$getTitle(blogPost.body);
+		var _p3 = _user$project$Prismic$getTitle(blogPost.body);
 		if (_p3.ctor === 'Nothing') {
 			return 'No Title';
 		} else {
-			return _user$project$Prismic_View$getText(_p3._0);
+			return _user$project$Prismic$getText(_p3._0);
 		}
 	}();
 	return A2(
@@ -12310,14 +12326,14 @@ var _user$project$App_Common$toCssUrl = function (_p0) {
 		'url(',
 		A2(_elm_lang$core$Basics_ops['++'], _p1._0, ')'));
 };
-var _user$project$App_Common$structuredTextAsHtml = _user$project$Prismic_View$structuredTextAsHtml(_user$project$App_Navigation$linkResolver);
+var _user$project$App_Common$structuredTextAsHtml = _user$project$Prismic$structuredTextAsHtml(_user$project$App_Navigation$linkResolver);
 
 var _user$project$App_Blog_Post_View$viewDocumentBlogPostFull = F2(
 	function (blogPost, model) {
 		var viewRelatedProduct = function (product) {
 			var _p0 = A2(
 				_elm_lang$core$Maybe$withDefault,
-				_user$project$Prismic_Types$Url(''),
+				_user$project$Prismic$Url(''),
 				A2(
 					_elm_lang$core$Maybe$map,
 					function (_) {
@@ -12355,18 +12371,18 @@ var _user$project$App_Blog_Post_View$viewDocumentBlogPostFull = F2(
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(product.name))
+										_user$project$Prismic$getTexts(product.name))
 									]))
 							]))
 					]));
 		};
 		var viewRelatedPost = function (post) {
 			var title = function () {
-				var _p1 = _user$project$Prismic_View$getTitle(post.body);
+				var _p1 = _user$project$Prismic$getTitle(post.body);
 				if (_p1.ctor === 'Nothing') {
 					return 'No title';
 				} else {
-					return _user$project$Prismic_View$getText(_p1._0);
+					return _user$project$Prismic$getText(_p1._0);
 				}
 			}();
 			return A2(
@@ -13032,7 +13048,7 @@ var _user$project$App_Site_Home_State$init = function (prismic) {
 var _user$project$App_Site_Products_Common_View$viewFeaturedProduct = function (product) {
 	var _p0 = A2(
 		_elm_lang$core$Maybe$withDefault,
-		_user$project$Prismic_Types$Url(''),
+		_user$project$Prismic$Url(''),
 		A2(
 			_elm_lang$core$Maybe$map,
 			function (_) {
@@ -13089,7 +13105,7 @@ var _user$project$App_Site_Products_Common_View$viewFeaturedProduct = function (
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(product.name))
+										_user$project$Prismic$getTexts(product.name))
 									]))
 							])),
 						A2(
@@ -13105,7 +13121,7 @@ var _user$project$App_Site_Products_Common_View$viewFeaturedProduct = function (
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(product.shortLede))
+										_user$project$Prismic$getTexts(product.shortLede))
 									]))
 							]))
 					]))
@@ -13162,7 +13178,7 @@ var _user$project$App_Site_Products_Common_View$toCurrency = function (amount) {
 var _user$project$App_Site_Products_Common_View$viewProductShort = function (product) {
 	var _p3 = A2(
 		_elm_lang$core$Maybe$withDefault,
-		_user$project$Prismic_Types$Url(''),
+		_user$project$Prismic$Url(''),
 		A2(
 			_elm_lang$core$Maybe$map,
 			function (_) {
@@ -13211,7 +13227,7 @@ var _user$project$App_Site_Products_Common_View$viewProductShort = function (pro
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html$text(
-								_user$project$Prismic_View$getTexts(product.name))
+								_user$project$Prismic$getTexts(product.name))
 							])),
 						A2(
 						_elm_lang$html$Html$em,
@@ -13274,8 +13290,8 @@ var _user$project$App_Site_Home_View$viewFeaturedBlogPost = function (blogPost) 
 									'',
 									A2(
 										_elm_lang$core$Maybe$map,
-										_user$project$Prismic_View$getText,
-										_user$project$Prismic_View$getTitle(blogPost.body))))
+										_user$project$Prismic$getText,
+										_user$project$Prismic$getTitle(blogPost.body))))
 							])),
 						A2(
 						_elm_lang$html$Html$p,
@@ -13289,8 +13305,8 @@ var _user$project$App_Site_Home_View$viewFeaturedBlogPost = function (blogPost) 
 									'',
 									A2(
 										_elm_lang$core$Maybe$map,
-										_user$project$Prismic_View$getText,
-										_user$project$Prismic_View$getFirstParagraph(blogPost.body))))
+										_user$project$Prismic$getText,
+										_user$project$Prismic$getFirstParagraph(blogPost.body))))
 							]))
 					])),
 				A2(
@@ -13345,7 +13361,7 @@ var _user$project$App_Site_Home_View$viewBlog = function (model) {
 var _user$project$App_Site_Home_View$viewFeaturedSelection = function (selection) {
 	var _p2 = A2(
 		_elm_lang$core$Maybe$withDefault,
-		_user$project$Prismic_Types$Url(''),
+		_user$project$Prismic$Url(''),
 		A2(
 			_elm_lang$core$Maybe$map,
 			function (_) {
@@ -13394,7 +13410,7 @@ var _user$project$App_Site_Home_View$viewFeaturedSelection = function (selection
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(selection.name))
+										_user$project$Prismic$getTexts(selection.name))
 									]))
 							])),
 						A2(
@@ -13410,7 +13426,7 @@ var _user$project$App_Site_Home_View$viewFeaturedSelection = function (selection
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(selection.shortLede))
+										_user$project$Prismic$getTexts(selection.shortLede))
 									]))
 							]))
 					]))
@@ -13923,7 +13939,7 @@ var _user$project$App_Site_Products_Show_View$viewTestamonial = function (produc
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html$text(
-								_user$project$Prismic_View$getTexts(quote)),
+								_user$project$Prismic$getTexts(quote)),
 								A2(
 								_elm_lang$html$Html$strong,
 								_elm_lang$core$Native_List.fromArray(
@@ -13932,7 +13948,7 @@ var _user$project$App_Site_Products_Show_View$viewTestamonial = function (produc
 									[
 										_elm_lang$html$Html$text('said '),
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(author))
+										_user$project$Prismic$getTexts(author))
 									]))
 							]))
 					]));
@@ -14022,7 +14038,7 @@ var _user$project$App_Site_Products_Show_View$view = function (model) {
 												_elm_lang$core$Native_List.fromArray(
 													[
 														_elm_lang$html$Html$text(
-														_user$project$Prismic_View$getTexts(_p4.name))
+														_user$project$Prismic$getTexts(_p4.name))
 													])),
 												A2(
 												_elm_lang$html$Html$em,
@@ -14041,7 +14057,7 @@ var _user$project$App_Site_Products_Show_View$view = function (model) {
 										_elm_lang$core$Native_List.fromArray(
 											[
 												_elm_lang$html$Html$text(
-												_user$project$Prismic_View$getTexts(_p4.shortLede))
+												_user$project$Prismic$getTexts(_p4.shortLede))
 											]))
 									]),
 								A2(
@@ -14485,7 +14501,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 									_elm_lang$core$Native_List.fromArray(
 										[
 											_elm_lang$html$Html$text(
-											_user$project$Prismic_View$getTexts(_p1.title))
+											_user$project$Prismic$getTexts(_p1.title))
 										])),
 									A2(
 									_elm_lang$html$Html$em,
@@ -14504,7 +14520,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 										[
 											_elm_lang$html$Html$text(
 											_user$project$App_Site_Search_Results_View$excerpt(
-												_user$project$Prismic_View$getTexts(_p1.content)))
+												_user$project$Prismic$getTexts(_p1.content)))
 										]))
 								]))
 						]));
@@ -14538,8 +14554,8 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 												'(no title)',
 												A2(
 													_elm_lang$core$Maybe$map,
-													_user$project$Prismic_View$getText,
-													_user$project$Prismic_View$getTitle(_p3.body))))
+													_user$project$Prismic$getText,
+													_user$project$Prismic$getTitle(_p3.body))))
 										])),
 									A2(
 									_elm_lang$html$Html$em,
@@ -14564,9 +14580,9 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 													_elm_lang$core$Maybe$map,
 													function (_p2) {
 														return _user$project$App_Site_Search_Results_View$excerpt(
-															_user$project$Prismic_View$getText(_p2));
+															_user$project$Prismic$getText(_p2));
 													},
-													_user$project$Prismic_View$getFirstParagraph(_p3.body))))
+													_user$project$Prismic$getFirstParagraph(_p3.body))))
 										]))
 								]))
 						]));
@@ -14595,7 +14611,7 @@ var _user$project$App_Site_Search_Results_View$viewArticleR = F2(
 										[
 											_elm_lang$html$Html$text('Les Bonnes Choses Store - '),
 											_elm_lang$html$Html$text(
-											_user$project$Prismic_View$getTexts(_p4.name))
+											_user$project$Prismic$getTexts(_p4.name))
 										])),
 									A2(
 									_elm_lang$html$Html$em,
@@ -14663,7 +14679,7 @@ var _user$project$App_Site_Search_Results_View$viewProductR = function (productR
 		function (mkUrl, item) {
 			var _p5 = A2(
 				_elm_lang$core$Maybe$withDefault,
-				_user$project$Prismic_Types$Url(''),
+				_user$project$Prismic$Url(''),
 				A2(
 					_elm_lang$core$Maybe$map,
 					function (_) {
@@ -14701,7 +14717,7 @@ var _user$project$App_Site_Search_Results_View$viewProductR = function (productR
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(item.name))
+										_user$project$Prismic$getTexts(item.name))
 									]))
 							]))
 					]));
@@ -15142,7 +15158,7 @@ var _user$project$App_Site_Selections_Show_View$viewPageHeader = function (selec
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(selection.name))
+										_user$project$Prismic$getTexts(selection.name))
 									])),
 								A2(
 								_elm_lang$html$Html$p,
@@ -15151,7 +15167,7 @@ var _user$project$App_Site_Selections_Show_View$viewPageHeader = function (selec
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Prismic_View$getTexts(selection.shortLede))
+										_user$project$Prismic$getTexts(selection.shortLede))
 									]))
 							]))
 					]))
@@ -15846,7 +15862,7 @@ var _user$project$App_Site_State$init = F2(
 var _user$project$App_Site_Stores_Index_View$viewStore = function (store) {
 	var imageUrl = A2(
 		_elm_lang$core$Maybe$withDefault,
-		_user$project$Prismic_Types$Url(''),
+		_user$project$Prismic$Url(''),
 		A2(
 			_elm_lang$core$Maybe$map,
 			function (_) {
@@ -15886,7 +15902,7 @@ var _user$project$App_Site_Stores_Index_View$viewStore = function (store) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html$text(
-								_user$project$Prismic_View$getTexts(store.name))
+								_user$project$Prismic$getTexts(store.name))
 							]))
 					]))
 			]));
@@ -15927,7 +15943,7 @@ var _user$project$App_Site_Stores_Index_View$viewStores = function (model) {
 					A2(
 						_elm_lang$core$List$sortBy,
 						function (_p1) {
-							return _user$project$Prismic_View$getTexts(
+							return _user$project$Prismic$getTexts(
 								function (_) {
 									return _.name;
 								}(_p1));
@@ -15996,7 +16012,7 @@ var _user$project$App_Site_Stores_Show_View$viewStore = function (store) {
 										_elm_lang$core$Native_List.fromArray(
 											[
 												_elm_lang$html$Html$text(
-												_user$project$Prismic_View$getTexts(store.name))
+												_user$project$Prismic$getTexts(store.name))
 											]))
 									]),
 								_user$project$App_Common$structuredTextAsHtml(store.description)))
@@ -16268,10 +16284,6 @@ var _user$project$App_Site_View$view = function (model) {
 			]));
 };
 
-var _user$project$Prismic_State$initCache = function (url) {
-	return {api: _elm_lang$core$Maybe$Nothing, url: url, nextRequestId: 0, requests: _elm_lang$core$Dict$empty, responses: _elm_lang$core$Dict$empty};
-};
-
 var _user$project$App_State$urlUpdate = F2(
 	function (result, model) {
 		var _p0 = result;
@@ -16408,8 +16420,8 @@ var _user$project$App_State$init = function (result) {
 	var model = {
 		page: _user$project$App_Types$SiteP(_user$project$App_Site_Types$AboutP),
 		content: _user$project$App_Types$NoContent,
-		prismic: _user$project$Prismic_State$initCache(
-			_user$project$Prismic_Types$Url('https://lesbonneschoses.prismic.io/api'))
+		prismic: _user$project$Prismic$init(
+			_user$project$Prismic$Url('https://lesbonneschoses.prismic.io/api'))
 	};
 	return A2(_user$project$App_State$urlUpdate, result, model);
 };
