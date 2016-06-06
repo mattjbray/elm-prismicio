@@ -10,21 +10,24 @@ check out the `examples/` directory of this repo.
 
 First, you need to initialise Prismic's Model.
 
-    type alias Model =
-        { prismic : Prismic.Model
-        , response : Maybe (P.Response P.DefaultDocType)
-        }
+```elm
+type alias Model =
+    { prismic : Prismic.Model
+    , response : Maybe (P.Response P.DefaultDocType)
+    }
 
-    init =
-        let
-            model =
-                { prismic =
-                    Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
-                , response =
-                    Nothing
-                }
-        in
-            ( model, fetchHomePage model.prismic )
+
+init =
+    let
+        model =
+            { prismic =
+                Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
+            , response =
+                Nothing
+            }
+    in
+        ( model, fetchHomePage model.prismic )
+```
 
 
 ## Querying Prismic
@@ -39,36 +42,41 @@ To make a Prismic request, you need to do four things:
 
 In practice, it will look something like this:
 
-    type Msg
-        = SetPrismicError P.PrismicError
-        | SetHomePage ( P.Response P.DefaultDocType, P.Model )
+```elm
+type Msg
+    = SetPrismicError P.PrismicError
+    | SetHomePage ( P.Response P.DefaultDocType, P.Model )
 
-    fetchHomePage prismic =
-        P.fetchApi prismic
-          |> P.form "everything"
-          |> P.bookmark "home-page"
-          |> P.submit P.decodeDefaultDocType
-          |> Task.perform SetPrismicError SetHomePage
+
+fetchHomePage prismic =
+    P.fetchApi prismic
+      |> P.form "everything"
+      |> P.bookmark "home-page"
+      |> P.submit P.decodeDefaultDocType
+      |> Task.perform SetPrismicError SetHomePage
+```
 
 
 When you handle `SetHomePage` in your app's `update` function, you should
 replace the `prismic` value in your model with the one returned in the tuple.
 
-    update msg model =
-        case msg of
-            SetHomePage ( response, prismic ) ->
-                ( { model
-                      | prismic =
-                          P.collectResponses model.prismic prismic
-                      , response =
-                          response
-                  }
-                , Cmd.none
-                )
+```elm
+update msg model =
+    case msg of
+        SetHomePage ( response, prismic ) ->
+            ( { model
+                  | prismic =
+                      P.collectResponses model.prismic prismic
+                  , response =
+                      response
+              }
+            , Cmd.none
+            )
+```
                 
 If you have nested components that use Prismic, you'll need to thread the
-Prismic `Model` through your update functions. See the use of the `GlobalMsg`
-type in the `examples/` directory for one way of doing this.
+Prismic `Model` through your `init` and `update` functions. See the use of the
+`GlobalMsg` type in the `examples/` directory for one way of doing this.
 
 ## Custom document types
 
