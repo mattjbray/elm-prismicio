@@ -4,9 +4,14 @@ import Dict exposing (Dict)
 import Json.Decode as Json
 import Http
 
-type alias Model = Model' (Maybe Api)
 
-type alias ModelWithApi = Model' Api
+type alias Model =
+    Model' (Maybe Api)
+
+
+type alias ModelWithApi =
+    Model' Api
+
 
 type alias Model' api =
     { api : api
@@ -15,6 +20,7 @@ type alias Model' api =
     , requests : Dict Int Request
     , responses : Dict Int Json.Value
     }
+
 
 
 -- API
@@ -77,6 +83,13 @@ type alias Experiments =
 
 
 -- REQUEST
+
+
+type Predicate
+    = At String String
+    | AtL String (List String)
+    | Any String (List String)
+    | FullText String String
 
 
 type alias Request =
@@ -155,7 +168,8 @@ type DocumentField
     | Link Link
 
 
-type alias StructuredText = List StructuredTextField
+type alias StructuredText =
+    List StructuredTextField
 
 
 type StructuredTextField
@@ -213,8 +227,8 @@ type alias ImageDimensions =
 
 
 type EmbedProperties
-  = EmbedVideo EmbedVideoProperties
-  | EmbedRich EmbedRichProperties
+    = EmbedVideo EmbedVideoProperties
+    | EmbedRich EmbedRichProperties
 
 
 type alias EmbedVideoProperties =

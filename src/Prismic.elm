@@ -1,4 +1,4 @@
-module Prismic exposing (fetchApi, form, ref, query, bookmark, none, submit, any, at, atL, fulltext)
+module Prismic exposing (init, fetchApi, form, ref, query, bookmark, none, submit, any, at, atL, fulltext)
 
 import Dict
 import Json.Decode as Json exposing (Decoder)
@@ -6,33 +6,21 @@ import Http
 import Task exposing (Task)
 import Prismic.Types exposing (..)
 import Prismic.Decoders exposing (..)
-import String
+import Prismic.Internal.State exposing (..)
 
 
-getJson : Decoder a -> String -> Task Http.Error a
-getJson decoder url =
-    let
-        request =
-            { verb = "GET"
-            , headers =
-                [ ( "Accept", "application/json" ) ]
-            , url = url
-            , body = Http.empty
-            }
-    in
-        Http.fromJson decoder (Http.send Http.defaultSettings request)
 {-| Initialise the Prismic model with the URL for your Prismic repository.
 
     init (Url "https://lesbonneschoses.prismic.io/api")
 -}
 init : Url -> Model
 init url =
-  { api = Nothing
-  , url = url
-  , nextRequestId = 0
-  , requests = Dict.empty
-  , responses = Dict.empty
-  }
+    { api = Nothing
+    , url = url
+    , nextRequestId = 0
+    , requests = Dict.empty
+    , responses = Dict.empty
+    }
 
 
 fetchApi : Model -> Task PrismicError ModelWithApi
@@ -115,13 +103,6 @@ ref refId requestTask =
         requestTask `Task.andThen` addRef
 
 
-getRefById : String -> Api -> Maybe RefProperties
-getRefById refId api =
-    api.refs
-        |> List.filter (\r -> r.id == refId)
-        |> List.head
-
-
 query :
     List Predicate
     -> Task PrismicError ( Request, ModelWithApi )
@@ -157,69 +138,6 @@ bookmark bookmarkId cacheTask =
                                             |> form "everything"
                                             |> query [ at "document.id" docId ]
                        )
-
-
-type Predicate
-    = At String String
-    | AtL String (List String)
-    | Any String (List String)
-    | FullText String String
-
-
-predicatesToStr : List Predicate -> String
-predicatesToStr predicates =
-    let
-        wrapQuotes value =
-            "\"" ++ value ++ "\""
-
-        toStrList values =
-            let
-                valueStrs =
-                    values
-                        |> List.map wrapQuotes
-                        |> String.join ", "
-            in
-                "[" ++ valueStrs ++ "]"
-
-        predicateToStr predicate =
-            let
-                query =
-                    case predicate of
-                        At fragment value ->
-                            "at(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
-
-                        AtL fragment values ->
-                            "at(" ++ fragment ++ ", " ++ toStrList values ++ ")"
-
-                        Any fragment values ->
-                            "any(" ++ fragment ++ ", " ++ toStrList values ++ ")"
-
-                        FullText fragment value ->
-                            "fulltext(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
-            in
-                "[:d = " ++ query ++ "]"
-    in
-        "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
-
-
-at : String -> String -> Predicate
-at fragment value =
-    At fragment value
-
-
-atL : String -> List String -> Predicate
-atL fragment values =
-    AtL fragment values
-
-
-any : String -> List String -> Predicate
-any fragment values =
-    Any fragment values
-
-
-fulltext : String -> String -> Predicate
-fulltext fragment value =
-    FullText fragment value
 
 
 none :
@@ -273,59 +191,25 @@ submit decodeDocType requestTask =
         requestTask `Task.andThen` doSubmit
 
 
-requestToUrl : Request -> Url
-requestToUrl request =
-    let
-        (Ref refStr) =
-            request.ref
 
-        (Url urlStr) =
-            request.action
-    in
-        Url
-            (Http.url urlStr
-                (( "ref", refStr )
-                    :: if String.isEmpty request.q then
-                        []
-                       else
-                        [ ( "q", request.q ) ]
-                )
-            )
+-- Predicates
 
 
-getFromCache :
-    Request
-    -> Model' api
-    -> Maybe Json.Value
-getFromCache request cache =
-    let
-        mRequestId =
-            Dict.toList cache.requests
-                |> List.filter (\( id, cachedRequest ) -> cachedRequest == request)
-                |> List.map fst
-                |> List.head
-
-        mResponse =
-            mRequestId
-                `Maybe.andThen` (\id ->
-                                    Dict.get id cache.responses
-                                )
-    in
-        mResponse
+at : String -> String -> Predicate
+at fragment value =
+    At fragment value
 
 
-setInCache :
-    Request
-    -> Json.Value
-    -> Model' api
-    -> Model' api
-setInCache request response cache =
-    let
-        id =
-            cache.nextRequestId
-    in
-        { cache
-            | nextRequestId = id + 1
-            , requests = Dict.insert id request cache.requests
-            , responses = Dict.insert id response cache.responses
-        }
+atL : String -> List String -> Predicate
+atL fragment values =
+    AtL fragment values
+
+
+any : String -> List String -> Predicate
+any fragment values =
+    Any fragment values
+
+
+fulltext : String -> String -> Predicate
+fulltext fragment value =
+    FullText fragment value
