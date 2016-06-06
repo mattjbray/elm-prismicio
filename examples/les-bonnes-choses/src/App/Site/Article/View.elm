@@ -27,7 +27,7 @@ viewMArticle : Maybe Documents.Article -> List (Html msg)
 viewMArticle mArticle =
     case mArticle of
         Nothing ->
-            [ viewLoading ]
+            [ viewLoading Nothing ]
 
         Just article ->
             viewArticle article

@@ -3,6 +3,7 @@ module App.Navigation exposing (..)
 import App.Blog.Navigation as Blog
 import App.Blog.Types as Blog
 import App.Documents.Types as Documents
+import App.Site.Jobs.Types as Jobs
 import App.Site.Navigation as Site
 import App.Site.Products.Types as Products
 import App.Site.Search.Types as Search
@@ -59,6 +60,9 @@ linkResolver documentRef =
                 "blog-post" ->
                     toHash <| App.BlogP <| Blog.PostP documentRef.id documentRef.slug
 
+                "job-offer" ->
+                    toHash <| App.SiteP <| Site.JobsP <| Jobs.ShowP documentRef.id documentRef.slug
+
                 "store" ->
                     toHash <| App.SiteP <| Site.StoresP <| Stores.ShowP documentRef.id documentRef.slug
 
@@ -94,7 +98,7 @@ urlForArticle bookmarks article =
                     App.SiteP <| Site.AboutP
 
                 Just "jobs" ->
-                    App.SiteP <| Site.JobsP
+                    App.SiteP <| Site.JobsP <| Jobs.IndexP
 
                 Just "stores" ->
                     App.SiteP <| Site.StoresP <| Stores.IndexP
@@ -123,6 +127,17 @@ urlForBlogPost blogPost =
 urlForHome : String
 urlForHome =
     toHash <| App.SiteP <| Site.HomeP
+
+
+urlForJob : Documents.JobOffer -> String
+urlForJob job =
+    let
+        slug =
+            job.slugs
+                |> List.head
+                |> Maybe.withDefault ""
+    in
+        toHash <| App.SiteP <| Site.JobsP <| Jobs.ShowP job.id slug
 
 
 urlForProduct : Documents.Product -> String

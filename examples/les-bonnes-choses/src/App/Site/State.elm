@@ -3,6 +3,7 @@ module App.Site.State exposing (..)
 import App.Site.Types exposing (..)
 import App.Site.Article.State as Article
 import App.Site.Home.State as Home
+import App.Site.Jobs.State as Jobs
 import App.Site.Products.State as Products
 import App.Site.Search.State as Search
 import App.Site.Selections.State as Selections
@@ -39,8 +40,18 @@ init prismic page =
             AboutP as page ->
                 initWith "about"
 
-            JobsP as page ->
-                initWith "jobs"
+            (JobsP jobsPage) as page ->
+                let
+                    ( jobs, jobsCmd ) =
+                        Jobs.init prismic jobsPage
+
+                    newModel =
+                        { model
+                            | page = page
+                            , content = JobsC jobs
+                        }
+                in
+                    newModel ! [ Cmd.map JobsMsg jobsCmd ]
 
             (ProductsP productsPage) as page ->
                 let
@@ -147,6 +158,26 @@ update msg model =
                     in
                         ( newModel
                         , Cmd.map ArticleMsg articleCmd
+                        , globalMsgs
+                        )
+
+                _ ->
+                    ( model, Cmd.none, [] )
+
+        JobsMsg jobsMsg ->
+            case model.content of
+                JobsC jobs ->
+                    let
+                        ( newJobs, jobsCmd, globalMsgs ) =
+                            Jobs.update jobsMsg jobs
+
+                        newModel =
+                            { model
+                                | content = JobsC newJobs
+                            }
+                    in
+                        ( newModel
+                        , Cmd.map JobsMsg jobsCmd
                         , globalMsgs
                         )
 

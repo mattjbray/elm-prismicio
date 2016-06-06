@@ -31,7 +31,7 @@ viewMStore : Maybe Documents.Store -> List (Html msg)
 viewMStore mStore =
     mStore
         |> Maybe.map viewStore
-        |> Maybe.withDefault [ viewLoading ]
+        |> Maybe.withDefault [ viewLoading Nothing ]
 
 
 viewStore : Documents.Store -> List (Html msg)

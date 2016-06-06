@@ -3,6 +3,7 @@ module App.Site.View exposing (..)
 import App.Site.Types exposing (..)
 import App.Site.Article.View as Article
 import App.Site.Home.View as Home
+import App.Site.Jobs.View as Jobs
 import App.Site.Products.View as Products
 import App.Site.Search.View as Search
 import App.Site.Selections.View as Selections
@@ -29,6 +30,9 @@ viewContent model =
 
         HomeC home ->
             map HomeMsg (Home.view home)
+
+        JobsC jobs ->
+            map JobsMsg (Jobs.view jobs)
 
         ProductsC products ->
             map ProductsMsg (Products.view products)

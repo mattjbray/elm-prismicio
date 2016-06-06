@@ -1,6 +1,7 @@
 module App.Site.Navigation exposing (..)
 
 import App.Site.Types exposing (..)
+import App.Site.Jobs.Navigation as Jobs
 import App.Site.Products.Navigation as Products
 import App.Site.Search.Navigation as Search
 import App.Site.Selections.Navigation as Selections
@@ -14,8 +15,8 @@ toUrl page =
         AboutP ->
             "about"
 
-        JobsP ->
-            "jobs"
+        JobsP jobsPage ->
+            "jobs/" ++ Jobs.toUrl jobsPage
 
         StoresP storesPage ->
             "stores/" ++ Stores.toUrl storesPage
@@ -37,7 +38,7 @@ pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
         [ format AboutP (s "about")
-        , format JobsP (s "jobs")
+        , format JobsP (s "jobs" </> Jobs.pageParser)
         , format StoresP (s "stores" </> Stores.pageParser)
         , format ProductsP (s "products" </> Products.pageParser)
         , format SearchP (s "search" </> Search.pageParser)

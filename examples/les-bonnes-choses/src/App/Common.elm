@@ -1,11 +1,12 @@
 module App.Common exposing (..)
 
 import App.Navigation exposing (toHash, linkResolver, urlForBlog, urlForSearch)
+import App.Site.Jobs.Types as Jobs
 import App.Site.Stores.Types as Stores
 import App.Site.Types as Site
 import App.Types as App
 import Html exposing (..)
-import Html.Attributes exposing (classList, id, href)
+import Html.Attributes exposing (classList, id, href, style)
 import Prismic as P
 
 
@@ -19,10 +20,14 @@ toCssUrl (P.Url url) =
     "url(" ++ url ++ ")"
 
 
-viewLoading : Html msg
-viewLoading =
+viewLoading : Maybe P.Url -> Html msg
+viewLoading backgroundImageUrl =
     section [ id "page-header" ]
-        [ div []
+        [ div
+            (backgroundImageUrl
+                |> Maybe.map (\url -> [ style [ ( "background-image", toCssUrl url ) ] ])
+                |> Maybe.withDefault []
+            )
             [ div []
                 [ h1 [] [ text "Loading..." ]
                 ]
@@ -54,7 +59,7 @@ viewHeader currentPage =
                     , li [] [ mkHeaderLink (Site.StoresP Stores.IndexP) "Stores" ]
                     ]
                 , ul []
-                    [ li [] [ mkHeaderLink Site.JobsP "Jobs" ]
+                    [ li [] [ mkHeaderLink (Site.JobsP Jobs.IndexP) "Jobs" ]
                     , li []
                         [ a [ href urlForBlog ]
                             [ text "Blog" ]

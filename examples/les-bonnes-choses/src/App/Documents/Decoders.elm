@@ -27,15 +27,16 @@ decodeArticle =
 
 decodeJobOffer : Decoder JobOffer
 decodeJobOffer =
-    at [ "data", "job-offer" ]
-        (succeed JobOffer
-            |: at [ "name", "value" ] P.decodeStructuredText
-            |: maybe (at [ "contract_type", "value" ] string)
-            |: maybe (at [ "service", "value" ] string)
-            |: at [ "job_description", "value" ] P.decodeStructuredText
-            |: at [ "profile", "value" ] P.decodeStructuredText
-            |: at [ "location" ] (list P.decodeLink)
-        )
+    succeed JobOffer
+        |: at [ "id" ] string
+        |: at [ "slugs" ] (list string)
+        |: at [ "tags" ] (list string)
+        |: at [ "data", "job-offer", "name", "value" ] P.decodeStructuredText
+        |: maybe (at [ "data", "job-offer", "contract_type", "value" ] string)
+        |: maybe (at [ "data", "job-offer", "service", "value" ] string)
+        |: at [ "data", "job-offer", "job_description", "value" ] P.decodeStructuredText
+        |: at [ "data", "job-offer", "profile", "value" ] P.decodeStructuredText
+        |: at [ "data", "job-offer", "location" ] (list P.decodeLink)
 
 
 decodeBlogPost : Decoder BlogPost

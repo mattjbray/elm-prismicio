@@ -27,7 +27,10 @@ type alias BlogPost =
 
 
 type alias JobOffer =
-    { name : P.StructuredText
+    { id : String
+    , slugs : List String
+    , tags : List String
+    , name : P.StructuredText
     , contractType : Maybe String
     , service : Maybe String
     , jobDescription : P.StructuredText

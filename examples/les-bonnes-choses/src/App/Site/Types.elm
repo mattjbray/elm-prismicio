@@ -2,6 +2,7 @@ module App.Site.Types exposing (..)
 
 import App.Site.Article.Types as Article
 import App.Site.Home.Types as Home
+import App.Site.Jobs.Types as Jobs
 import App.Site.Products.Types as Products
 import App.Site.Search.Types as Search
 import App.Site.Selections.Types as Selections
@@ -16,7 +17,7 @@ type alias Model =
 
 type Page
     = AboutP
-    | JobsP
+    | JobsP Jobs.Page
     | SearchP Search.Page
     | StoresP Stores.Page
     | ProductsP Products.Page
@@ -27,6 +28,7 @@ type Page
 type Content
     = NoContent
     | ArticleC Article.Model
+    | JobsC Jobs.Model
     | ProductsC Products.Model
     | SearchC Search.Model
     | SelectionsC Selections.Model
@@ -36,6 +38,7 @@ type Content
 
 type Msg
     = ArticleMsg Article.Msg
+    | JobsMsg Jobs.Msg
     | ProductsMsg Products.Msg
     | SearchMsg Search.Msg
     | SelectionsMsg Selections.Msg
