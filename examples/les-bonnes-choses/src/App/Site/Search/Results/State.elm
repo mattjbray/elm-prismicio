@@ -6,7 +6,6 @@ import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Dict
 import Prismic as P
-import Prismic.Types as P
 import Task
 
 

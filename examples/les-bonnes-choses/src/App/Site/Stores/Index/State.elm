@@ -5,7 +5,7 @@ import App.Site.Article.State as Article
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
-import Prismic.Types as P exposing (Url(Url))
+import Prismic as P exposing (Url(Url))
 import Prismic as P
 import Task
 

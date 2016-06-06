@@ -13,7 +13,7 @@ import App.Types as App
 import App.Types exposing (..)
 import Dict exposing (Dict)
 import Navigation
-import Prismic.Types as P
+import Prismic as P
 import String
 import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
 
@@ -51,21 +51,21 @@ pageParser =
 -- Prismic linkResolver
 
 
-linkResolver : P.LinkedDocument -> P.Url
-linkResolver linkedDoc =
+linkResolver : P.DocumentReference -> P.Url
+linkResolver documentRef =
     let
         url =
-            case linkedDoc.linkedDocumentType of
+            case documentRef.linkedDocumentType of
                 "blog-post" ->
-                    toHash <| App.BlogP <| Blog.PostP linkedDoc.id linkedDoc.slug
+                    toHash <| App.BlogP <| Blog.PostP documentRef.id documentRef.slug
 
                 "store" ->
-                    toHash <| App.SiteP <| Site.StoresP <| Stores.ShowP linkedDoc.id linkedDoc.slug
+                    toHash <| App.SiteP <| Site.StoresP <| Stores.ShowP documentRef.id documentRef.slug
 
                 _ ->
                     let
                         _ =
-                            Debug.log "Cannot resolve linkedDoc: " linkedDoc
+                            Debug.log "Cannot resolve documentRef: " documentRef
                     in
                         urlForHome
     in

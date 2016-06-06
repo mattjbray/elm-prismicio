@@ -3,8 +3,7 @@ module App.Blog.Index.State exposing (..)
 import App.Blog.Index.Types exposing (..)
 import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Documents.Decoders as Documents
-import Prismic.Types as P exposing (Url(Url))
-import Prismic as P
+import Prismic as P exposing (Url(Url))
 import Task
 
 

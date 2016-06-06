@@ -4,8 +4,7 @@ import App.Types exposing (..)
 import App.Blog.State as Blog
 import App.Site.State as Site
 import App.Site.Types as Site
-import Prismic.Types as P exposing (Url(Url))
-import Prismic as P
+import Prismic as P exposing (Url(Url))
 
 
 init : Result String Page -> ( Model, Cmd Msg )

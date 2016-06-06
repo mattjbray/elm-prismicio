@@ -8,8 +8,7 @@ import App.Navigation exposing (urlForProduct, urlForBlogPost)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (id, href, src)
-import Prismic.Types exposing (Url(Url))
-import Prismic.View exposing (getText, getTexts, getTitle)
+import Prismic as P exposing (Url(Url))
 
 
 view : Model -> Html Msg
@@ -28,12 +27,12 @@ viewDocumentBlogPostFull blogPost model =
         viewRelatedPost post =
             let
                 title =
-                    case getTitle post.body of
+                    case P.getTitle post.body of
                         Nothing ->
                             "No title"
 
                         Just heading ->
-                            getText heading
+                            P.getText heading
             in
                 li []
                     [ a [ href (urlForBlogPost post) ]
@@ -52,7 +51,7 @@ viewDocumentBlogPostFull blogPost model =
                         [ href (urlForProduct product)
                         ]
                         [ img [ src imgUrl ] []
-                        , span [] [ text (getTexts product.name) ]
+                        , span [] [ text (P.getTexts product.name) ]
                         ]
                     ]
     in

@@ -6,8 +6,7 @@ import App.Site.Types as Site
 import App.Types as App
 import Html exposing (..)
 import Html.Attributes exposing (classList, id, href)
-import Prismic.Types as P
-import Prismic.View as P
+import Prismic as P
 
 
 structuredTextAsHtml : P.StructuredText -> List (Html msg)

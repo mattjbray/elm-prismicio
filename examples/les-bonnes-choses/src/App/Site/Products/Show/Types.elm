@@ -1,7 +1,7 @@
 module App.Site.Products.Show.Types exposing (..)
 
 import App.Documents.Types as Documents
-import Prismic.Types as P
+import Prismic as P
 
 
 type alias Model =

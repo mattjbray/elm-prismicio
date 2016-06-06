@@ -3,7 +3,7 @@ module App.Site.Selections.State exposing (..)
 import App.Site.Selections.Types exposing (..)
 import App.Site.Selections.Show.State as Show
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Prismic.Types as P
+import Prismic as P
 
 
 init : P.Model -> Page -> ( Model, Cmd Msg )

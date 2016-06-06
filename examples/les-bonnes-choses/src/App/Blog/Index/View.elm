@@ -6,8 +6,7 @@ import App.Navigation exposing (urlForBlogPost)
 import App.Documents.Types as Documents
 import Html exposing (..)
 import Html.Attributes exposing (class, id, href, style)
-import Prismic.View exposing (getFirstImage, getFirstParagraph, getText, getTitle)
-import Prismic.Types exposing (Url(Url))
+import Prismic as P exposing (Url(Url))
 
 
 view : Model -> Html Msg
@@ -25,23 +24,23 @@ viewDocumentBlogPostShort : Documents.BlogPost -> Html Msg
 viewDocumentBlogPostShort blogPost =
     let
         title =
-            case getTitle blogPost.body of
+            case P.getTitle blogPost.body of
                 Nothing ->
                     "No Title"
 
                 Just heading ->
-                    getText heading
+                    P.getText heading
 
         firstPara =
-            case getFirstParagraph blogPost.body of
+            case P.getFirstParagraph blogPost.body of
                 Nothing ->
                     "No text"
 
                 Just paragraph ->
-                    getText paragraph
+                    P.getText paragraph
 
         imageUrl =
-            case getFirstImage blogPost.body of
+            case P.getFirstImage blogPost.body of
                 Just image ->
                     let
                         (Url url) =

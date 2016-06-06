@@ -3,7 +3,6 @@ module App.Site.Products.Index.State exposing (..)
 import App.Site.Products.Index.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Prismic.Types as P
 import Prismic as P
 import Task
 

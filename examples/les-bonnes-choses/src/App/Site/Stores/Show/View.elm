@@ -6,8 +6,7 @@ import App.Common exposing (structuredTextAsHtml, viewLoading, toCssUrl)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
 import Result.Extra as Result
-import Prismic.View exposing (getTexts)
-import Prismic.Types as P
+import Prismic as P
 import String
 
 
@@ -40,7 +39,7 @@ viewStore store =
     [ section [ id "page-header" ]
         [ div [ style [ ( "background-image", toCssUrl store.image.main.url ) ] ]
             [ div []
-                ([ h1 [] [ text (getTexts store.name) ] ]
+                ([ h1 [] [ text (P.getTexts store.name) ] ]
                     ++ structuredTextAsHtml store.description
                 )
             ]

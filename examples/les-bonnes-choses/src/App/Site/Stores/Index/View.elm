@@ -9,8 +9,7 @@ import Dict
 import Html exposing (..)
 import Html.App as Html
 import Html.Attributes exposing (..)
-import Prismic.Types as P exposing (Url(Url))
-import Prismic.View exposing (getTexts)
+import Prismic as P exposing (Url(Url))
 import Result.Extra as Result
 
 
@@ -34,7 +33,7 @@ viewStores model =
             ]
         (model.stores
             |> Result.mapBoth viewError
-                (List.map viewStore << List.sortBy (getTexts << .name))
+                (List.map viewStore << List.sortBy (P.getTexts << .name))
         )
 
 
@@ -52,5 +51,5 @@ viewStore store =
             , style [ ( "background-image", toCssUrl imageUrl ) ]
             ]
             [ a [ href (urlForStore store) ]
-                [ h3 [] [ text (getTexts store.name) ] ]
+                [ h3 [] [ text (P.getTexts store.name) ] ]
             ]

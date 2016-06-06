@@ -8,8 +8,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, href, id, src)
 import Regex
 import Result.Extra as Result
-import Prismic.Types as P
-import Prismic.View as P
+import Prismic as P
 import String
 
 

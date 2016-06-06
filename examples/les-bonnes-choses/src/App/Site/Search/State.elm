@@ -5,7 +5,7 @@ import App.Types as App exposing (GlobalMsg)
 import App.Site.Search.Types exposing (..)
 import App.Site.Search.Results.State as Results
 import Navigation
-import Prismic.Types as P
+import Prismic as P
 
 
 init : P.Model -> Page -> ( Model, Cmd Msg )

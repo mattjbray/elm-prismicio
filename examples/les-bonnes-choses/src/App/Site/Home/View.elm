@@ -8,8 +8,7 @@ import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
 import Html.Events exposing (onClick)
-import Prismic.Types exposing (Url(Url))
-import Prismic.View exposing (getTitle, getText, getTexts, getFirstParagraph)
+import Prismic as P exposing (Url(Url))
 import Result.Extra as Result
 
 
@@ -103,8 +102,8 @@ viewFeaturedSelection selection =
     in
         div [ style [ ( "background-image", "url(" ++ backgroundImgUrl ++ ")" ) ] ]
             [ a [ href (urlForSelection selection) ]
-                [ h3 [] [ span [] [ text (getTexts selection.name) ] ]
-                , p [] [ span [] [ text (getTexts selection.shortLede) ] ]
+                [ h3 [] [ span [] [ text (P.getTexts selection.name) ] ]
+                , p [] [ span [] [ text (P.getTexts selection.shortLede) ] ]
                 ]
             ]
 
@@ -145,16 +144,16 @@ viewFeaturedBlogPost blogPost =
             [ h1 []
                 [ text
                     (blogPost.body
-                        |> getTitle
-                        |> Maybe.map getText
+                        |> P.getTitle
+                        |> Maybe.map P.getText
                         |> Maybe.withDefault ""
                     )
                 ]
             , p []
                 [ text
                     (blogPost.body
-                        |> getFirstParagraph
-                        |> Maybe.map getText
+                        |> P.getFirstParagraph
+                        |> Maybe.map P.getText
                         |> Maybe.withDefault ""
                     )
                 ]

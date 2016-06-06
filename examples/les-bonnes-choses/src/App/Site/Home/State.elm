@@ -7,7 +7,7 @@ import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
 import Basics.Extra exposing (never)
 import Prismic as P
-import Prismic.Types as P
+import Prismic as P
 import Task
 
 

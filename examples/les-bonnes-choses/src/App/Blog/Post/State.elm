@@ -3,7 +3,6 @@ module App.Blog.Post.State exposing (..)
 import App.Blog.Post.Types exposing (..)
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import App.Documents.Decoders as Documents
-import Prismic.Types as P
 import Prismic as P
 import Task
 

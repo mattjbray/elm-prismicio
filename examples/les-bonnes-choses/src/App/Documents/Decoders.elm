@@ -2,29 +2,39 @@ module App.Documents.Decoders exposing (..)
 
 import App.Documents.Types exposing (..)
 import Json.Decode exposing (..)
-import Prismic.Decoders exposing (..)
+import Prismic as P
+
+
+(|:) : Decoder (a -> b) -> Decoder a -> Decoder b
+(|:) =
+    object2 (<|)
+
+
+maybeWithDefault : a -> Decoder a -> Decoder a
+maybeWithDefault default decoder =
+    maybe decoder `andThen` (succeed << (Maybe.withDefault default))
 
 
 decodeArticle : Decoder Article
 decodeArticle =
     succeed Article
         |: at [ "id" ] string
-        |: at [ "data", "article", "content", "value" ] decodeStructuredText
-        |: at [ "data", "article", "image", "value" ] decodeImageField
-        |: at [ "data", "article", "short_lede", "value" ] decodeStructuredText
-        |: at [ "data", "article", "title", "value" ] decodeStructuredText
+        |: at [ "data", "article", "content", "value" ] P.decodeStructuredText
+        |: at [ "data", "article", "image", "value" ] P.decodeImageField
+        |: at [ "data", "article", "short_lede", "value" ] P.decodeStructuredText
+        |: at [ "data", "article", "title", "value" ] P.decodeStructuredText
 
 
 decodeJobOffer : Decoder JobOffer
 decodeJobOffer =
     at [ "data", "job-offer" ]
         (succeed JobOffer
-            |: at [ "name", "value" ] decodeStructuredText
+            |: at [ "name", "value" ] P.decodeStructuredText
             |: maybe (at [ "contract_type", "value" ] string)
             |: maybe (at [ "service", "value" ] string)
-            |: at [ "job_description", "value" ] decodeStructuredText
-            |: at [ "profile", "value" ] decodeStructuredText
-            |: at [ "location" ] (list decodeLink)
+            |: at [ "job_description", "value" ] P.decodeStructuredText
+            |: at [ "profile", "value" ] P.decodeStructuredText
+            |: at [ "location" ] (list P.decodeLink)
         )
 
 
@@ -45,13 +55,13 @@ decodeBlogPost =
         succeed BlogPost
             |: at [ "id" ] string
             |: at [ "slugs" ] (list string)
-            |: at [ "data", "blog-post", "body", "value" ] decodeStructuredText
+            |: at [ "data", "blog-post", "body", "value" ] P.decodeStructuredText
             |: at [ "data", "blog-post", "author", "value" ] string
             |: at [ "data", "blog-post", "category", "value" ] string
             |: at [ "data", "blog-post", "date", "value" ] string
-            |: at [ "data", "blog-post", "shortlede", "value" ] decodeStructuredText
-            |: at [ "data", "blog-post", "relatedpost" ] (list decodeLink)
-            |: at [ "data", "blog-post", "relatedproduct" ] (list decodeLink)
+            |: at [ "data", "blog-post", "shortlede", "value" ] P.decodeStructuredText
+            |: at [ "data", "blog-post", "relatedpost" ] (list P.decodeLink)
+            |: at [ "data", "blog-post", "relatedproduct" ] (list P.decodeLink)
             |: at [ "data", "blog-post", "allow_comments", "value" ] (string `andThen` decodeAllowComments)
 
 
@@ -83,16 +93,16 @@ decodeProduct =
         |: at [ "slugs" ] (list string)
         |: maybe (at [ "data", "product", "allergens", "value" ] string)
         |: at [ "data", "product", "color", "value" ] string
-        |: at [ "data", "product", "description", "value" ] decodeStructuredText
+        |: at [ "data", "product", "description", "value" ] P.decodeStructuredText
         |: maybeWithDefault [] (at [ "data", "product", "flavour" ] (list ("value" := string)))
-        |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := decodeImageField)))
-        |: at [ "data", "product", "image", "value" ] decodeImageField
-        |: at [ "data", "product", "name", "value" ] decodeStructuredText
+        |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := P.decodeImageField)))
+        |: at [ "data", "product", "image", "value" ] P.decodeImageField
+        |: at [ "data", "product", "name", "value" ] P.decodeStructuredText
         |: at [ "data", "product", "price", "value" ] float
-        |: maybeWithDefault [] (at [ "data", "product", "related" ] (list decodeLink))
-        |: at [ "data", "product", "short_lede", "value" ] decodeStructuredText
-        |: maybe (at [ "data", "product", "testimonial_author", "value" ] decodeStructuredText)
-        |: maybe (at [ "data", "product", "testimonial_quote", "value" ] decodeStructuredText)
+        |: maybeWithDefault [] (at [ "data", "product", "related" ] (list P.decodeLink))
+        |: at [ "data", "product", "short_lede", "value" ] P.decodeStructuredText
+        |: maybe (at [ "data", "product", "testimonial_author", "value" ] P.decodeStructuredText)
+        |: maybe (at [ "data", "product", "testimonial_quote", "value" ] P.decodeStructuredText)
         |: at [ "tags" ] (list string)
         |: at [ "tags" ] decodeCategories
     )
@@ -104,13 +114,13 @@ decodeSelection =
         |: at [ "id" ] string
         |: at [ "slugs" ] (list string)
         |: at [ "tags" ] (list string)
-        |: at [ "data", "selection", "name", "value" ] decodeStructuredText
-        |: at [ "data", "selection", "catcher_image", "value" ] decodeImageField
-        |: at [ "data", "selection", "description", "value" ] decodeStructuredText
-        |: at [ "data", "selection", "image", "value" ] decodeImageField
+        |: at [ "data", "selection", "name", "value" ] P.decodeStructuredText
+        |: at [ "data", "selection", "catcher_image", "value" ] P.decodeImageField
+        |: at [ "data", "selection", "description", "value" ] P.decodeStructuredText
+        |: at [ "data", "selection", "image", "value" ] P.decodeImageField
         |: at [ "data", "selection", "price", "value" ] float
-        |: at [ "data", "selection", "product" ] (list decodeLink)
-        |: at [ "data", "selection", "short_lede", "value" ] decodeStructuredText
+        |: at [ "data", "selection", "product" ] (list P.decodeLink)
+        |: at [ "data", "selection", "short_lede", "value" ] P.decodeStructuredText
 
 
 decodeStore : Decoder Store
@@ -123,9 +133,9 @@ decodeStore =
         |: at [ "data", "store", "city", "value" ] string
         |: at [ "data", "store", "zipcode", "value" ] string
         |: at [ "data", "store", "country", "value" ] string
-        |: at [ "data", "store", "description", "value" ] decodeStructuredText
-        |: at [ "data", "store", "name", "value" ] decodeStructuredText
-        |: at [ "data", "store", "image", "value" ] decodeImageField
+        |: at [ "data", "store", "description", "value" ] P.decodeStructuredText
+        |: at [ "data", "store", "name", "value" ] P.decodeStructuredText
+        |: at [ "data", "store", "image", "value" ] P.decodeImageField
         |: at [ "data", "store", "monday" ] (list ("value" := string))
         |: at [ "data", "store", "tuesday" ] (list ("value" := string))
         |: at [ "data", "store", "wednesday" ] (list ("value" := string))

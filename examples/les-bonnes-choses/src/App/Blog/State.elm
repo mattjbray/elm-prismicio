@@ -4,7 +4,7 @@ import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Blog.Types exposing (..)
 import App.Blog.Index.State as Index
 import App.Blog.Post.State as Post
-import Prismic.Types as P
+import Prismic as P
 
 
 init : P.Model -> Page -> ( Model, Cmd Msg )

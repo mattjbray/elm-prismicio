@@ -7,8 +7,7 @@ import App.Site.Products.Common.View exposing (toCurrency, viewProductShort)
 import App.Site.Products.Show.Types exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
-import Prismic.Types as P exposing (Url(Url))
-import Prismic.View exposing (getTexts)
+import Prismic as P exposing (Url(Url))
 
 
 view : Model -> Html Msg
@@ -31,10 +30,10 @@ view model =
                         [ div []
                             ([ img [ src imageUrl ] []
                              , h4 []
-                                [ strong [] [ text (getTexts product.name) ]
+                                [ strong [] [ text (P.getTexts product.name) ]
                                 , em [] [ text (toCurrency product.price) ]
                                 ]
-                             , h2 [] [ text (getTexts product.shortLede) ]
+                             , h2 [] [ text (P.getTexts product.shortLede) ]
                              ]
                                 ++ structuredTextAsHtml product.description
                                 ++ [ p []
@@ -71,7 +70,7 @@ view model =
                     p [] [ text "Loading product..." ]
 
 
-viewGallery : P.ImageField -> Html Msg
+viewGallery : P.ImageViews -> Html Msg
 viewGallery image =
     let
         (Url url) =
@@ -90,10 +89,10 @@ viewTestamonial product =
         quoteSection author quote =
             section [ id "quote" ]
                 [ blockquote []
-                    [ text (getTexts quote)
+                    [ text (P.getTexts quote)
                     , strong []
                         [ text "said "
-                        , text (getTexts author)
+                        , text (P.getTexts author)
                         ]
                     ]
                 ]

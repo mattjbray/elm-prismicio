@@ -5,7 +5,6 @@ import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import App.Ports exposing (googleMap)
 import Basics.Extra exposing (never)
-import Prismic.Types as P
 import Prismic as P
 import Task
 import String

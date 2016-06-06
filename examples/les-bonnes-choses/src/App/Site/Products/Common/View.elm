@@ -5,8 +5,7 @@ import App.Documents.Types as Documents
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, disabled, href, id, rel, selected, style, src)
-import Prismic.Types exposing (Url(Url))
-import Prismic.View exposing (getTexts)
+import Prismic as P exposing (Url(Url))
 import String
 
 
@@ -63,7 +62,7 @@ viewProductShort product =
         li [ attribute "data-category" (Maybe.withDefault "" (Maybe.map categoryToString (List.head product.categories))) ]
             [ a [ href (urlForProduct product) ]
                 [ img [ src imageUrl ] []
-                , span [] [ text (getTexts product.name) ]
+                , span [] [ text (P.getTexts product.name) ]
                 , em [] [ text (toCurrency product.price) ]
                 ]
             ]
@@ -82,7 +81,7 @@ viewFeaturedProduct product =
     in
         div [ style [ ( "background-image", "url(" ++ backgroundImgUrl ++ ")" ) ] ]
             [ a [ href (urlForProduct product) ]
-                [ h3 [] [ span [] [ text (getTexts product.name) ] ]
-                , p [] [ span [] [ text (getTexts product.shortLede) ] ]
+                [ h3 [] [ span [] [ text (P.getTexts product.name) ] ]
+                , p [] [ span [] [ text (P.getTexts product.shortLede) ] ]
                 ]
             ]

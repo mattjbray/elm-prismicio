@@ -1,7 +1,7 @@
 module App.Blog.Index.Types exposing (..)
 
 import App.Documents.Types as Documents
-import Prismic.Types as Prismic
+import Prismic as P
 
 
 type alias Model =
@@ -10,5 +10,5 @@ type alias Model =
 
 
 type Msg
-    = SetResponse ( Prismic.Response Documents.BlogPost, Prismic.Model )
-    | SetError Prismic.PrismicError
+    = SetResponse ( P.Response Documents.BlogPost, P.Model )
+    | SetError P.PrismicError

@@ -4,7 +4,7 @@ import App.Site.Stores.Types exposing (..)
 import App.Site.Stores.Index.State as Index
 import App.Site.Stores.Show.State as Show
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Prismic.Types as P
+import Prismic as P
 
 
 init : P.Model -> Page -> ( Model, Cmd Msg )

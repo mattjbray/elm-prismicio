@@ -5,7 +5,6 @@ import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Basics.Extra exposing (never)
-import Prismic.Types as P
 import Prismic as P
 import Task
 

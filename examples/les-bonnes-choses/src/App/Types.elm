@@ -2,7 +2,7 @@ module App.Types exposing (..)
 
 import App.Blog.Types as Blog
 import App.Site.Types as Site
-import Prismic.Types as P
+import Prismic as P
 
 
 type alias Model =

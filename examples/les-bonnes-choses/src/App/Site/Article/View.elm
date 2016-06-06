@@ -5,7 +5,7 @@ import App.Documents.Types as Documents
 import App.Common exposing (structuredTextAsHtml, viewLoading)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Prismic.Types as P exposing (Url(Url))
+import Prismic as P exposing (Url(Url))
 import Result.Extra as Result
 
 

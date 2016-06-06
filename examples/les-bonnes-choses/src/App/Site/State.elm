@@ -8,7 +8,7 @@ import App.Site.Search.State as Search
 import App.Site.Selections.State as Selections
 import App.Site.Stores.State as Stores
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Prismic.Types as P
+import Prismic as P
 
 
 init : P.Model -> Page -> ( Model, Cmd Msg )
