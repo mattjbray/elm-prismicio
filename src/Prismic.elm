@@ -158,8 +158,7 @@ type alias Model' api =
     { api : api
     , url : Url
     , nextRequestId : Int
-    , requests : Dict Int Request
-    , responses : Dict Int Json.Value
+    , cache : Dict String Json.Value
     }
 
 
@@ -499,8 +498,7 @@ init url =
     { api = Nothing
     , url = url
     , nextRequestId = 0
-    , requests = Dict.empty
-    , responses = Dict.empty
+    , cache = Dict.empty
     }
 
 
@@ -1472,21 +1470,8 @@ getFromCache :
     Request
     -> Model' api
     -> Maybe Json.Value
-getFromCache request cache =
-    let
-        mRequestId =
-            Dict.toList cache.requests
-                |> List.filter (\( id, cachedRequest ) -> cachedRequest == request)
-                |> List.map fst
-                |> List.head
-
-        mResponse =
-            mRequestId
-                `Maybe.andThen` (\id ->
-                                    Dict.get id cache.responses
-                                )
-    in
-        mResponse
+getFromCache request prismic =
+    Dict.get (requestToKey request) prismic.cache
 
 
 setInCache :
@@ -1494,13 +1479,12 @@ setInCache :
     -> Json.Value
     -> Model' api
     -> Model' api
-setInCache request response cache =
-    let
-        id =
-            cache.nextRequestId
-    in
-        { cache
-            | nextRequestId = id + 1
-            , requests = Dict.insert id request cache.requests
-            , responses = Dict.insert id response cache.responses
-        }
+setInCache request response prismic =
+    { prismic
+        | cache = Dict.insert (requestToKey request) response prismic.cache
+    }
+
+
+requestToKey : Request -> String
+requestToKey =
+    toString
