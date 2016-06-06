@@ -1,5 +1,5 @@
 .PHONY: all
-all: examples
+all: docs examples
 
 .PHONY: examples
 examples: ../publish/js/app.js ../publish/index.html ../publish/assets
@@ -28,3 +28,7 @@ serve:
 .PHONY: watch
 watch:
 	bash ./bin/watch.sh
+
+.PHONY: docs
+docs:
+	elm-make --docs=documentation.json
