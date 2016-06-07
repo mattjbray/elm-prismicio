@@ -113,7 +113,7 @@ following components.
 @docs defaultLinkResolver
 
 ### `StructuredText` helpers
-@docs getFirstImage, getFirstParagraph, getText, getTexts, getTitle
+@docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
 -}
 
 import Dict exposing (Dict)
