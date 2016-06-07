@@ -35,7 +35,7 @@ module Prismic
         , StructuredTextBlock(..)
         , Block
         , Span
-        , SpanType(..)
+        , SpanElement(..)
         , ImageViews
         , ImageView
         , ImageDimensions
@@ -99,7 +99,7 @@ You can create your own Elm types to represent your documents using the
 following components.
 
 #### Structured Text
-@docs StructuredText, StructuredTextBlock, Block, Span, SpanType
+@docs StructuredText, StructuredTextBlock, Block, Span, SpanElement
 
 #### Image
 @docs ImageViews, ImageView, ImageDimensions
@@ -382,13 +382,13 @@ type alias Block =
 type alias Span =
     { start : Int
     , end : Int
-    , spanType : SpanType
+    , spanElement : SpanElement
     }
 
 
 {-| Types of spans.
 -}
-type SpanType
+type SpanElement
     = Em
     | Strong
     | Hyperlink Link
@@ -1012,7 +1012,7 @@ decodeSpan =
         |: decodeSpanType
 
 
-decodeSpanType : Json.Decoder SpanType
+decodeSpanType : Json.Decoder SpanElement
 decodeSpanType =
     let
         decodeOnType typeStr =
@@ -1215,7 +1215,7 @@ blockAsHtml :
 blockAsHtml el linkResolver field =
     let
         spanEl span =
-            case span.spanType of
+            case span.spanElement of
                 Em ->
                     em []
 
