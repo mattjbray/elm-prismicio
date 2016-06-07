@@ -82,4 +82,12 @@ Prismic `Model` through your `init` and `update` functions. See the use of the
 
 ## Custom document types
 
+You can and should define your own Elm record type for each of your Prismic
+document types. You'll also need to define a decoder for each of your Elm record
+types, and pass it to `Prismic.submit` so that the JSON document can be
+marshalled into your Elm record type.
+
+See [examples/les-bonnes-choses/src/App/Documents](examples/les-bonnes-choses/src/App/Documents)
+for some examples.
+
 ## View helpers
