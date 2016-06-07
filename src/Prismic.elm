@@ -32,9 +32,9 @@ module Prismic
         , DocumentField(..)
         , decodeDefaultDocType
         , StructuredText
-        , StructuredTextElement(..)
-        , SimpleStructuredTextField
-        , SimpleStructuredTextType(..)
+        , StructuredTextBlock(..)
+        , Block
+        , BlockType(..)
         , Span
         , SpanType(..)
         , ImageViews
@@ -100,7 +100,7 @@ You can create your own Elm types to represent your documents using the
 following components.
 
 #### Structured Text
-@docs StructuredText, StructuredTextElement, SimpleStructuredTextField, SimpleStructuredTextType, Span, SpanType
+@docs StructuredText, StructuredTextBlock, Block, BlockType, Span, SpanType
 
 #### Image
 @docs ImageViews, ImageView, ImageDimensions
@@ -352,24 +352,24 @@ type DocumentField
     | Link Link
 
 
-{-| `StructuredText` is a list of `StructuredTextElement`s.
+{-| `StructuredText` is a list of `StructuredTextBlock`s.
 -}
 type alias StructuredText =
-    List StructuredTextElement
+    List StructuredTextBlock
 
 
 {-| An element of `StructuredText`.
 -}
-type StructuredTextElement
-    = SSimple SimpleStructuredTextField
+type StructuredTextBlock
+    = SBlock Block
     | SImage ImageView
     | SEmbed Embed
 
 
 {-| "Simple" `StructuredText` elements, such as headings and paragraphs.
 -}
-type alias SimpleStructuredTextField =
-    { fieldType : SimpleStructuredTextType
+type alias Block =
+    { fieldType : BlockType
     , text : String
     , spans : List Span
     }
@@ -377,7 +377,7 @@ type alias SimpleStructuredTextField =
 
 {-| Types of "simple" `StructuredText` elements.
 -}
-type SimpleStructuredTextType
+type BlockType
     = Heading1
     | Heading2
     | Heading3
@@ -945,7 +945,7 @@ decodeDocumentField =
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
-    Json.list decodeStructuredTextElement
+    Json.list decodeStructuredTextBlock
 
 
 {-| Decode an `ImageField`.
@@ -973,25 +973,25 @@ decodeImageDimensions =
         |: ("height" := Json.int)
 
 
-decodeStructuredTextElement : Json.Decoder StructuredTextElement
-decodeStructuredTextElement =
+decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
+decodeStructuredTextBlock =
     let
         decodeOnType typeStr =
             case typeStr of
                 "heading1" ->
-                    Json.object1 SSimple (decodeSimpleStructuredTextField Heading1)
+                    Json.object1 SBlock (decodeBlock Heading1)
 
                 "heading2" ->
-                    Json.object1 SSimple (decodeSimpleStructuredTextField Heading2)
+                    Json.object1 SBlock (decodeBlock Heading2)
 
                 "heading3" ->
-                    Json.object1 SSimple (decodeSimpleStructuredTextField Heading3)
+                    Json.object1 SBlock (decodeBlock Heading3)
 
                 "paragraph" ->
-                    Json.object1 SSimple (decodeSimpleStructuredTextField Paragraph)
+                    Json.object1 SBlock (decodeBlock Paragraph)
 
                 "list-item" ->
-                    Json.object1 SSimple (decodeSimpleStructuredTextField ListItem)
+                    Json.object1 SBlock (decodeBlock ListItem)
 
                 "image" ->
                     Json.object1 SImage (decodeImageView)
@@ -1005,9 +1005,9 @@ decodeStructuredTextElement =
         ("type" := Json.string) `Json.andThen` decodeOnType
 
 
-decodeSimpleStructuredTextField : SimpleStructuredTextType -> Json.Decoder SimpleStructuredTextField
-decodeSimpleStructuredTextField tag =
-    Json.succeed (SimpleStructuredTextField tag)
+decodeBlock : BlockType -> Json.Decoder Block
+decodeBlock tag =
+    Json.succeed (Block tag)
         |: ("text" := Json.string)
         |: ("spans" := Json.list decodeSpan)
 
@@ -1178,14 +1178,14 @@ If you don't care about this, you can use the `defaultLinkResolver`.
 -}
 structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
 structuredTextAsHtml linkResolver =
-    List.map (structuredTextElementAsHtml linkResolver)
+    List.map (structuredTextBlockAsHtml linkResolver)
 
 
-structuredTextElementAsHtml : (DocumentReference -> Url) -> StructuredTextElement -> Html msg
-structuredTextElementAsHtml linkResolver field =
+structuredTextBlockAsHtml : (DocumentReference -> Url) -> StructuredTextBlock -> Html msg
+structuredTextBlockAsHtml linkResolver field =
     case field of
-        SSimple simpleField ->
-            simpleFieldAsHtml linkResolver simpleField
+        SBlock block ->
+            blockAsHtml linkResolver block
 
         SImage image ->
             imageAsHtml image
@@ -1194,8 +1194,8 @@ structuredTextElementAsHtml linkResolver field =
             embedAsHtml embed
 
 
-simpleFieldAsHtml : (DocumentReference -> Url) -> SimpleStructuredTextField -> Html msg
-simpleFieldAsHtml linkResolver field =
+blockAsHtml : (DocumentReference -> Url) -> Block -> Html msg
+blockAsHtml linkResolver field =
     let
         el =
             case field.fieldType of
@@ -1325,13 +1325,13 @@ viewDefaultDocType doc =
 
 {-| Get the first title out of some `StructuredText`, if there is one.
 -}
-getTitle : StructuredText -> Maybe StructuredTextElement
+getTitle : StructuredText -> Maybe StructuredTextBlock
 getTitle structuredText =
     let
         isTitle field =
             case field of
-                SSimple simpleField ->
-                    case simpleField.fieldType of
+                SBlock block ->
+                    case block.fieldType of
                         Heading1 ->
                             True
 
@@ -1352,13 +1352,13 @@ getTitle structuredText =
 
 {-| Get the first paragraph out of some `StructuredText`, if there is one.
 -}
-getFirstParagraph : StructuredText -> Maybe StructuredTextElement
+getFirstParagraph : StructuredText -> Maybe StructuredTextBlock
 getFirstParagraph structuredText =
     let
         isParagraph field =
             case field of
-                SSimple simpleField ->
-                    case simpleField.fieldType of
+                SBlock block ->
+                    case block.fieldType of
                         Paragraph ->
                             True
 
@@ -1389,11 +1389,11 @@ getFirstImage structuredText =
 
 {-| Get the contents of a single `StructuredText` element as a `String`.
 -}
-getText : StructuredTextElement -> String
+getText : StructuredTextBlock -> String
 getText field =
     case field of
-        SSimple simpleField ->
-            simpleField.text
+        SBlock block ->
+            block.text
 
         SImage imageField ->
             Maybe.withDefault "<image>" imageField.alt
