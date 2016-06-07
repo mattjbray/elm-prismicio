@@ -40,14 +40,15 @@ module Prismic
         , ImageViews
         , ImageView
         , ImageDimensions
-        , EmbedProperties(..)
-        , EmbedRichProperties
-        , EmbedVideoProperties
+        , Embed(..)
+        , EmbedRich
+        , EmbedVideo
         , Link(DocumentLink, WebLink)
         , DocumentReference
         , decodeStructuredText
         , decodeImageViews
         , decodeLink
+        , decodeEmbed
         , structuredTextAsHtml
         , defaultLinkResolver
         , getFirstImage
@@ -97,9 +98,17 @@ module Prismic
 
 You can create your own Elm types to represent your documents using the
 following components.
+
+#### Structured Text
 @docs StructuredText, StructuredTextElement, SimpleStructuredTextField, SimpleStructuredTextType, Span, SpanType
+
+#### Image
 @docs ImageViews, ImageView, ImageDimensions
-@docs EmbedProperties, EmbedRichProperties, EmbedVideoProperties
+
+#### Embed
+@docs Embed, EmbedRich, EmbedVideo
+
+#### Link
 @docs Link, DocumentReference
 
 ### Custom document decoders
@@ -107,6 +116,7 @@ following components.
 @docs decodeStructuredText
 @docs decodeImageViews
 @docs decodeLink
+@docs decodeEmbed
 
 ## Viewing documents
 @docs structuredTextAsHtml
@@ -353,7 +363,7 @@ type alias StructuredText =
 type StructuredTextElement
     = SSimple SimpleStructuredTextField
     | SImage ImageView
-    | SEmbed EmbedProperties
+    | SEmbed Embed
 
 
 {-| "Simple" `StructuredText` elements, such as headings and paragraphs.
@@ -420,14 +430,14 @@ type alias ImageDimensions =
 
 {-| Embed elements.
 -}
-type EmbedProperties
-    = EmbedVideo EmbedVideoProperties
-    | EmbedRich EmbedRichProperties
+type Embed
+    = EVideo EmbedVideo
+    | ERich EmbedRich
 
 
 {-| Video embed elements.
 -}
-type alias EmbedVideoProperties =
+type alias EmbedVideo =
     { authorName : String
     , authorUrl : Url
     , embedUrl : Url
@@ -446,7 +456,7 @@ type alias EmbedVideoProperties =
 
 {-| Rich embed elements.
 -}
-type alias EmbedRichProperties =
+type alias EmbedRich =
     { authorName : String
     , authorUrl : Url
     , cacheAge : String
@@ -987,7 +997,7 @@ decodeStructuredTextElement =
                     Json.object1 SImage (decodeImageView)
 
                 "embed" ->
-                    Json.object1 SEmbed ("oembed" := decodeEmbedProperties)
+                    Json.object1 SEmbed ("oembed" := decodeEmbed)
 
                 _ ->
                     Json.fail ("Unknown structured field type: " ++ toString typeStr)
@@ -1029,17 +1039,18 @@ decodeSpanType =
     in
         ("type" := Json.string) `Json.andThen` decodeOnType
 
-
-decodeEmbedProperties : Json.Decoder EmbedProperties
-decodeEmbedProperties =
+{-| Decode an `Embed` field.
+-}
+decodeEmbed : Json.Decoder Embed
+decodeEmbed =
     let
         decodeOnType typeStr =
             case typeStr of
                 "video" ->
-                    Json.object1 EmbedVideo decodeEmbedVideoProperties
+                    Json.object1 EVideo decodeEmbedVideo
 
                 "rich" ->
-                    Json.object1 EmbedRich decodeEmbedRichProperties
+                    Json.object1 ERich decodeEmbedRich
 
                 _ ->
                     Json.fail ("Unknown embed type: " ++ typeStr)
@@ -1047,9 +1058,9 @@ decodeEmbedProperties =
         ("type" := Json.string) `Json.andThen` decodeOnType
 
 
-decodeEmbedVideoProperties : Json.Decoder EmbedVideoProperties
-decodeEmbedVideoProperties =
-    Json.succeed EmbedVideoProperties
+decodeEmbedVideo : Json.Decoder EmbedVideo
+decodeEmbedVideo =
+    Json.succeed EmbedVideo
         |: ("author_name" := Json.string)
         |: ("author_url" := decodeUrl)
         |: ("embed_url" := decodeUrl)
@@ -1065,9 +1076,9 @@ decodeEmbedVideoProperties =
         |: ("width" := Json.int)
 
 
-decodeEmbedRichProperties : Json.Decoder EmbedRichProperties
-decodeEmbedRichProperties =
-    Json.succeed EmbedRichProperties
+decodeEmbedRich : Json.Decoder EmbedRich
+decodeEmbedRich =
+    Json.succeed EmbedRich
         |: ("author_name" := Json.string)
         |: ("author_url" := decodeUrl)
         |: ("cache_age" := Json.string)
@@ -1246,13 +1257,13 @@ imageAsHtml image =
         img [ src urlStr ] []
 
 
-embedAsHtml : EmbedProperties -> Html msg
+embedAsHtml : Embed -> Html msg
 embedAsHtml embed =
     case embed of
-        EmbedVideo props ->
+        EVideo props ->
             div [ property "innerHTML" (Json.Encode.string props.html) ] []
 
-        EmbedRich props ->
+        ERich props ->
             div [ property "innerHTML" (Json.Encode.string props.html) ] []
 
 
