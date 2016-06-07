@@ -37,7 +37,7 @@ reactor:
 .PHONY: serve
 serve:
 	cd ../publish && \
-	python2 -m SimpleHTTPServer
+	python2.7 -m SimpleHTTPServer
 
 .PHONY: watch
 watch:

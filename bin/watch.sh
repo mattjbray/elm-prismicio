@@ -1,9 +1,9 @@
 #!/bin/bash
 
-(cd ../publish && python2 -m SimpleHTTPServer) &
+(make serve) &
 
-while true; do
+fswatch -o . | while read num; do
     make
     echo "Watching for changes..."
-    inotifywait -qre close_write .
+    # inotifywait -qre close_write .
 done
