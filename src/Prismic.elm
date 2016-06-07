@@ -34,7 +34,6 @@ module Prismic
         , StructuredText
         , StructuredTextBlock(..)
         , Block
-        , BlockType(..)
         , Span
         , SpanType(..)
         , ImageViews
@@ -100,7 +99,7 @@ You can create your own Elm types to represent your documents using the
 following components.
 
 #### Structured Text
-@docs StructuredText, StructuredTextBlock, Block, BlockType, Span, SpanType
+@docs StructuredText, StructuredTextBlock, Block, Span, SpanType
 
 #### Image
 @docs ImageViews, ImageView, ImageDimensions
@@ -361,31 +360,24 @@ type alias StructuredText =
 {-| An element of `StructuredText`.
 -}
 type StructuredTextBlock
-    = SBlock Block
+    = Heading1 Block
+    | Heading2 Block
+    | Heading3 Block
+    | Paragraph Block
+    | ListItem Block
     | SImage ImageView
     | SEmbed Embed
 
 
-{-| "Simple" `StructuredText` elements, such as headings and paragraphs.
+{-| Contents of `StructuredText` blocks, such as headings and paragraphs.
 -}
 type alias Block =
-    { fieldType : BlockType
-    , text : String
+    { text : String
     , spans : List Span
     }
 
 
-{-| Types of "simple" `StructuredText` elements.
--}
-type BlockType
-    = Heading1
-    | Heading2
-    | Heading3
-    | Paragraph
-    | ListItem
-
-
-{-| `Span`s are nested within "simple" `StructuredText` elements.
+{-| `Span`s are nested within `StructuredText` blocks.
 -}
 type alias Span =
     { start : Int
@@ -979,22 +971,22 @@ decodeStructuredTextBlock =
         decodeOnType typeStr =
             case typeStr of
                 "heading1" ->
-                    Json.object1 SBlock (decodeBlock Heading1)
+                    Json.object1 Heading1 decodeBlock
 
                 "heading2" ->
-                    Json.object1 SBlock (decodeBlock Heading2)
+                    Json.object1 Heading2 decodeBlock
 
                 "heading3" ->
-                    Json.object1 SBlock (decodeBlock Heading3)
+                    Json.object1 Heading3 decodeBlock
 
                 "paragraph" ->
-                    Json.object1 SBlock (decodeBlock Paragraph)
+                    Json.object1 Paragraph decodeBlock
 
                 "list-item" ->
-                    Json.object1 SBlock (decodeBlock ListItem)
+                    Json.object1 ListItem decodeBlock
 
                 "image" ->
-                    Json.object1 SImage (decodeImageView)
+                    Json.object1 SImage decodeImageView
 
                 "embed" ->
                     Json.object1 SEmbed ("oembed" := decodeEmbed)
@@ -1005,9 +997,9 @@ decodeStructuredTextBlock =
         ("type" := Json.string) `Json.andThen` decodeOnType
 
 
-decodeBlock : BlockType -> Json.Decoder Block
-decodeBlock tag =
-    Json.succeed (Block tag)
+decodeBlock : Json.Decoder Block
+decodeBlock =
+    Json.succeed Block
         |: ("text" := Json.string)
         |: ("spans" := Json.list decodeSpan)
 
@@ -1038,6 +1030,7 @@ decodeSpanType =
                     Json.fail ("Unknown span type: " ++ typeStr)
     in
         ("type" := Json.string) `Json.andThen` decodeOnType
+
 
 {-| Decode an `Embed` field.
 -}
@@ -1184,39 +1177,43 @@ structuredTextAsHtml linkResolver =
 structuredTextBlockAsHtml : (DocumentReference -> Url) -> StructuredTextBlock -> Html msg
 structuredTextBlockAsHtml linkResolver field =
     case field of
-        SBlock block ->
-            blockAsHtml linkResolver block
-
         SImage image ->
             imageAsHtml image
 
         SEmbed embed ->
             embedAsHtml embed
 
+        Heading1 block ->
+            blockAsHtml h1 linkResolver block
 
-blockAsHtml : (DocumentReference -> Url) -> Block -> Html msg
-blockAsHtml linkResolver field =
+        Heading2 block ->
+            blockAsHtml h2 linkResolver block
+
+        Heading3 block ->
+            blockAsHtml h3 linkResolver block
+
+        Paragraph block ->
+            blockAsHtml p linkResolver block
+
+        ListItem block ->
+            blockAsHtml
+                (\attrs childs ->
+                    ul [] [ li attrs childs ]
+                )
+                linkResolver
+                block
+
+
+blockAsHtml :
+    (List (Attribute msg)
+     -> List (Html msg)
+     -> Html msg
+    )
+    -> (DocumentReference -> Url)
+    -> Block
+    -> Html msg
+blockAsHtml el linkResolver field =
     let
-        el =
-            case field.fieldType of
-                Heading1 ->
-                    h1
-
-                Heading2 ->
-                    h2
-
-                Heading3 ->
-                    h3
-
-                Paragraph ->
-                    p
-
-                ListItem ->
-                    -- TODO: unify ULs?
-                    (\attrs childs ->
-                        ul [] [ li attrs childs ]
-                    )
-
         spanEl span =
             case span.spanType of
                 Em ->
@@ -1330,19 +1327,14 @@ getTitle structuredText =
     let
         isTitle field =
             case field of
-                SBlock block ->
-                    case block.fieldType of
-                        Heading1 ->
-                            True
+                Heading1 _ ->
+                    True
 
-                        Heading2 ->
-                            True
+                Heading2 _ ->
+                    True
 
-                        Heading3 ->
-                            True
-
-                        _ ->
-                            False
+                Heading3 _ ->
+                    True
 
                 _ ->
                     False
@@ -1357,13 +1349,8 @@ getFirstParagraph structuredText =
     let
         isParagraph field =
             case field of
-                SBlock block ->
-                    case block.fieldType of
-                        Paragraph ->
-                            True
-
-                        _ ->
-                            False
+                Paragraph _ ->
+                    True
 
                 _ ->
                     False
@@ -1392,13 +1379,25 @@ getFirstImage structuredText =
 getText : StructuredTextBlock -> String
 getText field =
     case field of
-        SBlock block ->
+        Heading1 block ->
+            block.text
+
+        Heading2 block ->
+            block.text
+
+        Heading3 block ->
+            block.text
+
+        Paragraph block ->
+            block.text
+
+        ListItem block ->
             block.text
 
         SImage imageField ->
             Maybe.withDefault "<image>" imageField.alt
 
-        _ ->
+        SEmbed _ ->
             ""
 
 
