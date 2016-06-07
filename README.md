@@ -89,5 +89,3 @@ marshalled into your Elm record type.
 
 See [examples/les-bonnes-choses/src/App/Documents](examples/les-bonnes-choses/src/App/Documents)
 for some examples.
-
-## View helpers
