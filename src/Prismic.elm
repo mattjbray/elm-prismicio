@@ -32,13 +32,13 @@ module Prismic
         , DocumentField(..)
         , decodeDefaultDocType
         , StructuredText
-        , StructuredTextField(..)
+        , StructuredTextElement(..)
         , SimpleStructuredTextField
         , SimpleStructuredTextType(..)
         , Span
         , SpanType(..)
         , ImageViews
-        , ImageProperties
+        , ImageView
         , ImageDimensions
         , EmbedProperties(..)
         , EmbedRichProperties
@@ -46,7 +46,7 @@ module Prismic
         , Link(DocumentLink, WebLink)
         , DocumentReference
         , decodeStructuredText
-        , decodeImageField
+        , decodeImageViews
         , decodeLink
         , structuredTextAsHtml
         , defaultLinkResolver
@@ -97,15 +97,15 @@ module Prismic
 
 You can create your own Elm types to represent your documents using the
 following components.
-@docs StructuredText, StructuredTextField, SimpleStructuredTextField, SimpleStructuredTextType, Span, SpanType
-@docs ImageViews, ImageProperties, ImageDimensions
+@docs StructuredText, StructuredTextElement, SimpleStructuredTextField, SimpleStructuredTextType, Span, SpanType
+@docs ImageViews, ImageView, ImageDimensions
 @docs EmbedProperties, EmbedRichProperties, EmbedVideoProperties
 @docs Link, DocumentReference
 
 ### Custom document decoders
 
 @docs decodeStructuredText
-@docs decodeImageField
+@docs decodeImageViews
 @docs decodeLink
 
 ## Viewing documents
@@ -342,17 +342,17 @@ type DocumentField
     | Link Link
 
 
-{-| `StructuredText` is a list of `StructuredTextField`s.
+{-| `StructuredText` is a list of `StructuredTextElement`s.
 -}
 type alias StructuredText =
-    List StructuredTextField
+    List StructuredTextElement
 
 
 {-| An element of `StructuredText`.
 -}
-type StructuredTextField
+type StructuredTextElement
     = SSimple SimpleStructuredTextField
-    | SImage ImageProperties
+    | SImage ImageView
     | SEmbed EmbedProperties
 
 
@@ -395,14 +395,14 @@ type SpanType
 {-| A collection of image views.
 -}
 type alias ImageViews =
-    { main : ImageProperties
-    , views : Dict String ImageProperties
+    { main : ImageView
+    , views : Dict String ImageView
     }
 
 
 {-| Properties for a single image view.
 -}
-type alias ImageProperties =
+type alias ImageView =
     { alt : Maybe String
     , copyright : Maybe String
     , url : Url
@@ -914,7 +914,7 @@ decodeDocumentField =
                     Json.object1 Date ("value" := Json.string)
 
                 "Image" ->
-                    Json.object1 Image ("value" := decodeImageField)
+                    Json.object1 Image ("value" := decodeImageViews)
 
                 "StructuredText" ->
                     Json.object1 StructuredText ("value" := decodeStructuredText)
@@ -935,21 +935,21 @@ decodeDocumentField =
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
-    Json.list decodeStructuredTextField
+    Json.list decodeStructuredTextElement
 
 
 {-| Decode an `ImageField`.
 -}
-decodeImageField : Json.Decoder ImageViews
-decodeImageField =
+decodeImageViews : Json.Decoder ImageViews
+decodeImageViews =
     Json.succeed ImageViews
-        |: ("main" := decodeImageProperties)
-        |: ("views" := (Json.dict decodeImageProperties))
+        |: ("main" := decodeImageView)
+        |: ("views" := (Json.dict decodeImageView))
 
 
-decodeImageProperties : Json.Decoder ImageProperties
-decodeImageProperties =
-    Json.succeed ImageProperties
+decodeImageView : Json.Decoder ImageView
+decodeImageView =
+    Json.succeed ImageView
         |: ("alt" := nullOr Json.string)
         |: ("copyright" := nullOr Json.string)
         |: ("url" := decodeUrl)
@@ -963,8 +963,8 @@ decodeImageDimensions =
         |: ("height" := Json.int)
 
 
-decodeStructuredTextField : Json.Decoder StructuredTextField
-decodeStructuredTextField =
+decodeStructuredTextElement : Json.Decoder StructuredTextElement
+decodeStructuredTextElement =
     let
         decodeOnType typeStr =
             case typeStr of
@@ -984,7 +984,7 @@ decodeStructuredTextField =
                     Json.object1 SSimple (decodeSimpleStructuredTextField ListItem)
 
                 "image" ->
-                    Json.object1 SImage (decodeImageProperties)
+                    Json.object1 SImage (decodeImageView)
 
                 "embed" ->
                     Json.object1 SEmbed ("oembed" := decodeEmbedProperties)
@@ -1166,11 +1166,11 @@ You must supply a `linkResolver` to resolve any links in the `StructuredText`. I
 -}
 structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
 structuredTextAsHtml linkResolver =
-    List.map (structuredTextFieldAsHtml linkResolver)
+    List.map (structuredTextElementAsHtml linkResolver)
 
 
-structuredTextFieldAsHtml : (DocumentReference -> Url) -> StructuredTextField -> Html msg
-structuredTextFieldAsHtml linkResolver field =
+structuredTextElementAsHtml : (DocumentReference -> Url) -> StructuredTextElement -> Html msg
+structuredTextElementAsHtml linkResolver field =
     case field of
         SSimple simpleField ->
             simpleFieldAsHtml linkResolver simpleField
@@ -1236,7 +1236,7 @@ simpleFieldAsHtml linkResolver field =
             )
 
 
-imageAsHtml : ImageProperties -> Html msg
+imageAsHtml : ImageView -> Html msg
 imageAsHtml image =
     let
         (Url urlStr) =
@@ -1313,7 +1313,7 @@ viewDefaultDocType doc =
 
 {-| Get the first title out of some `StructuredText`, if there is one.
 -}
-getTitle : StructuredText -> Maybe StructuredTextField
+getTitle : StructuredText -> Maybe StructuredTextElement
 getTitle structuredText =
     let
         isTitle field =
@@ -1340,7 +1340,7 @@ getTitle structuredText =
 
 {-| Get the first paragraph out of some `StructuredText`, if there is one.
 -}
-getFirstParagraph : StructuredText -> Maybe StructuredTextField
+getFirstParagraph : StructuredText -> Maybe StructuredTextElement
 getFirstParagraph structuredText =
     let
         isParagraph field =
@@ -1361,7 +1361,7 @@ getFirstParagraph structuredText =
 
 {-| Get the first image out of some `StructuredText`, if there is one.
 -}
-getFirstImage : StructuredText -> Maybe ImageProperties
+getFirstImage : StructuredText -> Maybe ImageView
 getFirstImage structuredText =
     let
         getImage field =
@@ -1377,7 +1377,7 @@ getFirstImage structuredText =
 
 {-| Get the contents of a single `StructuredText` element as a `String`.
 -}
-getText : StructuredTextField -> String
+getText : StructuredTextElement -> String
 getText field =
     case field of
         SSimple simpleField ->

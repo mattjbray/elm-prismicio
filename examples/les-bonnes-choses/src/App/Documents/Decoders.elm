@@ -20,7 +20,7 @@ decodeArticle =
     succeed Article
         |: at [ "id" ] string
         |: at [ "data", "article", "content", "value" ] P.decodeStructuredText
-        |: at [ "data", "article", "image", "value" ] P.decodeImageField
+        |: at [ "data", "article", "image", "value" ] P.decodeImageViews
         |: at [ "data", "article", "short_lede", "value" ] P.decodeStructuredText
         |: at [ "data", "article", "title", "value" ] P.decodeStructuredText
 
@@ -96,8 +96,8 @@ decodeProduct =
         |: at [ "data", "product", "color", "value" ] string
         |: at [ "data", "product", "description", "value" ] P.decodeStructuredText
         |: maybeWithDefault [] (at [ "data", "product", "flavour" ] (list ("value" := string)))
-        |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := P.decodeImageField)))
-        |: at [ "data", "product", "image", "value" ] P.decodeImageField
+        |: maybeWithDefault [] (at [ "data", "product", "gallery" ] (list ("value" := P.decodeImageViews)))
+        |: at [ "data", "product", "image", "value" ] P.decodeImageViews
         |: at [ "data", "product", "name", "value" ] P.decodeStructuredText
         |: at [ "data", "product", "price", "value" ] float
         |: maybeWithDefault [] (at [ "data", "product", "related" ] (list P.decodeLink))
@@ -116,9 +116,9 @@ decodeSelection =
         |: at [ "slugs" ] (list string)
         |: at [ "tags" ] (list string)
         |: at [ "data", "selection", "name", "value" ] P.decodeStructuredText
-        |: at [ "data", "selection", "catcher_image", "value" ] P.decodeImageField
+        |: at [ "data", "selection", "catcher_image", "value" ] P.decodeImageViews
         |: at [ "data", "selection", "description", "value" ] P.decodeStructuredText
-        |: at [ "data", "selection", "image", "value" ] P.decodeImageField
+        |: at [ "data", "selection", "image", "value" ] P.decodeImageViews
         |: at [ "data", "selection", "price", "value" ] float
         |: at [ "data", "selection", "product" ] (list P.decodeLink)
         |: at [ "data", "selection", "short_lede", "value" ] P.decodeStructuredText
@@ -136,7 +136,7 @@ decodeStore =
         |: at [ "data", "store", "country", "value" ] string
         |: at [ "data", "store", "description", "value" ] P.decodeStructuredText
         |: at [ "data", "store", "name", "value" ] P.decodeStructuredText
-        |: at [ "data", "store", "image", "value" ] P.decodeImageField
+        |: at [ "data", "store", "image", "value" ] P.decodeImageViews
         |: at [ "data", "store", "monday" ] (list ("value" := string))
         |: at [ "data", "store", "tuesday" ] (list ("value" := string))
         |: at [ "data", "store", "wednesday" ] (list ("value" := string))
