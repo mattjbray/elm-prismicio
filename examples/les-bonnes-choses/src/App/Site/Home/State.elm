@@ -18,13 +18,12 @@ init prismic =
       , category = Documents.Macaron
       }
     , Cmd.batch
-         -- TODO: Avoid fetching the api twice.
-        [ P.fetchApi prismic
+        [ P.api prismic
             |> P.form "products"
             |> P.submit Documents.decodeProduct
             |> Task.toResult
             |> Task.perform never SetProducts
-        , P.fetchApi prismic
+        , P.api prismic
             |> P.form "featured"
             |> P.submit decodeFeatured
             |> Task.toResult

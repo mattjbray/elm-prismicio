@@ -17,8 +17,7 @@ init prismic bookmarkName =
             }
     in
         ( model
-        , prismic
-            |> P.fetchApi
+        , P.api prismic
             |> P.bookmark bookmarkName
             |> P.submit Documents.decodeArticle
             |> Task.toResult

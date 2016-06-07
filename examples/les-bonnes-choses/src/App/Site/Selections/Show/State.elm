@@ -14,8 +14,7 @@ init prismic docId =
     ( { products = Ok []
       , selection = Ok Nothing
       }
-    , prismic
-        |> P.fetchApi
+    , P.api prismic
         |> P.form "everything"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeSelection
@@ -91,8 +90,7 @@ fetchProducts prismic selection =
                                 Nothing
                     )
     in
-        prismic
-            |> P.fetchApi
+        P.api prismic
             |> P.form "products"
             |> P.query [ P.any "document.id" productIds ]
             |> P.submit Documents.decodeProduct

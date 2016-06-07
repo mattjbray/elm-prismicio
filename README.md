@@ -49,7 +49,7 @@ type Msg
 
 
 fetchHomePage prismic =
-    P.fetchApi prismic
+    P.api prismic
       |> P.form "everything"
       |> P.bookmark "home-page"
       |> P.submit P.decodeDefaultDocType

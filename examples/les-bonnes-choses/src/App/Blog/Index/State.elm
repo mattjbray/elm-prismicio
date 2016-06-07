@@ -16,8 +16,7 @@ init prismic mCategory =
             }
     in
         ( model
-        , prismic
-            |> P.fetchApi
+        , P.api prismic
             |> P.form "blog"
             |> (mCategory
                     |> Maybe.map
@@ -42,5 +41,5 @@ update msg model =
                 | docs = Just (List.map .data response.results)
               }
             , Cmd.none
-            , [SetPrismic prismic]
+            , [ SetPrismic prismic ]
             )

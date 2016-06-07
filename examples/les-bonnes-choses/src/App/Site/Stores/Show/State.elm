@@ -15,8 +15,7 @@ init prismic docId =
     ( { store =
             Ok Nothing
       }
-    , prismic
-        |> P.fetchApi
+    , P.api prismic
         |> P.form "everything"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeStore

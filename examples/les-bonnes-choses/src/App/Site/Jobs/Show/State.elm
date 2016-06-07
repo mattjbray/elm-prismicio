@@ -25,8 +25,7 @@ init prismic docId =
         ( model
         , Cmd.batch
             [ Cmd.map ArticleMsg articleCmd
-            , prismic
-                |> P.fetchApi
+            , P.api prismic
                 |> P.form "everything"
                 |> P.query [ P.at "document.id" docId ]
                 |> P.submit Documents.decodeJobOffer

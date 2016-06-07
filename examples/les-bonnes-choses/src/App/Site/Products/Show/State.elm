@@ -14,8 +14,7 @@ init prismic docId =
       , relatedProducts = []
       , error = Nothing
       }
-    , prismic
-        |> P.fetchApi
+    , P.api prismic
         |> P.form "products"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeProduct
@@ -74,8 +73,7 @@ fetchRelatedProducts prismic product =
                 )
                 product.related
     in
-        prismic
-            |> P.fetchApi
+        P.api prismic
             |> P.form "products"
             |> P.query [ P.any "document.id" relatedDocIds ]
             |> P.submit Documents.decodeProduct

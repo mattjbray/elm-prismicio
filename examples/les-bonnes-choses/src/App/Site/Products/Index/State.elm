@@ -12,8 +12,7 @@ init prismic mFlavour =
     ( { products = Nothing
       , error = Nothing
       }
-    , prismic
-        |> P.fetchApi
+    , P.api prismic
         |> P.form "products"
         |> (mFlavour
                 |> Maybe.map (\flavour -> P.query [ P.at "my.product.flavour" flavour ])

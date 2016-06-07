@@ -1,7 +1,7 @@
 module Prismic
     exposing
         ( init
-        , fetchApi
+        , api
         , form
         , bookmark
         , ref
@@ -63,7 +63,7 @@ module Prismic
 @docs init
 
 # Making a request
-@docs fetchApi, form, bookmark, submit, collectResponses
+@docs api, form, bookmark, submit, collectResponses
 
 # Customising the request
 @docs ref, query, none
@@ -143,7 +143,7 @@ type alias Model =
     Model' (Maybe Api)
 
 
-{-| This variation of the Model type is returned by `fetchApi`, when we know we have successfully retreived the `Api`.
+{-| This variation of the Model type is returned by `api`, when we know we have successfully retreived the `Api`.
 
 It is used internally by elm-prismicio.
 -}
@@ -506,8 +506,8 @@ init url =
 {-| Go and fetch the Prismic API, if it has not already been fetched. You must
 start every Prismic request with this function.
 -}
-fetchApi : Model -> Task PrismicError ModelWithApi
-fetchApi cache =
+api : Model -> Task PrismicError ModelWithApi
+api cache =
     case cache.api of
         Just api ->
             Task.succeed { cache | api = api }
@@ -1162,7 +1162,8 @@ asHtml linkResolver field =
 
 {-| Render some `StructuredText` as HTML.
 
-You must supply a `linkResolver` to resolve any links in the `StructuredText`. If you don't care about this, you can use the `defaultLinkResolver`.
+You must supply a `linkResolver` to resolve any links in the `StructuredText`.
+If you don't care about this, you can use the `defaultLinkResolver`.
 -}
 structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
 structuredTextAsHtml linkResolver =

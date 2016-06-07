@@ -26,8 +26,7 @@ init prismic =
         ( model
         , Cmd.batch
             [ Cmd.map ArticleMsg articleCmd
-            , prismic
-                |> P.fetchApi
+            , P.api prismic
                 |> P.form "stores"
                 |> P.submit Documents.decodeStore
                 |> Task.toResult

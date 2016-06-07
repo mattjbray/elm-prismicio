@@ -16,7 +16,7 @@ init prismic query =
       , bookmarks = Dict.empty
       }
     , Cmd.batch
-        [ P.fetchApi prismic
+        [ P.api prismic
             |> P.form "everything"
             |> P.query
                 [ P.any "document.type" [ "product", "selection" ]
@@ -25,7 +25,7 @@ init prismic query =
             |> P.submit decodeProductR
             |> Task.toResult
             |> Task.perform never SetProducts
-        , P.fetchApi prismic
+        , P.api prismic
             |> P.form "everything"
             |> P.query
                 [ P.any "document.type"

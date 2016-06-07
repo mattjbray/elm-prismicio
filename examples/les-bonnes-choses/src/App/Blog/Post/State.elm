@@ -22,8 +22,7 @@ init prismic docId =
             }
     in
         ( model
-        , prismic
-            |> P.fetchApi
+        , P.api prismic
             |> P.form "everything"
             |> P.query [ P.at "document.id" docId ]
             |> P.submit Documents.decodeBlogPost
@@ -91,14 +90,12 @@ fetchRelated prismic model =
             in
                 ( model
                 , Cmd.batch
-                    [ prismic
-                        |> P.fetchApi
+                    [ P.api prismic
                         |> P.form "everything"
                         |> P.query [ P.any "document.id" relatedPostIds ]
                         |> P.submit Documents.decodeBlogPost
                         |> Task.perform SetError SetRelatedPosts
-                    , prismic
-                        |> P.fetchApi
+                    , P.api prismic
                         |> P.form "everything"
                         |> P.query [ P.any "document.id" relatedProductIds ]
                         |> P.submit Documents.decodeProduct
