@@ -8,11 +8,13 @@ check out the `examples/` directory of this repo.
 
 ## Set up
 
-First, you need to initialise Prismic's Model.
+First, you need to initialise the Prismic `Model`.
 
 ```elm
+import Prismic as P
+
 type alias Model =
-    { prismic : Prismic.Model
+    { prismic : P.Model
     , response : Maybe (P.Response P.DefaultDocType)
     }
 
@@ -21,7 +23,7 @@ init =
     let
         model =
             { prismic =
-                Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
+                P.init (Url "https://lesbonneschoses.prismic.io/api")
             , response =
                 Nothing
             }
