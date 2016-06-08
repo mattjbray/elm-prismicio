@@ -17,24 +17,43 @@ init prismic =
       , featured = Ok []
       , category = Documents.Macaron
       }
-    , Cmd.batch
-        [ P.api prismic
-            |> P.form "products"
-            |> P.submit Documents.decodeProduct
-            |> Task.toResult
-            |> Task.perform never SetProducts
-        , P.api prismic
-            |> P.form "featured"
-            |> P.submit decodeFeatured
-            |> Task.toResult
-            |> Task.perform never SetFeatured
-        ]
+    , P.api prismic
+        |> Task.toResult
+        |> Task.perform never FetchData
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
+        FetchData result ->
+            case result of
+                Err error ->
+                    ( { model
+                        | products = Err error
+                        , featured = Err error
+                      }
+                    , Cmd.none
+                    , []
+                    )
+
+                Ok prismicWithApi ->
+                    ( model
+                    , Cmd.batch
+                        [ Task.succeed prismicWithApi
+                            |> P.form "products"
+                            |> P.submit Documents.decodeProduct
+                            |> Task.toResult
+                            |> Task.perform never SetProducts
+                        , Task.succeed prismicWithApi
+                            |> P.form "featured"
+                            |> P.submit decodeFeatured
+                            |> Task.toResult
+                            |> Task.perform never SetFeatured
+                        ]
+                    , []
+                    )
+
         SetProducts result ->
             case result of
                 Err error ->

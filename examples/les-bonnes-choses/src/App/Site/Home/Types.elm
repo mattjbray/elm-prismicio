@@ -18,6 +18,7 @@ type alias Model =
 
 
 type Msg
-    = SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Model ))
+    = FetchData (Result P.PrismicError P.ModelWithApi)
+    | SetProducts (Result P.PrismicError ( P.Response Documents.Product, P.Model ))
     | SetFeatured (Result P.PrismicError ( P.Response Featured, P.Model ))
     | SetCategory Documents.Category
