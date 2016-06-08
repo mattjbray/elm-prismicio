@@ -8781,37 +8781,25 @@ var _evancz$url_parser$UrlParser$format = F2(
 				}));
 	});
 
+var _user$project$Prismic$requestToKey = _elm_lang$core$Basics$toString;
 var _user$project$Prismic$setInCache = F3(
-	function (request, response, cache) {
-		var id = cache.nextRequestId;
+	function (request, response, prismic) {
 		return _elm_lang$core$Native_Utils.update(
-			cache,
+			prismic,
 			{
-				nextRequestId: id + 1,
-				requests: A3(_elm_lang$core$Dict$insert, id, request, cache.requests),
-				responses: A3(_elm_lang$core$Dict$insert, id, response, cache.responses)
+				cache: A3(
+					_elm_lang$core$Dict$insert,
+					_user$project$Prismic$requestToKey(request),
+					response,
+					prismic.cache)
 			});
 	});
 var _user$project$Prismic$getFromCache = F2(
-	function (request, cache) {
-		var mRequestId = _elm_lang$core$List$head(
-			A2(
-				_elm_lang$core$List$map,
-				_elm_lang$core$Basics$fst,
-				A2(
-					_elm_lang$core$List$filter,
-					function (_p0) {
-						var _p1 = _p0;
-						return _elm_lang$core$Native_Utils.eq(_p1._1, request);
-					},
-					_elm_lang$core$Dict$toList(cache.requests))));
-		var mResponse = A2(
-			_elm_lang$core$Maybe$andThen,
-			mRequestId,
-			function (id) {
-				return A2(_elm_lang$core$Dict$get, id, cache.responses);
-			});
-		return mResponse;
+	function (request, prismic) {
+		return A2(
+			_elm_lang$core$Dict$get,
+			_user$project$Prismic$requestToKey(request),
+			prismic.cache);
 	});
 var _user$project$Prismic$predicatesToStr = function (predicates) {
 	var wrapQuotes = function (value) {
@@ -8832,21 +8820,21 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 	};
 	var predicateToStr = function (predicate) {
 		var query = function () {
-			var _p2 = predicate;
-			switch (_p2.ctor) {
+			var _p0 = predicate;
+			switch (_p0.ctor) {
 				case 'At':
 					return A2(
 						_elm_lang$core$Basics_ops['++'],
 						'at(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p2._0,
+							_p0._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									wrapQuotes(_p2._1),
+									wrapQuotes(_p0._1),
 									')'))));
 				case 'AtL':
 					return A2(
@@ -8854,13 +8842,13 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 						'at(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p2._0,
+							_p0._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p2._1),
+									toStrList(_p0._1),
 									')'))));
 				case 'Any':
 					return A2(
@@ -8868,13 +8856,13 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 						'any(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p2._0,
+							_p0._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									toStrList(_p2._1),
+									toStrList(_p0._1),
 									')'))));
 				default:
 					return A2(
@@ -8882,13 +8870,13 @@ var _user$project$Prismic$predicatesToStr = function (predicates) {
 						'fulltext(',
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_p2._0,
+							_p0._0,
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									wrapQuotes(_p2._1),
+									wrapQuotes(_p0._1),
 									')'))));
 			}
 		}();
@@ -8933,12 +8921,20 @@ var _user$project$Prismic$getJson = F2(
 			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
 	});
 var _user$project$Prismic$getText = function (field) {
-	var _p3 = field;
-	switch (_p3.ctor) {
-		case 'SSimple':
-			return _p3._0.text;
+	var _p1 = field;
+	switch (_p1.ctor) {
+		case 'Heading1':
+			return _p1._0.text;
+		case 'Heading2':
+			return _p1._0.text;
+		case 'Heading3':
+			return _p1._0.text;
+		case 'Paragraph':
+			return _p1._0.text;
+		case 'ListItem':
+			return _p1._0.text;
 		case 'SImage':
-			return A2(_elm_lang$core$Maybe$withDefault, '<image>', _p3._0.alt);
+			return A2(_elm_lang$core$Maybe$withDefault, '<image>', _p1._0.alt);
 		default:
 			return '';
 	}
@@ -8951,9 +8947,9 @@ var _user$project$Prismic$getTexts = function (fields) {
 };
 var _user$project$Prismic$getFirstImage = function (structuredText) {
 	var getImage = function (field) {
-		var _p4 = field;
-		if (_p4.ctor === 'SImage') {
-			return _elm_lang$core$Maybe$Just(_p4._0);
+		var _p2 = field;
+		if (_p2.ctor === 'SImage') {
+			return _elm_lang$core$Maybe$Just(_p2._0);
 		} else {
 			return _elm_lang$core$Maybe$Nothing;
 		}
@@ -8963,14 +8959,9 @@ var _user$project$Prismic$getFirstImage = function (structuredText) {
 };
 var _user$project$Prismic$getFirstParagraph = function (structuredText) {
 	var isParagraph = function (field) {
-		var _p5 = field;
-		if (_p5.ctor === 'SSimple') {
-			var _p6 = _p5._0.fieldType;
-			if (_p6.ctor === 'Paragraph') {
-				return true;
-			} else {
-				return false;
-			}
+		var _p3 = field;
+		if (_p3.ctor === 'Paragraph') {
+			return true;
 		} else {
 			return false;
 		}
@@ -8980,21 +8971,16 @@ var _user$project$Prismic$getFirstParagraph = function (structuredText) {
 };
 var _user$project$Prismic$getTitle = function (structuredText) {
 	var isTitle = function (field) {
-		var _p7 = field;
-		if (_p7.ctor === 'SSimple') {
-			var _p8 = _p7._0.fieldType;
-			switch (_p8.ctor) {
-				case 'Heading1':
-					return true;
-				case 'Heading2':
-					return true;
-				case 'Heading3':
-					return true;
-				default:
-					return false;
-			}
-		} else {
-			return false;
+		var _p4 = field;
+		switch (_p4.ctor) {
+			case 'Heading1':
+				return true;
+			case 'Heading2':
+				return true;
+			case 'Heading3':
+				return true;
+			default:
+				return false;
 		}
 	};
 	return _elm_lang$core$List$head(
@@ -9002,10 +8988,10 @@ var _user$project$Prismic$getTitle = function (structuredText) {
 };
 var _user$project$Prismic$linkAsHtmlWith = F3(
 	function (linkResolver, link, childs) {
-		var _p9 = link;
-		if (_p9.ctor === 'DocumentLink') {
-			var _p10 = linkResolver(_p9._0);
-			var url = _p10._0;
+		var _p5 = link;
+		if (_p5.ctor === 'DocumentLink') {
+			var _p6 = linkResolver(_p5._0);
+			var url = _p6._0;
 			return A2(
 				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
@@ -9018,18 +9004,18 @@ var _user$project$Prismic$linkAsHtmlWith = F3(
 				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$href(_p9._0._0)
+						_elm_lang$html$Html_Attributes$href(_p5._0._0)
 					]),
 				childs);
 		}
 	});
 var _user$project$Prismic$linkAsHtml = F2(
 	function (linkResolver, link) {
-		var _p11 = link;
-		if (_p11.ctor === 'DocumentLink') {
-			var _p13 = _p11._0;
-			var _p12 = linkResolver(_p13);
-			var url = _p12._0;
+		var _p7 = link;
+		if (_p7.ctor === 'DocumentLink') {
+			var _p9 = _p7._0;
+			var _p8 = linkResolver(_p9);
+			var url = _p8._0;
 			return A2(
 				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
@@ -9039,25 +9025,25 @@ var _user$project$Prismic$linkAsHtml = F2(
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(_p13.slug))
+						_elm_lang$core$Basics$toString(_p9.slug))
 					]));
 		} else {
-			var _p14 = _p11._0._0;
+			var _p10 = _p7._0._0;
 			return A2(
 				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$href(_p14)
+						_elm_lang$html$Html_Attributes$href(_p10)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html$text(_p14)
+						_elm_lang$html$Html$text(_p10)
 					]));
 		}
 	});
 var _user$project$Prismic$embedAsHtml = function (embed) {
-	var _p15 = embed;
-	if (_p15.ctor === 'EmbedVideo') {
+	var _p11 = embed;
+	if (_p11.ctor === 'EVideo') {
 		return A2(
 			_elm_lang$html$Html$div,
 			_elm_lang$core$Native_List.fromArray(
@@ -9065,7 +9051,7 @@ var _user$project$Prismic$embedAsHtml = function (embed) {
 					A2(
 					_elm_lang$html$Html_Attributes$property,
 					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p15._0.html))
+					_elm_lang$core$Json_Encode$string(_p11._0.html))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
@@ -9077,15 +9063,15 @@ var _user$project$Prismic$embedAsHtml = function (embed) {
 					A2(
 					_elm_lang$html$Html_Attributes$property,
 					'innerHTML',
-					_elm_lang$core$Json_Encode$string(_p15._0.html))
+					_elm_lang$core$Json_Encode$string(_p11._0.html))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
 	}
 };
 var _user$project$Prismic$imageAsHtml = function (image) {
-	var _p16 = image.url;
-	var urlStr = _p16._0;
+	var _p12 = image.url;
+	var urlStr = _p12._0;
 	return A2(
 		_elm_lang$html$Html$img,
 		_elm_lang$core$Native_List.fromArray(
@@ -9095,11 +9081,11 @@ var _user$project$Prismic$imageAsHtml = function (image) {
 		_elm_lang$core$Native_List.fromArray(
 			[]));
 };
-var _user$project$Prismic$simpleFieldAsHtml = F2(
-	function (linkResolver, field) {
+var _user$project$Prismic$blockAsHtml = F3(
+	function (el, linkResolver, field) {
 		var spanEl = function (span) {
-			var _p17 = span.spanType;
-			switch (_p17.ctor) {
+			var _p13 = span.spanElement;
+			switch (_p13.ctor) {
 				case 'Em':
 					return _elm_lang$html$Html$em(
 						_elm_lang$core$Native_List.fromArray(
@@ -9109,19 +9095,19 @@ var _user$project$Prismic$simpleFieldAsHtml = F2(
 						_elm_lang$core$Native_List.fromArray(
 							[]));
 				default:
-					return A2(_user$project$Prismic$linkAsHtmlWith, linkResolver, _p17._0);
+					return A2(_user$project$Prismic$linkAsHtmlWith, linkResolver, _p13._0);
 			}
 		};
 		var foldFn = F2(
-			function (span, _p18) {
-				var _p19 = _p18;
+			function (span, _p14) {
+				var _p15 = _p14;
 				var middle = A3(_elm_lang$core$String$slice, span.start, span.end, field.text);
-				var beginning = A3(_elm_lang$core$String$slice, _p19._1, span.start, field.text);
+				var beginning = A3(_elm_lang$core$String$slice, _p15._1, span.start, field.text);
 				return {
 					ctor: '_Tuple2',
 					_0: A2(
 						_elm_lang$core$Basics_ops['++'],
-						_p19._0,
+						_p15._0,
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html$text(beginning),
@@ -9136,44 +9122,19 @@ var _user$project$Prismic$simpleFieldAsHtml = F2(
 					_1: span.end
 				};
 			});
-		var el = function () {
-			var _p20 = field.fieldType;
-			switch (_p20.ctor) {
-				case 'Heading1':
-					return _elm_lang$html$Html$h1;
-				case 'Heading2':
-					return _elm_lang$html$Html$h2;
-				case 'Heading3':
-					return _elm_lang$html$Html$h3;
-				case 'Paragraph':
-					return _elm_lang$html$Html$p;
-				default:
-					return F2(
-						function (attrs, childs) {
-							return A2(
-								_elm_lang$html$Html$ul,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(_elm_lang$html$Html$li, attrs, childs)
-									]));
-						});
-			}
-		}();
 		return A2(
 			el,
 			_elm_lang$core$Native_List.fromArray(
 				[]),
-			function (_p21) {
-				var _p22 = _p21;
+			function (_p16) {
+				var _p17 = _p16;
 				return A2(
 					_elm_lang$core$Basics_ops['++'],
-					_p22._0,
+					_p17._0,
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$String$dropLeft, _p22._1, field.text))
+							A2(_elm_lang$core$String$dropLeft, _p17._1, field.text))
 						]));
 			}(
 				A3(
@@ -9192,26 +9153,48 @@ var _user$project$Prismic$simpleFieldAsHtml = F2(
 						},
 						field.spans))));
 	});
-var _user$project$Prismic$structuredTextFieldAsHtml = F2(
+var _user$project$Prismic$structuredTextBlockAsHtml = F2(
 	function (linkResolver, field) {
-		var _p23 = field;
-		switch (_p23.ctor) {
-			case 'SSimple':
-				return A2(_user$project$Prismic$simpleFieldAsHtml, linkResolver, _p23._0);
+		var _p18 = field;
+		switch (_p18.ctor) {
 			case 'SImage':
-				return _user$project$Prismic$imageAsHtml(_p23._0);
+				return _user$project$Prismic$imageAsHtml(_p18._0);
+			case 'SEmbed':
+				return _user$project$Prismic$embedAsHtml(_p18._0);
+			case 'Heading1':
+				return A3(_user$project$Prismic$blockAsHtml, _elm_lang$html$Html$h1, linkResolver, _p18._0);
+			case 'Heading2':
+				return A3(_user$project$Prismic$blockAsHtml, _elm_lang$html$Html$h2, linkResolver, _p18._0);
+			case 'Heading3':
+				return A3(_user$project$Prismic$blockAsHtml, _elm_lang$html$Html$h3, linkResolver, _p18._0);
+			case 'Paragraph':
+				return A3(_user$project$Prismic$blockAsHtml, _elm_lang$html$Html$p, linkResolver, _p18._0);
 			default:
-				return _user$project$Prismic$embedAsHtml(_p23._0);
+				return A3(
+					_user$project$Prismic$blockAsHtml,
+					F2(
+						function (attrs, childs) {
+							return A2(
+								_elm_lang$html$Html$ul,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(_elm_lang$html$Html$li, attrs, childs)
+									]));
+						}),
+					linkResolver,
+					_p18._0);
 		}
 	});
 var _user$project$Prismic$structuredTextAsHtml = function (linkResolver) {
 	return _elm_lang$core$List$map(
-		_user$project$Prismic$structuredTextFieldAsHtml(linkResolver));
+		_user$project$Prismic$structuredTextBlockAsHtml(linkResolver));
 };
 var _user$project$Prismic$asHtml = F2(
 	function (linkResolver, field) {
-		var _p24 = field;
-		switch (_p24.ctor) {
+		var _p19 = field;
+		switch (_p19.ctor) {
 			case 'Text':
 				return A2(
 					_elm_lang$html$Html$span,
@@ -9219,7 +9202,7 @@ var _user$project$Prismic$asHtml = F2(
 						[]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(_p24._0)
+							_elm_lang$html$Html$text(_p19._0)
 						]));
 			case 'Date':
 				return A2(
@@ -9228,7 +9211,7 @@ var _user$project$Prismic$asHtml = F2(
 						[]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(_p24._0)
+							_elm_lang$html$Html$text(_p19._0)
 						]));
 			case 'Number':
 				return A2(
@@ -9238,7 +9221,7 @@ var _user$project$Prismic$asHtml = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(_p24._0))
+							_elm_lang$core$Basics$toString(_p19._0))
 						]));
 			case 'Select':
 				return A2(
@@ -9247,7 +9230,7 @@ var _user$project$Prismic$asHtml = F2(
 						[]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(_p24._0)
+							_elm_lang$html$Html$text(_p19._0)
 						]));
 			case 'Color':
 				return A2(
@@ -9257,18 +9240,18 @@ var _user$project$Prismic$asHtml = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p24._0))
+							A2(_elm_lang$core$Basics_ops['++'], '<Color> ', _p19._0))
 						]));
 			case 'Link':
-				return A2(_user$project$Prismic$linkAsHtml, linkResolver, _p24._0);
+				return A2(_user$project$Prismic$linkAsHtml, linkResolver, _p19._0);
 			case 'Image':
-				return _user$project$Prismic$imageAsHtml(_p24._0.main);
+				return _user$project$Prismic$imageAsHtml(_p19._0.main);
 			default:
 				return A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[]),
-					A2(_user$project$Prismic$structuredTextAsHtml, linkResolver, _p24._0));
+					A2(_user$project$Prismic$structuredTextAsHtml, linkResolver, _p19._0));
 		}
 	});
 var _user$project$Prismic$asHtmlWithDefault = F5(
@@ -9285,9 +9268,9 @@ var _user$project$Prismic$asHtmlWithDefault = F5(
 				function (docs) {
 					return _elm_lang$core$Maybe$Just(
 						function () {
-							var _p25 = docs;
-							if ((_p25.ctor === '::') && (_p25._1.ctor === '[]')) {
-								return A2(_user$project$Prismic$asHtml, linkResolver, _p25._0);
+							var _p20 = docs;
+							if ((_p20.ctor === '::') && (_p20._1.ctor === '[]')) {
+								return A2(_user$project$Prismic$asHtml, linkResolver, _p20._0);
 							} else {
 								return A2(
 									_elm_lang$html$Html$div,
@@ -9314,9 +9297,9 @@ var _user$project$Prismic$maybeWithDefault = F2(
 		return A2(
 			_elm_lang$core$Json_Decode$andThen,
 			_elm_lang$core$Json_Decode$maybe(decoder),
-			function (_p26) {
+			function (_p21) {
 				return _elm_lang$core$Json_Decode$succeed(
-					A2(_elm_lang$core$Maybe$withDefault, $default, _p26));
+					A2(_elm_lang$core$Maybe$withDefault, $default, _p21));
 			});
 	});
 var _user$project$Prismic_ops = _user$project$Prismic_ops || {};
@@ -9325,30 +9308,38 @@ _user$project$Prismic_ops['|:'] = _elm_lang$core$Json_Decode$object2(
 		function (x, y) {
 			return x(y);
 		}));
+var _user$project$Prismic$collectResponses = F2(
+	function (model1, model2) {
+		return _elm_lang$core$Native_Utils.update(
+			model2,
+			{
+				cache: A2(_elm_lang$core$Dict$union, model2.cache, model1.cache)
+			});
+	});
 var _user$project$Prismic$none = _elm_lang$core$Task$map(_elm_lang$core$Basics$identity);
 var _user$project$Prismic$query = F2(
 	function (predicates, requestTask) {
-		var addQuery = function (_p27) {
-			var _p28 = _p27;
+		var addQuery = function (_p22) {
+			var _p23 = _p22;
 			return _elm_lang$core$Task$succeed(
 				{
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
-						_p28._0,
+						_p23._0,
 						{
 							q: _user$project$Prismic$predicatesToStr(predicates)
 						}),
-					_1: _p28._1
+					_1: _p23._1
 				});
 		};
 		return A2(_elm_lang$core$Task$andThen, requestTask, addQuery);
 	});
 var _user$project$Prismic$init = function (url) {
-	return {api: _elm_lang$core$Maybe$Nothing, url: url, nextRequestId: 0, requests: _elm_lang$core$Dict$empty, responses: _elm_lang$core$Dict$empty};
+	return {api: _elm_lang$core$Maybe$Nothing, url: url, nextRequestId: 0, cache: _elm_lang$core$Dict$empty};
 };
-var _user$project$Prismic$Model$ = F5(
-	function (a, b, c, d, e) {
-		return {api: a, url: b, nextRequestId: c, requests: d, responses: e};
+var _user$project$Prismic$Model$ = F4(
+	function (a, b, c, d) {
+		return {api: a, url: b, nextRequestId: c, cache: d};
 	});
 var _user$project$Prismic$Api = function (a) {
 	return function (b) {
@@ -9429,19 +9420,19 @@ var _user$project$Prismic$SearchResult = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {data: a, href: b, id: c, linkedDocuments: d, slugs: e, tags: f, resultType: g, uid: h};
 	});
-var _user$project$Prismic$SimpleStructuredTextField = F3(
-	function (a, b, c) {
-		return {fieldType: a, text: b, spans: c};
+var _user$project$Prismic$Block = F2(
+	function (a, b) {
+		return {text: a, spans: b};
 	});
 var _user$project$Prismic$Span = F3(
 	function (a, b, c) {
-		return {start: a, end: b, spanType: c};
+		return {start: a, end: b, spanElement: c};
 	});
 var _user$project$Prismic$ImageViews = F2(
 	function (a, b) {
 		return {main: a, views: b};
 	});
-var _user$project$Prismic$ImageProperties = F4(
+var _user$project$Prismic$ImageView = F4(
 	function (a, b, c, d) {
 		return {alt: a, copyright: b, url: c, dimensions: d};
 	});
@@ -9456,7 +9447,7 @@ var _user$project$Prismic$decodeImageDimensions = A2(
 		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageDimensions),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int)),
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'height', _elm_lang$core$Json_Decode$int));
-var _user$project$Prismic$EmbedVideoProperties = function (a) {
+var _user$project$Prismic$EmbedVideo = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -9483,7 +9474,7 @@ var _user$project$Prismic$EmbedVideoProperties = function (a) {
 		};
 	};
 };
-var _user$project$Prismic$EmbedRichProperties = function (a) {
+var _user$project$Prismic$EmbedRich = function (a) {
 	return function (b) {
 		return function (c) {
 			return function (d) {
@@ -9614,7 +9605,7 @@ var _user$project$Prismic$decodeResponse = function (decodeDocType) {
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'total_results_size', _elm_lang$core$Json_Decode$int)),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string));
 };
-var _user$project$Prismic$decodeImageProperties = A2(
+var _user$project$Prismic$decodeImageView = A2(
 	_user$project$Prismic_ops['|:'],
 	A2(
 		_user$project$Prismic_ops['|:'],
@@ -9622,7 +9613,7 @@ var _user$project$Prismic$decodeImageProperties = A2(
 			_user$project$Prismic_ops['|:'],
 			A2(
 				_user$project$Prismic_ops['|:'],
-				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageProperties),
+				_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageView),
 				A2(
 					_elm_lang$core$Json_Decode_ops[':='],
 					'alt',
@@ -9633,17 +9624,17 @@ var _user$project$Prismic$decodeImageProperties = A2(
 				_user$project$Prismic$nullOr(_elm_lang$core$Json_Decode$string))),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'url', _user$project$Prismic$decodeUrl)),
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'dimensions', _user$project$Prismic$decodeImageDimensions));
-var _user$project$Prismic$decodeImageField = A2(
+var _user$project$Prismic$decodeImageViews = A2(
 	_user$project$Prismic_ops['|:'],
 	A2(
 		_user$project$Prismic_ops['|:'],
 		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$ImageViews),
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'main', _user$project$Prismic$decodeImageProperties)),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'main', _user$project$Prismic$decodeImageView)),
 	A2(
 		_elm_lang$core$Json_Decode_ops[':='],
 		'views',
-		_elm_lang$core$Json_Decode$dict(_user$project$Prismic$decodeImageProperties)));
-var _user$project$Prismic$decodeEmbedVideoProperties = A2(
+		_elm_lang$core$Json_Decode$dict(_user$project$Prismic$decodeImageView)));
+var _user$project$Prismic$decodeEmbedVideo = A2(
 	_user$project$Prismic_ops['|:'],
 	A2(
 		_user$project$Prismic_ops['|:'],
@@ -9669,7 +9660,7 @@ var _user$project$Prismic$decodeEmbedVideoProperties = A2(
 												_user$project$Prismic_ops['|:'],
 												A2(
 													_user$project$Prismic_ops['|:'],
-													_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedVideoProperties),
+													_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedVideo),
 													A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
 												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic$decodeUrl)),
 											A2(_elm_lang$core$Json_Decode_ops[':='], 'embed_url', _user$project$Prismic$decodeUrl)),
@@ -9683,7 +9674,7 @@ var _user$project$Prismic$decodeEmbedVideoProperties = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'title', _elm_lang$core$Json_Decode$string)),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'version', _elm_lang$core$Json_Decode$string)),
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'width', _elm_lang$core$Json_Decode$int));
-var _user$project$Prismic$decodeEmbedRichProperties = A2(
+var _user$project$Prismic$decodeEmbedRich = A2(
 	_user$project$Prismic_ops['|:'],
 	A2(
 		_user$project$Prismic_ops['|:'],
@@ -9707,7 +9698,7 @@ var _user$project$Prismic$decodeEmbedRichProperties = A2(
 											_user$project$Prismic_ops['|:'],
 											A2(
 												_user$project$Prismic_ops['|:'],
-												_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedRichProperties),
+												_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$EmbedRich),
 												A2(_elm_lang$core$Json_Decode_ops[':='], 'author_name', _elm_lang$core$Json_Decode$string)),
 											A2(_elm_lang$core$Json_Decode_ops[':='], 'author_url', _user$project$Prismic$decodeUrl)),
 										A2(_elm_lang$core$Json_Decode_ops[':='], 'cache_age', _elm_lang$core$Json_Decode$string)),
@@ -9760,10 +9751,10 @@ var _user$project$Prismic$viewDefaultDocType = function (doc) {
 				allDocFields)));
 };
 var _user$project$Prismic$requestToUrl = function (request) {
-	var _p29 = request.action;
-	var urlStr = _p29._0;
-	var _p30 = request.ref;
-	var refStr = _p30._0;
+	var _p24 = request.action;
+	var urlStr = _p24._0;
+	var _p25 = request.ref;
+	var refStr = _p25._0;
 	return _user$project$Prismic$Url(
 		A2(
 			_evancz$elm_http$Http$url,
@@ -9782,10 +9773,10 @@ var _user$project$Prismic$SubmitRequestError = function (a) {
 };
 var _user$project$Prismic$submit = F2(
 	function (decodeDocType, requestTask) {
-		var doSubmit = function (_p31) {
-			var _p32 = _p31;
-			var _p36 = _p32._0;
-			var _p35 = _p32._1;
+		var doSubmit = function (_p26) {
+			var _p27 = _p26;
+			var _p31 = _p27._0;
+			var _p30 = _p27._1;
 			var decodeResponseValue = function (responseValue) {
 				return A2(
 					_elm_lang$core$Task$mapError,
@@ -9800,27 +9791,27 @@ var _user$project$Prismic$submit = F2(
 							responseValue)));
 			};
 			var cacheWithApi = _elm_lang$core$Native_Utils.update(
-				_p35,
+				_p30,
 				{
-					api: _elm_lang$core$Maybe$Just(_p35.api)
+					api: _elm_lang$core$Maybe$Just(_p30.api)
 				});
-			var _p33 = _user$project$Prismic$requestToUrl(_p36);
-			var url = _p33._0;
-			var _p34 = A2(_user$project$Prismic$getFromCache, _p36, _p35);
-			if (_p34.ctor === 'Just') {
+			var _p28 = _user$project$Prismic$requestToUrl(_p31);
+			var url = _p28._0;
+			var _p29 = A2(_user$project$Prismic$getFromCache, _p31, _p30);
+			if (_p29.ctor === 'Just') {
 				return A2(
 					_elm_lang$core$Task$map,
 					function (response) {
 						return {ctor: '_Tuple2', _0: response, _1: cacheWithApi};
 					},
-					decodeResponseValue(_p34._0));
+					decodeResponseValue(_p29._0));
 			} else {
 				var mkResultTuple = F2(
 					function (responseValue, response) {
 						return {
 							ctor: '_Tuple2',
 							_0: response,
-							_1: A3(_user$project$Prismic$setInCache, _p36, responseValue, cacheWithApi)
+							_1: A3(_user$project$Prismic$setInCache, _p31, responseValue, cacheWithApi)
 						};
 					});
 				var decodeAndMkResult = function (responseValue) {
@@ -9849,11 +9840,11 @@ var _user$project$Prismic$RefDoesNotExist = function (a) {
 };
 var _user$project$Prismic$ref = F2(
 	function (refId, requestTask) {
-		var addRef = function (_p37) {
-			var _p38 = _p37;
-			var _p40 = _p38._1;
-			var _p39 = A2(_user$project$Prismic$getRefById, refId, _p40.api);
-			if (_p39.ctor === 'Nothing') {
+		var addRef = function (_p32) {
+			var _p33 = _p32;
+			var _p35 = _p33._1;
+			var _p34 = A2(_user$project$Prismic$getRefById, refId, _p35.api);
+			if (_p34.ctor === 'Nothing') {
 				return _elm_lang$core$Task$fail(
 					_user$project$Prismic$RefDoesNotExist(refId));
 			} else {
@@ -9861,9 +9852,9 @@ var _user$project$Prismic$ref = F2(
 					{
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
-							_p38._0,
-							{ref: _p39._0.ref}),
-						_1: _p40
+							_p33._0,
+							{ref: _p34._0.ref}),
+						_1: _p35
 					});
 			}
 		};
@@ -9878,29 +9869,29 @@ var _user$project$Prismic$form = F2(
 			var defaultRefId = 'master';
 			var mRef = A2(_user$project$Prismic$getRefById, defaultRefId, cache.api);
 			var mForm = A2(_elm_lang$core$Dict$get, formId, cache.api.forms);
-			var _p41 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
-			if (_p41._0.ctor === 'Nothing') {
+			var _p36 = {ctor: '_Tuple2', _0: mForm, _1: mRef};
+			if (_p36._0.ctor === 'Nothing') {
 				return _elm_lang$core$Task$fail(
 					_user$project$Prismic$FormDoesNotExist(formId));
 			} else {
-				if (_p41._1.ctor === 'Nothing') {
+				if (_p36._1.ctor === 'Nothing') {
 					return _elm_lang$core$Task$fail(
 						_user$project$Prismic$RefDoesNotExist(defaultRefId));
 				} else {
-					var _p42 = _p41._0._0;
+					var _p37 = _p36._0._0;
 					var q = A2(
 						_elm_lang$core$Maybe$withDefault,
 						'',
 						A2(
 							_elm_lang$core$Maybe$andThen,
-							A2(_elm_lang$core$Dict$get, 'q', _p42.fields),
+							A2(_elm_lang$core$Dict$get, 'q', _p37.fields),
 							function (_) {
 								return _.$default;
 							}));
 					return _elm_lang$core$Task$succeed(
 						{
 							ctor: '_Tuple2',
-							_0: {action: _p42.action, ref: _p41._1._0.ref, q: q},
+							_0: {action: _p37.action, ref: _p36._1._0.ref, q: q},
 							_1: cache
 						});
 				}
@@ -9932,8 +9923,8 @@ var _user$project$Prismic$Integer = {ctor: 'Integer'};
 var _user$project$Prismic$String = {ctor: 'String'};
 var _user$project$Prismic$decodeFieldType = function () {
 	var decodeOnType = function (str) {
-		var _p43 = str;
-		switch (_p43) {
+		var _p38 = str;
+		switch (_p38) {
 			case 'String':
 				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$String);
 			case 'Integer':
@@ -10026,16 +10017,16 @@ var _user$project$Prismic$decodeApi = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'oauth_token', _elm_lang$core$Json_Decode$string)),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'license', _elm_lang$core$Json_Decode$string)),
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'experiments', _user$project$Prismic$decodeExperiments));
-var _user$project$Prismic$fetchApi = function (cache) {
-	var _p44 = cache.api;
-	if (_p44.ctor === 'Just') {
+var _user$project$Prismic$api = function (cache) {
+	var _p39 = cache.api;
+	if (_p39.ctor === 'Just') {
 		return _elm_lang$core$Task$succeed(
 			_elm_lang$core$Native_Utils.update(
 				cache,
-				{api: _p44._0}));
+				{api: _p39._0}));
 	} else {
-		var _p45 = cache.url;
-		var url = _p45._0;
+		var _p40 = cache.url;
+		var url = _p40._0;
 		return A2(
 			_elm_lang$core$Task$map,
 			function (api) {
@@ -10088,8 +10079,8 @@ var _user$project$Prismic$bookmark = F2(
 			cacheTask,
 			function (cacheWithApi) {
 				var mDocId = A2(_elm_lang$core$Dict$get, bookmarkId, cacheWithApi.api.bookmarks);
-				var _p46 = mDocId;
-				if (_p46.ctor === 'Nothing') {
+				var _p41 = mDocId;
+				if (_p41.ctor === 'Nothing') {
 					return _elm_lang$core$Task$fail(
 						_user$project$Prismic$BookmarkDoesNotExist(bookmarkId));
 				} else {
@@ -10097,7 +10088,7 @@ var _user$project$Prismic$bookmark = F2(
 						_user$project$Prismic$query,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								A2(_user$project$Prismic$at, 'document.id', _p46._0)
+								A2(_user$project$Prismic$at, 'document.id', _p41._0)
 							]),
 						A2(
 							_user$project$Prismic$form,
@@ -10136,33 +10127,40 @@ var _user$project$Prismic$SEmbed = function (a) {
 var _user$project$Prismic$SImage = function (a) {
 	return {ctor: 'SImage', _0: a};
 };
-var _user$project$Prismic$SSimple = function (a) {
-	return {ctor: 'SSimple', _0: a};
+var _user$project$Prismic$ListItem = function (a) {
+	return {ctor: 'ListItem', _0: a};
 };
-var _user$project$Prismic$ListItem = {ctor: 'ListItem'};
-var _user$project$Prismic$Paragraph = {ctor: 'Paragraph'};
-var _user$project$Prismic$Heading3 = {ctor: 'Heading3'};
-var _user$project$Prismic$Heading2 = {ctor: 'Heading2'};
-var _user$project$Prismic$Heading1 = {ctor: 'Heading1'};
+var _user$project$Prismic$Paragraph = function (a) {
+	return {ctor: 'Paragraph', _0: a};
+};
+var _user$project$Prismic$Heading3 = function (a) {
+	return {ctor: 'Heading3', _0: a};
+};
+var _user$project$Prismic$Heading2 = function (a) {
+	return {ctor: 'Heading2', _0: a};
+};
+var _user$project$Prismic$Heading1 = function (a) {
+	return {ctor: 'Heading1', _0: a};
+};
 var _user$project$Prismic$Hyperlink = function (a) {
 	return {ctor: 'Hyperlink', _0: a};
 };
 var _user$project$Prismic$Strong = {ctor: 'Strong'};
 var _user$project$Prismic$Em = {ctor: 'Em'};
-var _user$project$Prismic$EmbedRich = function (a) {
-	return {ctor: 'EmbedRich', _0: a};
+var _user$project$Prismic$ERich = function (a) {
+	return {ctor: 'ERich', _0: a};
 };
-var _user$project$Prismic$EmbedVideo = function (a) {
-	return {ctor: 'EmbedVideo', _0: a};
+var _user$project$Prismic$EVideo = function (a) {
+	return {ctor: 'EVideo', _0: a};
 };
-var _user$project$Prismic$decodeEmbedProperties = function () {
+var _user$project$Prismic$decodeEmbed = function () {
 	var decodeOnType = function (typeStr) {
-		var _p47 = typeStr;
-		switch (_p47) {
+		var _p42 = typeStr;
+		switch (_p42) {
 			case 'video':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$EmbedVideo, _user$project$Prismic$decodeEmbedVideoProperties);
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$EVideo, _user$project$Prismic$decodeEmbedVideo);
 			case 'rich':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$EmbedRich, _user$project$Prismic$decodeEmbedRichProperties);
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$ERich, _user$project$Prismic$decodeEmbedRich);
 			default:
 				return _elm_lang$core$Json_Decode$fail(
 					A2(_elm_lang$core$Basics_ops['++'], 'Unknown embed type: ', typeStr));
@@ -10182,8 +10180,8 @@ var _user$project$Prismic$DocumentLink = F2(
 	});
 var _user$project$Prismic$decodeLink = function () {
 	var decodeOnType = function (typeStr) {
-		var _p48 = typeStr;
-		switch (_p48) {
+		var _p43 = typeStr;
+		switch (_p43) {
 			case 'Link.document':
 				return A2(
 					_user$project$Prismic_ops['|:'],
@@ -10221,8 +10219,8 @@ var _user$project$Prismic$decodeLink = function () {
 }();
 var _user$project$Prismic$decodeSpanType = function () {
 	var decodeOnType = function (typeStr) {
-		var _p49 = typeStr;
-		switch (_p49) {
+		var _p44 = typeStr;
+		switch (_p44) {
 			case 'em':
 				return _elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Em);
 			case 'strong':
@@ -10252,55 +10250,37 @@ var _user$project$Prismic$decodeSpan = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'start', _elm_lang$core$Json_Decode$int)),
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'end', _elm_lang$core$Json_Decode$int)),
 	_user$project$Prismic$decodeSpanType);
-var _user$project$Prismic$decodeSimpleStructuredTextField = function (tag) {
-	return A2(
+var _user$project$Prismic$decodeBlock = A2(
+	_user$project$Prismic_ops['|:'],
+	A2(
 		_user$project$Prismic_ops['|:'],
-		A2(
-			_user$project$Prismic_ops['|:'],
-			_elm_lang$core$Json_Decode$succeed(
-				_user$project$Prismic$SimpleStructuredTextField(tag)),
-			A2(_elm_lang$core$Json_Decode_ops[':='], 'text', _elm_lang$core$Json_Decode$string)),
-		A2(
-			_elm_lang$core$Json_Decode_ops[':='],
-			'spans',
-			_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeSpan)));
-};
-var _user$project$Prismic$decodeStructuredTextField = function () {
+		_elm_lang$core$Json_Decode$succeed(_user$project$Prismic$Block),
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'text', _elm_lang$core$Json_Decode$string)),
+	A2(
+		_elm_lang$core$Json_Decode_ops[':='],
+		'spans',
+		_elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeSpan)));
+var _user$project$Prismic$decodeStructuredTextBlock = function () {
 	var decodeOnType = function (typeStr) {
-		var _p50 = typeStr;
-		switch (_p50) {
+		var _p45 = typeStr;
+		switch (_p45) {
 			case 'heading1':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic$SSimple,
-					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading1));
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Heading1, _user$project$Prismic$decodeBlock);
 			case 'heading2':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic$SSimple,
-					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading2));
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Heading2, _user$project$Prismic$decodeBlock);
 			case 'heading3':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic$SSimple,
-					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Heading3));
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Heading3, _user$project$Prismic$decodeBlock);
 			case 'paragraph':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic$SSimple,
-					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$Paragraph));
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$Paragraph, _user$project$Prismic$decodeBlock);
 			case 'list-item':
-				return A2(
-					_elm_lang$core$Json_Decode$object1,
-					_user$project$Prismic$SSimple,
-					_user$project$Prismic$decodeSimpleStructuredTextField(_user$project$Prismic$ListItem));
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$ListItem, _user$project$Prismic$decodeBlock);
 			case 'image':
-				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$SImage, _user$project$Prismic$decodeImageProperties);
+				return A2(_elm_lang$core$Json_Decode$object1, _user$project$Prismic$SImage, _user$project$Prismic$decodeImageView);
 			case 'embed':
 				return A2(
 					_elm_lang$core$Json_Decode$object1,
 					_user$project$Prismic$SEmbed,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'oembed', _user$project$Prismic$decodeEmbedProperties));
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'oembed', _user$project$Prismic$decodeEmbed));
 			default:
 				return _elm_lang$core$Json_Decode$fail(
 					A2(
@@ -10314,11 +10294,11 @@ var _user$project$Prismic$decodeStructuredTextField = function () {
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'type', _elm_lang$core$Json_Decode$string),
 		decodeOnType);
 }();
-var _user$project$Prismic$decodeStructuredText = _elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeStructuredTextField);
+var _user$project$Prismic$decodeStructuredText = _elm_lang$core$Json_Decode$list(_user$project$Prismic$decodeStructuredTextBlock);
 var _user$project$Prismic$decodeDocumentField = function () {
 	var decodeOnType = function (typeStr) {
-		var _p51 = typeStr;
-		switch (_p51) {
+		var _p46 = typeStr;
+		switch (_p46) {
 			case 'Text':
 				return A2(
 					_elm_lang$core$Json_Decode$object1,
@@ -10348,7 +10328,7 @@ var _user$project$Prismic$decodeDocumentField = function () {
 				return A2(
 					_elm_lang$core$Json_Decode$object1,
 					_user$project$Prismic$Image,
-					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageField));
+					A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageViews));
 			case 'StructuredText':
 				return A2(
 					_elm_lang$core$Json_Decode$object1,
@@ -10605,6 +10585,9 @@ var _user$project$App_Site_Home_Types$SetFeatured = function (a) {
 };
 var _user$project$App_Site_Home_Types$SetProducts = function (a) {
 	return {ctor: 'SetProducts', _0: a};
+};
+var _user$project$App_Site_Home_Types$FetchData = function (a) {
+	return {ctor: 'FetchData', _0: a};
 };
 
 var _user$project$App_Site_Jobs_Index_Types$Model = F2(
@@ -10976,7 +10959,7 @@ var _user$project$App_Documents_Decoders$decodeArticle = A2(
 				_elm_lang$core$Json_Decode$at,
 				_elm_lang$core$Native_List.fromArray(
 					['data', 'article', 'image', 'value']),
-				_user$project$Prismic$decodeImageField)),
+				_user$project$Prismic$decodeImageViews)),
 		A2(
 			_elm_lang$core$Json_Decode$at,
 			_elm_lang$core$Native_List.fromArray(
@@ -11216,12 +11199,12 @@ var _user$project$App_Documents_Decoders$decodeProduct = A2(
 												_elm_lang$core$Native_List.fromArray(
 													['data', 'product', 'gallery']),
 												_elm_lang$core$Json_Decode$list(
-													A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageField))))),
+													A2(_elm_lang$core$Json_Decode_ops[':='], 'value', _user$project$Prismic$decodeImageViews))))),
 									A2(
 										_elm_lang$core$Json_Decode$at,
 										_elm_lang$core$Native_List.fromArray(
 											['data', 'product', 'image', 'value']),
-										_user$project$Prismic$decodeImageField)),
+										_user$project$Prismic$decodeImageViews)),
 								A2(
 									_elm_lang$core$Json_Decode$at,
 									_elm_lang$core$Native_List.fromArray(
@@ -11313,7 +11296,7 @@ var _user$project$App_Documents_Decoders$decodeSelection = A2(
 							_elm_lang$core$Json_Decode$at,
 							_elm_lang$core$Native_List.fromArray(
 								['data', 'selection', 'catcher_image', 'value']),
-							_user$project$Prismic$decodeImageField)),
+							_user$project$Prismic$decodeImageViews)),
 					A2(
 						_elm_lang$core$Json_Decode$at,
 						_elm_lang$core$Native_List.fromArray(
@@ -11323,7 +11306,7 @@ var _user$project$App_Documents_Decoders$decodeSelection = A2(
 					_elm_lang$core$Json_Decode$at,
 					_elm_lang$core$Native_List.fromArray(
 						['data', 'selection', 'image', 'value']),
-					_user$project$Prismic$decodeImageField)),
+					_user$project$Prismic$decodeImageViews)),
 			A2(
 				_elm_lang$core$Json_Decode$at,
 				_elm_lang$core$Native_List.fromArray(
@@ -11423,7 +11406,7 @@ var _user$project$App_Documents_Decoders$decodeStore = A2(
 									_elm_lang$core$Json_Decode$at,
 									_elm_lang$core$Native_List.fromArray(
 										['data', 'store', 'image', 'value']),
-									_user$project$Prismic$decodeImageField)),
+									_user$project$Prismic$decodeImageViews)),
 							A2(
 								_elm_lang$core$Json_Decode$at,
 								_elm_lang$core$Native_List.fromArray(
@@ -11529,7 +11512,7 @@ var _user$project$App_Blog_Index_State$init = F2(
 						A2(
 							_user$project$Prismic$form,
 							'blog',
-							_user$project$Prismic$fetchApi(prismic)))))
+							_user$project$Prismic$api(prismic)))))
 		};
 	});
 
@@ -12123,7 +12106,7 @@ var _user$project$App_Blog_Post_State$fetchRelated = F2(
 									A2(
 										_user$project$Prismic$form,
 										'everything',
-										_user$project$Prismic$fetchApi(prismic))))),
+										_user$project$Prismic$api(prismic))))),
 							A3(
 							_elm_lang$core$Task$perform,
 							_user$project$App_Blog_Post_Types$SetError,
@@ -12140,7 +12123,7 @@ var _user$project$App_Blog_Post_State$fetchRelated = F2(
 									A2(
 										_user$project$Prismic$form,
 										'everything',
-										_user$project$Prismic$fetchApi(prismic)))))
+										_user$project$Prismic$api(prismic)))))
 						])),
 				_2: _elm_lang$core$Native_List.fromArray(
 					[
@@ -12268,7 +12251,7 @@ var _user$project$App_Blog_Post_State$init = F2(
 						A2(
 							_user$project$Prismic$form,
 							'everything',
-							_user$project$Prismic$fetchApi(prismic)))))
+							_user$project$Prismic$api(prismic)))))
 		};
 	});
 
@@ -12950,7 +12933,7 @@ var _user$project$App_Site_Article_State$init = F2(
 						A2(
 							_user$project$Prismic$bookmark,
 							bookmarkName,
-							_user$project$Prismic$fetchApi(prismic)))))
+							_user$project$Prismic$api(prismic)))))
 		};
 	});
 
@@ -13066,15 +13049,68 @@ var _user$project$App_Site_Home_State$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
-			case 'SetProducts':
+			case 'FetchData':
 				var _p1 = _p0._0;
 				if (_p1.ctor === 'Err') {
+					var _p2 = _p1._0;
 					return {
 						ctor: '_Tuple3',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{
-								products: _elm_lang$core$Result$Err(_p1._0)
+								products: _elm_lang$core$Result$Err(_p2),
+								featured: _elm_lang$core$Result$Err(_p2)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none,
+						_2: _elm_lang$core$Native_List.fromArray(
+							[])
+					};
+				} else {
+					var _p3 = _p1._0;
+					return {
+						ctor: '_Tuple3',
+						_0: model,
+						_1: _elm_lang$core$Platform_Cmd$batch(
+							_elm_lang$core$Native_List.fromArray(
+								[
+									A3(
+									_elm_lang$core$Task$perform,
+									_elm_community$basics_extra$Basics_Extra$never,
+									_user$project$App_Site_Home_Types$SetProducts,
+									_elm_lang$core$Task$toResult(
+										A2(
+											_user$project$Prismic$submit,
+											_user$project$App_Documents_Decoders$decodeProduct,
+											A2(
+												_user$project$Prismic$form,
+												'products',
+												_elm_lang$core$Task$succeed(_p3))))),
+									A3(
+									_elm_lang$core$Task$perform,
+									_elm_community$basics_extra$Basics_Extra$never,
+									_user$project$App_Site_Home_Types$SetFeatured,
+									_elm_lang$core$Task$toResult(
+										A2(
+											_user$project$Prismic$submit,
+											_user$project$App_Site_Home_Decoders$decodeFeatured,
+											A2(
+												_user$project$Prismic$form,
+												'featured',
+												_elm_lang$core$Task$succeed(_p3)))))
+								])),
+						_2: _elm_lang$core$Native_List.fromArray(
+							[])
+					};
+				}
+			case 'SetProducts':
+				var _p4 = _p0._0;
+				if (_p4.ctor === 'Err') {
+					return {
+						ctor: '_Tuple3',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								products: _elm_lang$core$Result$Err(_p4._0)
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none,
 						_2: _elm_lang$core$Native_List.fromArray(
@@ -13092,24 +13128,24 @@ var _user$project$App_Site_Home_State$update = F2(
 										function (_) {
 											return _.data;
 										},
-										_p1._0._0.results))
+										_p4._0._0.results))
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none,
 						_2: _elm_lang$core$Native_List.fromArray(
 							[
-								_user$project$App_Types$SetPrismic(_p1._0._1)
+								_user$project$App_Types$SetPrismic(_p4._0._1)
 							])
 					};
 				}
 			case 'SetFeatured':
-				var _p2 = _p0._0;
-				if (_p2.ctor === 'Err') {
+				var _p5 = _p0._0;
+				if (_p5.ctor === 'Err') {
 					return {
 						ctor: '_Tuple3',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{
-								featured: _elm_lang$core$Result$Err(_p2._0)
+								featured: _elm_lang$core$Result$Err(_p5._0)
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none,
 						_2: _elm_lang$core$Native_List.fromArray(
@@ -13127,12 +13163,12 @@ var _user$project$App_Site_Home_State$update = F2(
 										function (_) {
 											return _.data;
 										},
-										_p2._0._0.results))
+										_p5._0._0.results))
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none,
 						_2: _elm_lang$core$Native_List.fromArray(
 							[
-								_user$project$App_Types$SetPrismic(_p2._0._1)
+								_user$project$App_Types$SetPrismic(_p5._0._1)
 							])
 					};
 				}
@@ -13160,34 +13196,12 @@ var _user$project$App_Site_Home_State$init = function (prismic) {
 					[])),
 			category: _user$project$App_Documents_Types$Macaron
 		},
-		_1: _elm_lang$core$Platform_Cmd$batch(
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A3(
-					_elm_lang$core$Task$perform,
-					_elm_community$basics_extra$Basics_Extra$never,
-					_user$project$App_Site_Home_Types$SetProducts,
-					_elm_lang$core$Task$toResult(
-						A2(
-							_user$project$Prismic$submit,
-							_user$project$App_Documents_Decoders$decodeProduct,
-							A2(
-								_user$project$Prismic$form,
-								'products',
-								_user$project$Prismic$fetchApi(prismic))))),
-					A3(
-					_elm_lang$core$Task$perform,
-					_elm_community$basics_extra$Basics_Extra$never,
-					_user$project$App_Site_Home_Types$SetFeatured,
-					_elm_lang$core$Task$toResult(
-						A2(
-							_user$project$Prismic$submit,
-							_user$project$App_Site_Home_Decoders$decodeFeatured,
-							A2(
-								_user$project$Prismic$form,
-								'featured',
-								_user$project$Prismic$fetchApi(prismic)))))
-				]))
+		_1: A3(
+			_elm_lang$core$Task$perform,
+			_elm_community$basics_extra$Basics_Extra$never,
+			_user$project$App_Site_Home_Types$FetchData,
+			_elm_lang$core$Task$toResult(
+				_user$project$Prismic$api(prismic)))
 	};
 };
 
@@ -13852,7 +13866,7 @@ var _user$project$App_Site_Jobs_Index_State$init = function (prismic) {
 							A2(
 								_user$project$Prismic$form,
 								'jobs',
-								_user$project$Prismic$fetchApi(prismic)))))
+								_user$project$Prismic$api(prismic)))))
 				]))
 	};
 };
@@ -14113,7 +14127,7 @@ var _user$project$App_Site_Jobs_Show_State$init = F2(
 									A2(
 										_user$project$Prismic$form,
 										'everything',
-										_user$project$Prismic$fetchApi(prismic))))))
+										_user$project$Prismic$api(prismic))))))
 					]))
 		};
 	});
@@ -14435,7 +14449,7 @@ var _user$project$App_Site_Products_Index_State$init = F2(
 						A2(
 							_user$project$Prismic$form,
 							'products',
-							_user$project$Prismic$fetchApi(prismic)))))
+							_user$project$Prismic$api(prismic)))))
 		};
 	});
 
@@ -14540,7 +14554,7 @@ var _user$project$App_Site_Products_Show_State$fetchRelatedProducts = F2(
 					A2(
 						_user$project$Prismic$form,
 						'products',
-						_user$project$Prismic$fetchApi(prismic)))));
+						_user$project$Prismic$api(prismic)))));
 	});
 var _user$project$App_Site_Products_Show_State$update = F2(
 	function (msg, model) {
@@ -14635,7 +14649,7 @@ var _user$project$App_Site_Products_Show_State$init = F2(
 						A2(
 							_user$project$Prismic$form,
 							'products',
-							_user$project$Prismic$fetchApi(prismic)))))
+							_user$project$Prismic$api(prismic)))))
 		};
 	});
 
@@ -15170,7 +15184,7 @@ var _user$project$App_Site_Search_Results_State$init = F2(
 									A2(
 										_user$project$Prismic$form,
 										'everything',
-										_user$project$Prismic$fetchApi(prismic)))))),
+										_user$project$Prismic$api(prismic)))))),
 						A3(
 						_elm_lang$core$Task$perform,
 						_elm_community$basics_extra$Basics_Extra$never,
@@ -15193,7 +15207,7 @@ var _user$project$App_Site_Search_Results_State$init = F2(
 									A2(
 										_user$project$Prismic$form,
 										'everything',
-										_user$project$Prismic$fetchApi(prismic))))))
+										_user$project$Prismic$api(prismic))))))
 					]))
 		};
 	});
@@ -15745,7 +15759,7 @@ var _user$project$App_Site_Selections_Show_State$fetchProducts = F2(
 						A2(
 							_user$project$Prismic$form,
 							'products',
-							_user$project$Prismic$fetchApi(prismic))))));
+							_user$project$Prismic$api(prismic))))));
 	});
 var _user$project$App_Site_Selections_Show_State$update = F2(
 	function (msg, model) {
@@ -15862,7 +15876,7 @@ var _user$project$App_Site_Selections_Show_State$init = F2(
 							A2(
 								_user$project$Prismic$form,
 								'everything',
-								_user$project$Prismic$fetchApi(prismic))))))
+								_user$project$Prismic$api(prismic))))))
 		};
 	});
 
@@ -16186,7 +16200,7 @@ var _user$project$App_Site_Stores_Index_State$init = function (prismic) {
 							A2(
 								_user$project$Prismic$form,
 								'stores',
-								_user$project$Prismic$fetchApi(prismic)))))
+								_user$project$Prismic$api(prismic)))))
 				]))
 	};
 };
@@ -16274,7 +16288,7 @@ var _user$project$App_Site_Stores_Show_State$init = F2(
 							A2(
 								_user$project$Prismic$form,
 								'everything',
-								_user$project$Prismic$fetchApi(prismic))))))
+								_user$project$Prismic$api(prismic))))))
 		};
 	});
 
@@ -17192,7 +17206,9 @@ var _user$project$App_State$processGlobalMsgs = F2(
 				if (_p3.ctor === 'SetPrismic') {
 					return _elm_lang$core$Native_Utils.update(
 						mod,
-						{prismic: _p3._0});
+						{
+							prismic: A2(_user$project$Prismic$collectResponses, model.prismic, _p3._0)
+						});
 				} else {
 					return _elm_lang$core$Native_Utils.update(
 						mod,
