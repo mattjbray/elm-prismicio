@@ -16,7 +16,7 @@ module Prismic
         , Url(Url)
         , Model
         , ModelWithApi
-        , Model'
+        , Model_
         , PrismicError(..)
         , Api
         , RefProperties
@@ -57,7 +57,8 @@ module Prismic
         , getTitle
         )
 
-{-| An Elm SDK for [Prismic.io](https://prismic.io).
+{-|
+An Elm SDK for [Prismic.io](https://prismic.io).
 
 # Initialisation
 @docs init
@@ -74,7 +75,7 @@ module Prismic
 # Types
 
 ## Models
-@docs Url, Model, ModelWithApi, Model'
+@docs Url, Model, ModelWithApi, Model_
 
 ## Errors
 @docs PrismicError
@@ -126,12 +127,14 @@ following components.
 -}
 
 import Dict exposing (Dict)
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Json
+import Json.Decode.Pipeline exposing (decode, custom, required, requiredAt, optional)
 import Json.Encode
 import Http
 import Html exposing (..)
 import Html.Attributes exposing (href, property, src)
 import Task exposing (Task)
+import Task.Extra as Task
 import String
 
 
@@ -149,7 +152,7 @@ type Url
 The `Api` is represented as `Maybe Api`, because we may not have fetched it yet.
 -}
 type alias Model =
-    Model' (Maybe Api)
+    Model_ (Maybe Api)
 
 
 {-| This variation of the Model type is returned by `api`, when we know we have successfully retreived the `Api`.
@@ -157,14 +160,14 @@ type alias Model =
 It is used internally by elm-prismicio.
 -}
 type alias ModelWithApi =
-    Model' Api
+    Model_ Api
 
 
 {-| The generic `Model'` type, where the `Api` is represented by a type parameter.
 
 You will be using the specialised `Model` type in user code.
 -}
-type alias Model' api =
+type alias Model_ api =
     { api : api
     , url : Url
     , nextRequestId : Int
@@ -521,7 +524,7 @@ api cache =
             in
                 Task.map (\api -> { cache | api = api })
                     (Task.mapError FetchApiError
-                        (getJson decodeApi url)
+                        (Http.get url decodeApi |> Http.toTask)
                     )
 
 
@@ -556,7 +559,7 @@ form formId apiTask =
                             q =
                                 Maybe.withDefault ""
                                     (Dict.get "q" form.fields
-                                        `Maybe.andThen` .default
+                                        |> Maybe.andThen .default
                                     )
                         in
                             Task.succeed
@@ -567,31 +570,32 @@ form formId apiTask =
                                 , cache
                                 )
     in
-        apiTask `Task.andThen` addForm
+        apiTask |> Task.andThen addForm
 
 
 {-| Convenience function for fetching a bookmarked document.
 -}
 bookmark :
     String
-    -> Task PrismicError (ModelWithApi)
+    -> Task PrismicError ModelWithApi
     -> Task PrismicError ( Request, ModelWithApi )
 bookmark bookmarkId cacheTask =
     cacheTask
-        `Task.andThen` (\cacheWithApi ->
-                            let
-                                mDocId =
-                                    Dict.get bookmarkId cacheWithApi.api.bookmarks
-                            in
-                                case mDocId of
-                                    Nothing ->
-                                        Task.fail (BookmarkDoesNotExist bookmarkId)
+        |> Task.andThen
+            (\cacheWithApi ->
+                let
+                    mDocId =
+                        Dict.get bookmarkId cacheWithApi.api.bookmarks
+                in
+                    case mDocId of
+                        Nothing ->
+                            Task.fail (BookmarkDoesNotExist bookmarkId)
 
-                                    Just docId ->
-                                        Task.succeed cacheWithApi
-                                            |> form "everything"
-                                            |> query [ at "document.id" docId ]
-                       )
+                        Just docId ->
+                            Task.succeed cacheWithApi
+                                |> form "everything"
+                                |> query [ at "document.id" docId ]
+            )
 
 
 {-| Override a Form's default ref
@@ -613,7 +617,7 @@ ref refId requestTask =
                         , cache
                         )
     in
-        requestTask `Task.andThen` addRef
+        requestTask |> Task.andThen addRef
 
 
 {-| Override a Form's default query.
@@ -632,7 +636,7 @@ query predicates requestTask =
                 , cache
                 )
     in
-        requestTask `Task.andThen` addQuery
+        requestTask |> Task.andThen addQuery
 
 
 {-| Pass the request through unmodified.
@@ -640,8 +644,8 @@ query predicates requestTask =
 Useful for conditionally adding a query.
 -}
 none :
-    Task PrismicError ( Request, Model' api )
-    -> Task PrismicError ( Request, Model' api )
+    Task PrismicError ( Request, Model_ api )
+    -> Task PrismicError ( Request, Model_ api )
 none =
     Task.map identity
 
@@ -665,10 +669,17 @@ submit decodeDocType requestTask =
                 cacheWithApi =
                     { cache | api = Just cache.api }
 
+                fakeResponse =
+                    { url = ""
+                    , status = { code = 200, message = "OK" }
+                    , headers = Dict.empty
+                    , body = ""
+                    }
+
                 decodeResponseValue responseValue =
                     Json.decodeValue (decodeResponse decodeDocType) responseValue
                         |> Task.fromResult
-                        |> Task.mapError (\msg -> SubmitRequestError (Http.UnexpectedPayload msg))
+                        |> Task.mapError (\msg -> SubmitRequestError (Http.BadPayload msg fakeResponse))
             in
                 case getFromCache request cache of
                     Just responseValue ->
@@ -678,7 +689,8 @@ submit decodeDocType requestTask =
                     Nothing ->
                         let
                             fetchUrl =
-                                getJson Json.value url
+                                Http.get url Json.value
+                                    |> Http.toTask
                                     |> Task.mapError SubmitRequestError
 
                             decodeAndMkResult responseValue =
@@ -690,9 +702,9 @@ submit decodeDocType requestTask =
                                 , setInCache request responseValue cacheWithApi
                                 )
                         in
-                            fetchUrl `Task.andThen` decodeAndMkResult
+                            fetchUrl |> Task.andThen decodeAndMkResult
     in
-        requestTask `Task.andThen` doSubmit
+        requestTask |> Task.andThen doSubmit
 
 
 {-| The `submit` `Task` returns an updated Prismic `Model` with the request and
@@ -744,32 +756,19 @@ fulltext fragment value =
 -- DECODER HELPERS
 
 
-(|:) : Json.Decoder (a -> b) -> Json.Decoder a -> Json.Decoder b
-(|:) =
-    Json.object2 (<|)
-
-
 maybeWithDefault : a -> Json.Decoder a -> Json.Decoder a
 maybeWithDefault default decoder =
-    Json.maybe decoder `Json.andThen` (Json.succeed << (Maybe.withDefault default))
-
-
-nullOr : Json.Decoder a -> Json.Decoder (Maybe a)
-nullOr decoder =
-    Json.oneOf
-        [ Json.null Nothing
-        , Json.map Just decoder
-        ]
+    Json.maybe decoder |> Json.andThen (Json.succeed << (Maybe.withDefault default))
 
 
 decodeRef : Json.Decoder Ref
 decodeRef =
-    Json.object1 Ref Json.string
+    Json.map Ref Json.string
 
 
 decodeUrl : Json.Decoder Url
 decodeUrl =
-    Json.object1 Url Json.string
+    Json.map Url Json.string
 
 
 
@@ -778,45 +777,45 @@ decodeUrl =
 
 decodeApi : Json.Decoder Api
 decodeApi =
-    Json.succeed Api
-        |: ("refs" := Json.list decodeRefProperties)
-        |: ("bookmarks" := Json.dict Json.string)
-        |: ("types" := Json.dict Json.string)
-        |: ("tags" := Json.list Json.string)
-        |: ("version" := Json.string)
-        |: ("forms" := Json.dict decodeForm)
-        |: ("oauth_initiate" := Json.string)
-        |: ("oauth_token" := Json.string)
-        |: ("license" := Json.string)
-        |: ("experiments" := decodeExperiments)
+    decode Api
+        |> required "refs" (Json.list decodeRefProperties)
+        |> required "bookmarks" (Json.dict Json.string)
+        |> required "types" (Json.dict Json.string)
+        |> required "tags" (Json.list Json.string)
+        |> required "version" (Json.string)
+        |> required "forms" (Json.dict decodeForm)
+        |> required "oauth_initiate" (Json.string)
+        |> required "oauth_token" (Json.string)
+        |> required "license" (Json.string)
+        |> required "experiments" (decodeExperiments)
 
 
 decodeRefProperties : Json.Decoder RefProperties
 decodeRefProperties =
-    Json.succeed RefProperties
-        |: ("id" := Json.string)
-        |: ("ref" := decodeRef)
-        |: ("label" := Json.string)
-        |: (maybeWithDefault False ("isMasterRef" := Json.bool))
+    decode RefProperties
+        |> required "id" Json.string
+        |> required "ref" decodeRef
+        |> required "label" Json.string
+        |> optional "isMasterRef" Json.bool False
 
 
 decodeForm : Json.Decoder Form
 decodeForm =
-    Json.succeed Form
-        |: ("method" := Json.string)
-        |: ("enctype" := Json.string)
-        |: ("action" := decodeUrl)
-        |: ("fields" := Json.dict decodeFormField)
-        |: (Json.maybe ("rel" := Json.string))
-        |: (Json.maybe ("name" := Json.string))
+    decode Form
+        |> required "method" (Json.string)
+        |> required "enctype" (Json.string)
+        |> required "action" (decodeUrl)
+        |> required "fields" (Json.dict decodeFormField)
+        |> optional "rel" (Json.maybe Json.string) Nothing
+        |> optional "name" (Json.maybe Json.string) Nothing
 
 
 decodeFormField : Json.Decoder FormField
 decodeFormField =
-    Json.succeed FormField
-        |: ("type" := decodeFieldType)
-        |: ("multiple" := Json.bool)
-        |: (Json.maybe ("default" := Json.string))
+    decode FormField
+        |> required "type" decodeFieldType
+        |> required "multiple" Json.bool
+        |> optional "default" (Json.maybe Json.string) Nothing
 
 
 decodeFieldType : Json.Decoder FieldType
@@ -833,66 +832,67 @@ decodeFieldType =
                 _ ->
                     Json.fail ("Unknown field type: " ++ str)
     in
-        Json.string `Json.andThen` decodeOnType
+        Json.string |> Json.andThen decodeOnType
 
 
 decodeExperiments : Json.Decoder Experiments
 decodeExperiments =
-    Json.succeed Experiments
-        |: ("draft" := Json.list Json.string)
-        |: ("running" := Json.list Json.string)
+    decode Experiments
+        |> required "draft" (Json.list Json.string)
+        |> required "running" (Json.list Json.string)
 
 
 decodeResponse : Json.Decoder docType -> Json.Decoder (Response docType)
 decodeResponse decodeDocType =
-    Json.succeed Response
-        |: ("license" := Json.string)
-        |: ("next_page" := nullOr decodeUrl)
-        |: ("page" := Json.int)
-        |: ("prev_page" := nullOr decodeUrl)
-        |: ("results" := Json.list (decodeSearchResult decodeDocType))
-        |: ("results_per_page" := Json.int)
-        |: ("results_size" := Json.int)
-        |: ("total_pages" := Json.int)
-        |: ("total_results_size" := Json.int)
-        |: ("version" := Json.string)
+    decode Response
+        |> required "license" (Json.string)
+        |> required "next_page" (Json.nullable decodeUrl)
+        |> required "page" (Json.int)
+        |> required "prev_page" (Json.nullable decodeUrl)
+        |> required "results" (Json.list (decodeSearchResult decodeDocType))
+        |> required "results_per_page" (Json.int)
+        |> required "results_size" (Json.int)
+        |> required "total_pages" (Json.int)
+        |> required "total_results_size" (Json.int)
+        |> required "version" (Json.string)
 
 
 {-| Decode a result to a `DefaultDocType`.
 -}
 decodeDefaultDocType : Json.Decoder DefaultDocType
 decodeDefaultDocType =
-    "data"
-        := Json.dict
+    Json.field "data"
+        (Json.dict
             (Json.dict
                 (Json.oneOf
-                    [ Json.object1 (\x -> [ x ]) decodeDocumentField
+                    [ Json.map (\x -> [ x ]) decodeDocumentField
                     , Json.list decodeDocumentField
                     ]
                 )
             )
+        )
 
 
 decodeSearchResult : Json.Decoder docType -> Json.Decoder (SearchResult docType)
 decodeSearchResult decodeDocType =
-    Json.succeed SearchResult
-        |: decodeDocType
-        |: ("href" := decodeUrl)
-        |: ("id" := Json.string)
-        |: ("linked_documents" := Json.list decodeDocumentReference)
-        |: ("slugs" := Json.list Json.string)
-        |: ("tags" := Json.list Json.string)
-        |: ("type" := Json.string)
-        |: ("uid" := nullOr Json.string)
+    decode SearchResult
+        |> custom decodeDocType
+        |> required "href" (decodeUrl)
+        |> required "id" (Json.string)
+        |> required "linked_documents" (Json.list decodeDocumentReference)
+        |> required "slugs" (Json.list Json.string)
+        |> required "tags" (Json.list Json.string)
+        |> required "type" (Json.string)
+        |> required "uid" (Json.nullable Json.string)
 
 
 decodeDocumentReference : Json.Decoder DocumentReference
 decodeDocumentReference =
-    Json.succeed DocumentReference
-        |: ("id" := Json.string)
-        |: ("slug" := Json.string)
-        |: ("tags" := Json.list Json.string)
-        |: ("type" := Json.string)
+    decode DocumentReference
+        |> required "id" (Json.string)
+        |> required "slug" (Json.string)
+        |> required "tags" (Json.list Json.string)
+        |> required "type" (Json.string)
 
 
 decodeDocumentField : Json.Decoder DocumentField
@@ -901,36 +901,36 @@ decodeDocumentField =
         decodeOnType typeStr =
             case typeStr of
                 "Text" ->
-                    Json.object1 Text ("value" := Json.string)
+                    Json.map Text (Json.field "value" Json.string)
 
                 "Select" ->
-                    Json.object1 Select ("value" := Json.string)
+                    Json.map Select (Json.field "value" Json.string)
 
                 "Color" ->
-                    Json.object1 Color ("value" := Json.string)
+                    Json.map Color (Json.field "value" Json.string)
 
                 "Number" ->
-                    Json.object1 Number ("value" := Json.float)
+                    Json.map Number (Json.field "value" Json.float)
 
                 "Date" ->
-                    Json.object1 Date ("value" := Json.string)
+                    Json.map Date (Json.field "value" Json.string)
 
                 "Image" ->
-                    Json.object1 Image ("value" := decodeImageViews)
+                    Json.map Image (Json.field "value" decodeImageViews)
 
                 "StructuredText" ->
-                    Json.object1 StructuredText ("value" := decodeStructuredText)
+                    Json.map StructuredText (Json.field "value" decodeStructuredText)
 
                 "Link.document" ->
-                    Json.object1 Link decodeLink
+                    Json.map Link decodeLink
 
                 "Link.web" ->
-                    Json.object1 Link decodeLink
+                    Json.map Link decodeLink
 
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
     in
-        ("type" := Json.string) `Json.andThen` decodeOnType
+        (Json.field "type" Json.string) |> Json.andThen decodeOnType
 
 
 {-| Decode some `StructuredText`.
@@ -944,25 +944,25 @@ decodeStructuredText =
 -}
 decodeImageViews : Json.Decoder ImageViews
 decodeImageViews =
-    Json.succeed ImageViews
-        |: ("main" := decodeImageView)
-        |: ("views" := (Json.dict decodeImageView))
+    decode ImageViews
+        |> required "main" decodeImageView
+        |> required "views" (Json.dict decodeImageView)
 
 
 decodeImageView : Json.Decoder ImageView
 decodeImageView =
-    Json.succeed ImageView
-        |: ("alt" := nullOr Json.string)
-        |: ("copyright" := nullOr Json.string)
-        |: ("url" := decodeUrl)
-        |: ("dimensions" := decodeImageDimensions)
+    decode ImageView
+        |> required "alt" (Json.nullable Json.string)
+        |> required "copyright" (Json.nullable Json.string)
+        |> required "url" (decodeUrl)
+        |> required "dimensions" (decodeImageDimensions)
 
 
 decodeImageDimensions : Json.Decoder ImageDimensions
 decodeImageDimensions =
-    Json.succeed ImageDimensions
-        |: ("width" := Json.int)
-        |: ("height" := Json.int)
+    decode ImageDimensions
+        |> required "width" Json.int
+        |> required "height" Json.int
 
 
 decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
@@ -971,45 +971,45 @@ decodeStructuredTextBlock =
         decodeOnType typeStr =
             case typeStr of
                 "heading1" ->
-                    Json.object1 Heading1 decodeBlock
+                    Json.map Heading1 decodeBlock
 
                 "heading2" ->
-                    Json.object1 Heading2 decodeBlock
+                    Json.map Heading2 decodeBlock
 
                 "heading3" ->
-                    Json.object1 Heading3 decodeBlock
+                    Json.map Heading3 decodeBlock
 
                 "paragraph" ->
-                    Json.object1 Paragraph decodeBlock
+                    Json.map Paragraph decodeBlock
 
                 "list-item" ->
-                    Json.object1 ListItem decodeBlock
+                    Json.map ListItem decodeBlock
 
                 "image" ->
-                    Json.object1 SImage decodeImageView
+                    Json.map SImage decodeImageView
 
                 "embed" ->
-                    Json.object1 SEmbed ("oembed" := decodeEmbed)
+                    Json.map SEmbed (Json.field "oembed" decodeEmbed)
 
                 _ ->
                     Json.fail ("Unknown structured field type: " ++ toString typeStr)
     in
-        ("type" := Json.string) `Json.andThen` decodeOnType
+        Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 decodeBlock : Json.Decoder Block
 decodeBlock =
-    Json.succeed Block
-        |: ("text" := Json.string)
-        |: ("spans" := Json.list decodeSpan)
+    decode Block
+        |> required "text" Json.string
+        |> required "spans" (Json.list decodeSpan)
 
 
 decodeSpan : Json.Decoder Span
 decodeSpan =
-    Json.succeed Span
-        |: ("start" := Json.int)
-        |: ("end" := Json.int)
-        |: decodeSpanType
+    decode Span
+        |> required "start" Json.int
+        |> required "end" Json.int
+        |> custom decodeSpanType
 
 
 decodeSpanType : Json.Decoder SpanElement
@@ -1024,12 +1024,12 @@ decodeSpanType =
                     Json.succeed Strong
 
                 "hyperlink" ->
-                    Json.object1 Hyperlink ("data" := decodeLink)
+                    Json.map Hyperlink (Json.field "data" decodeLink)
 
                 _ ->
                     Json.fail ("Unknown span type: " ++ typeStr)
     in
-        ("type" := Json.string) `Json.andThen` decodeOnType
+        Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 {-| Decode an `Embed` field.
@@ -1040,50 +1040,50 @@ decodeEmbed =
         decodeOnType typeStr =
             case typeStr of
                 "video" ->
-                    Json.object1 EVideo decodeEmbedVideo
+                    Json.map EVideo decodeEmbedVideo
 
                 "rich" ->
-                    Json.object1 ERich decodeEmbedRich
+                    Json.map ERich decodeEmbedRich
 
                 _ ->
                     Json.fail ("Unknown embed type: " ++ typeStr)
     in
-        ("type" := Json.string) `Json.andThen` decodeOnType
+        Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 decodeEmbedVideo : Json.Decoder EmbedVideo
 decodeEmbedVideo =
-    Json.succeed EmbedVideo
-        |: ("author_name" := Json.string)
-        |: ("author_url" := decodeUrl)
-        |: ("embed_url" := decodeUrl)
-        |: ("height" := Json.int)
-        |: ("html" := Json.string)
-        |: ("provider_name" := Json.string)
-        |: ("provider_url" := decodeUrl)
-        |: ("thumbnail_height" := Json.int)
-        |: ("thumbnail_url" := decodeUrl)
-        |: ("thumbnail_width" := Json.int)
-        |: ("title" := Json.string)
-        |: ("version" := Json.string)
-        |: ("width" := Json.int)
+    decode EmbedVideo
+        |> required "author_name" Json.string
+        |> required "author_url" decodeUrl
+        |> required "embed_url" decodeUrl
+        |> required "height" Json.int
+        |> required "html" Json.string
+        |> required "provider_name" Json.string
+        |> required "provider_url" decodeUrl
+        |> required "thumbnail_height" Json.int
+        |> required "thumbnail_url" decodeUrl
+        |> required "thumbnail_width" Json.int
+        |> required "title" Json.string
+        |> required "version" Json.string
+        |> required "width" Json.int
 
 
 decodeEmbedRich : Json.Decoder EmbedRich
 decodeEmbedRich =
-    Json.succeed EmbedRich
-        |: ("author_name" := Json.string)
-        |: ("author_url" := decodeUrl)
-        |: ("cache_age" := Json.string)
-        |: ("embed_url" := decodeUrl)
-        |: ("height" := Json.maybe Json.int)
-        |: ("html" := Json.string)
-        |: ("provider_name" := Json.string)
-        |: ("provider_url" := decodeUrl)
-        |: ("title" := Json.string)
-        |: ("url" := decodeUrl)
-        |: ("version" := Json.string)
-        |: ("width" := Json.int)
+    decode EmbedRich
+        |> required "author_name" Json.string
+        |> required "author_url" decodeUrl
+        |> required "cache_age" Json.string
+        |> required "embed_url" decodeUrl
+        |> required "height" (Json.maybe Json.int)
+        |> required "html" Json.string
+        |> required "provider_name" Json.string
+        |> required "provider_url" decodeUrl
+        |> required "title" Json.string
+        |> required "url" decodeUrl
+        |> required "version" Json.string
+        |> required "width" Json.int
 
 
 {-| Decode a `Link`.
@@ -1094,18 +1094,18 @@ decodeLink =
         decodeOnType typeStr =
             case typeStr of
                 "Link.document" ->
-                    Json.succeed DocumentLink
-                        |: (Json.at [ "value", "document" ] decodeDocumentReference)
-                        |: (Json.at [ "value", "isBroken" ] Json.bool)
+                    decode DocumentLink
+                        |> requiredAt [ "value", "document" ] decodeDocumentReference
+                        |> requiredAt [ "value", "isBroken" ] Json.bool
 
                 "Link.web" ->
-                    Json.succeed WebLink
-                        |: (Json.at [ "value", "url" ] decodeUrl)
+                    decode WebLink
+                        |> requiredAt [ "value", "url" ] decodeUrl
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)
     in
-        ("type" := Json.string) `Json.andThen` decodeOnType
+        Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 
@@ -1122,17 +1122,18 @@ asHtmlWithDefault :
 asHtmlWithDefault linkResolver default documentType fieldName data =
     Maybe.withDefault default
         (Dict.get documentType data
-            `Maybe.andThen` Dict.get fieldName
-            `Maybe.andThen` (\docs ->
-                                Just
-                                    (case docs of
-                                        [ doc ] ->
-                                            asHtml linkResolver doc
+            |> Maybe.andThen (Dict.get fieldName)
+            |> Maybe.andThen
+                (\docs ->
+                    Just
+                        (case docs of
+                            [ doc ] ->
+                                asHtml linkResolver doc
 
-                                        _ ->
-                                            div [] (List.map (asHtml linkResolver) docs)
-                                    )
-                            )
+                            _ ->
+                                div [] (List.map (asHtml linkResolver) docs)
+                        )
+                )
         )
 
 
@@ -1414,18 +1415,24 @@ getTexts fields =
 -- INTERNAL: State
 
 
-getJson : Json.Decoder a -> String -> Task Http.Error a
-getJson decoder url =
+mkUrl : Url -> List ( String, String ) -> Url
+mkUrl (Url base) params =
     let
-        request =
-            { verb = "GET"
-            , headers =
-                [ ( "Accept", "application/json" ) ]
-            , url = url
-            , body = Http.empty
-            }
+        sep =
+            if List.isEmpty params then
+                ""
+            else
+                "?"
+
+        joinParamPair ( key, val ) =
+            Http.encodeUri key ++ "=" ++ Http.encodeUri val
+
+        paramsPart =
+            params
+                |> List.map joinParamPair
+                |> String.join "&"
     in
-        Http.fromJson decoder (Http.send Http.defaultSettings request)
+        Url (base ++ sep ++ paramsPart)
 
 
 requestToUrl : Request -> Url
@@ -1433,18 +1440,13 @@ requestToUrl request =
     let
         (Ref refStr) =
             request.ref
-
-        (Url urlStr) =
-            request.action
     in
-        Url
-            (Http.url urlStr
-                (( "ref", refStr )
-                    :: if String.isEmpty request.q then
-                        []
-                       else
-                        [ ( "q", request.q ) ]
-                )
+        mkUrl request.action
+            (( "ref", refStr )
+                :: if String.isEmpty request.q then
+                    []
+                   else
+                    [ ( "q", request.q ) ]
             )
 
 
@@ -1493,7 +1495,7 @@ predicatesToStr predicates =
 
 getFromCache :
     Request
-    -> Model' api
+    -> Model_ api
     -> Maybe Json.Value
 getFromCache request prismic =
     Dict.get (requestToKey request) prismic.cache
@@ -1502,8 +1504,8 @@ getFromCache request prismic =
 setInCache :
     Request
     -> Json.Value
-    -> Model' api
-    -> Model' api
+    -> Model_ api
+    -> Model_ api
 setInCache request response prismic =
     { prismic
         | cache = Dict.insert (requestToKey request) response prismic.cache
