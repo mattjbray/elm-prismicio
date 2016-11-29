@@ -64,13 +64,19 @@ replace the `prismic` value in your model with the one returned in the tuple.
 ```elm
 update msg model =
     case msg of
-        SetHomePage ( response, prismic ) ->
+        SetHomePage (Ok ( response, prismic )) ->
             ( { model
                   | prismic =
                       P.collectResponses model.prismic prismic
                   , response =
                       response
               }
+            , Cmd.none
+            )
+
+        -- handle the error
+        SetHomePage (Err error) ->
+            ( model
             , Cmd.none
             )
 ```
