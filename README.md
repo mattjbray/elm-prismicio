@@ -46,8 +46,7 @@ In practice, it will look something like this:
 
 ```elm
 type Msg
-    = SetPrismicError P.PrismicError
-    | SetHomePage ( P.Response P.DefaultDocType, P.Model )
+    = SetHomePage (Result P.PrismicError ( P.Response P.DefaultDocType, P.Model ))
 
 
 fetchHomePage prismic =
@@ -55,7 +54,7 @@ fetchHomePage prismic =
       |> P.form "everything"
       |> P.bookmark "home-page"
       |> P.submit P.decodeDefaultDocType
-      |> Task.perform SetPrismicError SetHomePage
+      |> Task.attempt SetHomePage
 ```
 
 
