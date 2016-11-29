@@ -4,7 +4,6 @@ import App.Site.Selections.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
-import Basics.Extra exposing (never)
 import Prismic as P
 import Task
 
@@ -18,8 +17,7 @@ init prismic docId =
         |> P.form "everything"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeSelection
-        |> Task.toResult
-        |> Task.perform never SetSelection
+        |> Task.attempt SetSelection
     )
 
 
@@ -94,5 +92,4 @@ fetchProducts prismic selection =
             |> P.form "products"
             |> P.query [ P.any "document.id" productIds ]
             |> P.submit Documents.decodeProduct
-            |> Task.toResult
-            |> Task.perform never SetProducts
+            |> Task.attempt SetProducts

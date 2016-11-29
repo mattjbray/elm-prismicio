@@ -5,7 +5,6 @@ import App.Blog.Post.View as Post
 import App.Blog.Types exposing (..)
 import App.Navigation exposing (urlForHome, urlForBlog, urlForBlogCategory)
 import Html exposing (..)
-import Html.App exposing (map)
 import Html.Attributes exposing (rel, href, class)
 
 

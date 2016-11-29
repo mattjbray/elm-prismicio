@@ -1,10 +1,10 @@
 module App.Blog.Post.State exposing (..)
 
 import App.Blog.Post.Types exposing (..)
+import App.Common exposing (performCompat)
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import App.Documents.Decoders as Documents
 import Prismic as P
-import Task
 
 
 init : P.Model -> String -> ( Model, Cmd Msg )
@@ -26,7 +26,7 @@ init prismic docId =
             |> P.form "everything"
             |> P.query [ P.at "document.id" docId ]
             |> P.submit Documents.decodeBlogPost
-            |> Task.perform SetError SetResponse
+            |> performCompat SetError SetResponse
         )
 
 
@@ -94,12 +94,12 @@ fetchRelated prismic model =
                         |> P.form "everything"
                         |> P.query [ P.any "document.id" relatedPostIds ]
                         |> P.submit Documents.decodeBlogPost
-                        |> Task.perform SetError SetRelatedPosts
+                        |> performCompat SetError SetRelatedPosts
                     , P.api prismic
                         |> P.form "everything"
                         |> P.query [ P.any "document.id" relatedProductIds ]
                         |> P.submit Documents.decodeProduct
-                        |> Task.perform SetError SetRelatedProducts
+                        |> performCompat SetError SetRelatedProducts
                     ]
                 , [ SetPrismic prismic ]
                 )

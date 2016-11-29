@@ -15,14 +15,14 @@ toCurrency amount =
         amountStr =
             toString amount
 
-        amountStr' =
+        amountStr_ =
             if String.contains "." amountStr then
                 amountStr
             else
                 (amountStr ++ ".")
 
         parts =
-            String.split "." amountStr'
+            String.split "." amountStr_
 
         build strs =
             case strs of
@@ -75,7 +75,7 @@ viewFeaturedProduct product =
             (List.head product.gallery
                 |> Maybe.map .views
             )
-                `Maybe.andThen` Dict.get "squared"
+                |> Maybe.andThen (Dict.get "squared")
                 |> Maybe.map .url
                 |> Maybe.withDefault (Url "")
     in

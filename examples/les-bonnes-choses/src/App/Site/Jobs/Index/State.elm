@@ -4,7 +4,6 @@ import App.Site.Jobs.Index.Types exposing (..)
 import App.Site.Article.State as Article
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Basics.Extra exposing (never)
 import Prismic as P exposing (Url(Url))
 import Prismic as P
 import Task
@@ -13,8 +12,8 @@ import Task
 init : P.Model -> ( Model, Cmd Msg )
 init prismic =
     let
-        (article, articleCmd) =
-          Article.init prismic "jobs"
+        ( article, articleCmd ) =
+            Article.init prismic "jobs"
 
         model =
             { article =
@@ -29,8 +28,7 @@ init prismic =
             , P.api prismic
                 |> P.form "jobs"
                 |> P.submit Documents.decodeJobOffer
-                |> Task.toResult
-                |> Task.perform never SetJobs
+                |> Task.attempt SetJobs
             ]
         )
 
@@ -39,16 +37,16 @@ update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         ArticleMsg articleMsg ->
-          let
-            (newArticle, articleCmd, globalMsgs) =
-              Article.update articleMsg model.article
-          in
-            ( { model
-                | article = newArticle
-              }
-            , Cmd.map ArticleMsg articleCmd
-            , globalMsgs
-            )
+            let
+                ( newArticle, articleCmd, globalMsgs ) =
+                    Article.update articleMsg model.article
+            in
+                ( { model
+                    | article = newArticle
+                  }
+                , Cmd.map ArticleMsg articleCmd
+                , globalMsgs
+                )
 
         SetJobs (Err error) ->
             ( { model

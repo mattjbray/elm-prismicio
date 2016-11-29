@@ -1,7 +1,7 @@
 module App.Site.Search.Navigation exposing (..)
 
 import App.Site.Search.Types exposing (..)
-import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
+import UrlParser exposing (Parser, (</>), map, oneOf, s, string)
 
 
 toUrl : Page -> String
@@ -17,6 +17,6 @@ toUrl page =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format IndexP (s "")
-        , format ResultsP string
+        [ map IndexP (s "")
+        , map ResultsP string
         ]

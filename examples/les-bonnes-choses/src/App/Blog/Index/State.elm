@@ -5,6 +5,7 @@ import App.Types exposing (GlobalMsg(SetPrismic))
 import App.Documents.Decoders as Documents
 import Prismic as P exposing (Url(Url))
 import Task
+import App.Common exposing (performCompat)
 
 
 init : P.Model -> Maybe String -> ( Model, Cmd Msg )
@@ -26,7 +27,7 @@ init prismic mCategory =
                     |> Maybe.withDefault P.none
                )
             |> P.submit Documents.decodeBlogPost
-            |> Task.perform SetError SetResponse
+            |> performCompat SetError SetResponse
         )
 
 

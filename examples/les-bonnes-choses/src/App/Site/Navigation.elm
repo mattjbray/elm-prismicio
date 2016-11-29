@@ -6,7 +6,7 @@ import App.Site.Products.Navigation as Products
 import App.Site.Search.Navigation as Search
 import App.Site.Selections.Navigation as Selections
 import App.Site.Stores.Navigation as Stores
-import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
+import UrlParser exposing (Parser, (</>), map, oneOf, s, string)
 
 
 toUrl : Page -> String
@@ -37,11 +37,11 @@ toUrl page =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format AboutP (s "about")
-        , format JobsP (s "jobs" </> Jobs.pageParser)
-        , format StoresP (s "stores" </> Stores.pageParser)
-        , format ProductsP (s "products" </> Products.pageParser)
-        , format SearchP (s "search" </> Search.pageParser)
-        , format SelectionsP (s "selections" </> Selections.pageParser)
-        , format HomeP (s "")
+        [ map AboutP (s "about")
+        , map JobsP (s "jobs" </> Jobs.pageParser)
+        , map StoresP (s "stores" </> Stores.pageParser)
+        , map ProductsP (s "products" </> Products.pageParser)
+        , map SearchP (s "search" </> Search.pageParser)
+        , map SelectionsP (s "selections" </> Selections.pageParser)
+        , map HomeP (s "")
         ]

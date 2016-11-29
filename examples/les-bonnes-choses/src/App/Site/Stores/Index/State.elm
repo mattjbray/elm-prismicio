@@ -4,7 +4,6 @@ import App.Site.Stores.Index.Types exposing (..)
 import App.Site.Article.State as Article
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Basics.Extra exposing (never)
 import Prismic as P exposing (Url(Url))
 import Prismic as P
 import Task
@@ -13,8 +12,8 @@ import Task
 init : P.Model -> ( Model, Cmd Msg )
 init prismic =
     let
-        (article, articleCmd) =
-          Article.init prismic "stores"
+        ( article, articleCmd ) =
+            Article.init prismic "stores"
 
         model =
             { article =
@@ -29,8 +28,7 @@ init prismic =
             , P.api prismic
                 |> P.form "stores"
                 |> P.submit Documents.decodeStore
-                |> Task.toResult
-                |> Task.perform never SetStores
+                |> Task.attempt SetStores
             ]
         )
 
@@ -39,16 +37,16 @@ update : Msg -> Model -> ( Model, Cmd Msg, List GlobalMsg )
 update msg model =
     case msg of
         ArticleMsg articleMsg ->
-          let
-            (newArticle, articleCmd, globalMsgs) =
-              Article.update articleMsg model.article
-          in
-            ( { model
-                | article = newArticle
-              }
-            , Cmd.map ArticleMsg articleCmd
-            , globalMsgs
-            )
+            let
+                ( newArticle, articleCmd, globalMsgs ) =
+                    Article.update articleMsg model.article
+            in
+                ( { model
+                    | article = newArticle
+                  }
+                , Cmd.map ArticleMsg articleCmd
+                , globalMsgs
+                )
 
         SetStores (Err error) ->
             ( { model

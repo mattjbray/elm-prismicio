@@ -4,7 +4,6 @@ import App.Site.Article.State as Article
 import App.Site.Jobs.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
-import Basics.Extra exposing (never)
 import Prismic as P
 import Task
 
@@ -29,8 +28,7 @@ init prismic docId =
                 |> P.form "everything"
                 |> P.query [ P.at "document.id" docId ]
                 |> P.submit Documents.decodeJobOffer
-                |> Task.toResult
-                |> Task.perform never SetJob
+                |> Task.attempt SetJob
             ]
         )
 
@@ -69,13 +67,13 @@ update msg model =
                             )
 
         ArticleMsg articleMsg ->
-          let
-            (newArticle, articleCmd, globalMsgs) =
-              Article.update articleMsg model.article
-          in
-            ( { model
-                | article = newArticle
-              }
-            , Cmd.map ArticleMsg articleCmd
-            , globalMsgs
-            )
+            let
+                ( newArticle, articleCmd, globalMsgs ) =
+                    Article.update articleMsg model.article
+            in
+                ( { model
+                    | article = newArticle
+                  }
+                , Cmd.map ArticleMsg articleCmd
+                , globalMsgs
+                )

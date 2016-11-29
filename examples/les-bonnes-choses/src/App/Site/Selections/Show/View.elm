@@ -16,12 +16,12 @@ view model =
         [ class "main"
         , id "selection"
         ]
-        (Result.mapBoth (\error -> [ viewError error ])
+        (Result.unpack (\error -> [ viewError error ])
             viewMaybeSelection
             model.selection
             ++ [ section [ class "products" ]
                     [ h2 [] [ text "Part of this selection" ]
-                    , Result.mapBoth viewError
+                    , Result.unpack viewError
                         (\products ->
                             ul [] (List.map Common.viewProductShort products)
                         )

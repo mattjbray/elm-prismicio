@@ -3,7 +3,6 @@ module App.Site.Search.Results.State exposing (..)
 import App.Site.Search.Results.Decoders exposing (..)
 import App.Site.Search.Results.Types exposing (..)
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Basics.Extra exposing (never)
 import Dict
 import Prismic as P
 import Task
@@ -23,8 +22,7 @@ init prismic query =
                 , P.fulltext "document" query
                 ]
             |> P.submit decodeProductR
-            |> Task.toResult
-            |> Task.perform never SetProducts
+            |> Task.attempt SetProducts
         , P.api prismic
             |> P.form "everything"
             |> P.query
@@ -37,8 +35,7 @@ init prismic query =
                 , P.fulltext "document" query
                 ]
             |> P.submit decodeArticleR
-            |> Task.toResult
-            |> Task.perform never SetArticles
+            |> Task.attempt SetArticles
         ]
     )
 

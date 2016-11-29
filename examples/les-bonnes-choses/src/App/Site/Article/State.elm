@@ -3,7 +3,6 @@ module App.Site.Article.State exposing (..)
 import App.Site.Article.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
-import Basics.Extra exposing (never)
 import Prismic as P exposing (Url(Url))
 import Task
 
@@ -20,8 +19,7 @@ init prismic bookmarkName =
         , P.api prismic
             |> P.bookmark bookmarkName
             |> P.submit Documents.decodeArticle
-            |> Task.toResult
-            |> Task.perform never SetArticle
+            |> Task.attempt SetArticle
         )
 
 

@@ -15,8 +15,7 @@ import App.Types exposing (..)
 import Dict exposing (Dict)
 import Navigation
 import Prismic as P
-import String
-import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
+import UrlParser exposing (Parser, (</>), map, oneOf, s, string)
 
 
 -- Navigation
@@ -35,16 +34,16 @@ toHash page =
             "#404"
 
 
-hashParser : Navigation.Location -> Result String Page
+hashParser : Navigation.Location -> Maybe Page
 hashParser location =
-    UrlParser.parse identity pageParser (String.dropLeft 1 location.hash)
+    UrlParser.parseHash pageParser location
 
 
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format BlogP (s "blog" </> Blog.pageParser)
-        , format SiteP Site.pageParser
+        [ map BlogP (s "blog" </> Blog.pageParser)
+        , map SiteP Site.pageParser
         ]
 
 

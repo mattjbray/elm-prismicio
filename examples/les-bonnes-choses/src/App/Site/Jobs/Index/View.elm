@@ -5,7 +5,6 @@ import App.Site.Jobs.Index.Types exposing (..)
 import App.Site.Article.View as Article
 import App.Documents.Types as Documents
 import Html exposing (..)
-import Html.App as Html
 import Html.Attributes exposing (..)
 import Prismic as P exposing (Url(Url))
 import Result.Extra as Result
@@ -31,7 +30,7 @@ viewJobs model =
         , style [ ( "margin-top", "-120px" ) ]
         ]
         (model.jobs
-            |> Result.mapBoth viewError
+            |> Result.unpack viewError
                 (\jobs ->
                     List.concatMap (viewJobsByService jobs)
                         [ ( Just "Store", "Positions in our Stores" )
@@ -59,16 +58,16 @@ viewJobsByService jobs ( service, title ) =
 
 viewJob : Documents.JobOffer -> Html msg
 viewJob job =
-        div [ class "job" ]
-            [ a [ href (urlForJob job) ]
-                [ h3 [] [ text (P.getTexts job.name) ]
-                , p []
-                    [ text
-                        (P.getFirstParagraph job.profile
-                            |> Maybe.map P.getText
-                            |> Maybe.withDefault "No job profile"
-                        )
-                    ]
-                , strong [] [ text "Learn more" ]
+    div [ class "job" ]
+        [ a [ href (urlForJob job) ]
+            [ h3 [] [ text (P.getTexts job.name) ]
+            , p []
+                [ text
+                    (P.getFirstParagraph job.profile
+                        |> Maybe.map P.getText
+                        |> Maybe.withDefault "No job profile"
+                    )
                 ]
+            , strong [] [ text "Learn more" ]
             ]
+        ]

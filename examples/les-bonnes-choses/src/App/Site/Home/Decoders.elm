@@ -11,15 +11,15 @@ decodeFeatured =
         decodeOnType typeStr =
             case typeStr of
                 "blog-post" ->
-                    object1 BlogPostF Documents.decodeBlogPost
+                    map BlogPostF Documents.decodeBlogPost
 
                 "product" ->
-                    object1 ProductF Documents.decodeProduct
+                    map ProductF Documents.decodeProduct
 
                 "selection" ->
-                    object1 SelectionF Documents.decodeSelection
+                    map SelectionF Documents.decodeSelection
 
                 _ ->
                     fail ("Unexpected document type: " ++ typeStr)
     in
-        ("type" := string) `andThen` decodeOnType
+        field "type" string |> andThen decodeOnType

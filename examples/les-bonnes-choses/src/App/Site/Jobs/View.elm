@@ -4,7 +4,6 @@ import App.Site.Jobs.Types exposing (..)
 import App.Site.Jobs.Index.View as Index
 import App.Site.Jobs.Show.View as Show
 import Html exposing (..)
-import Html.App exposing (map)
 
 
 view : Model -> Html Msg

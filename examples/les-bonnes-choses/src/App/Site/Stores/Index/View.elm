@@ -7,7 +7,6 @@ import App.Documents.Types as Documents
 import App.Common exposing (structuredTextAsHtml, toCssUrl)
 import Dict
 import Html exposing (..)
-import Html.App as Html
 import Html.Attributes exposing (..)
 import Prismic as P exposing (Url(Url))
 import Result.Extra as Result
@@ -28,11 +27,12 @@ viewError error =
 
 viewStores : Model -> Html msg
 viewStores model =
-    section [ id "page-body"
-            , style [("margin-top", "-120px")]
-            ]
+    section
+        [ id "page-body"
+        , style [ ( "margin-top", "-120px" ) ]
+        ]
         (model.stores
-            |> Result.mapBoth viewError
+            |> Result.unpack viewError
                 (List.map viewStore << List.sortBy (P.getTexts << .name))
         )
 

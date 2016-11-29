@@ -4,7 +4,6 @@ import App.Site.Products.Types exposing (..)
 import App.Site.Products.Index.View as Index
 import App.Site.Products.Show.View as Show
 import Html exposing (..)
-import Html.App exposing (map)
 
 
 view : Model -> Html Msg

@@ -13,8 +13,7 @@ view : Model -> Html msg
 view model =
     div [ class "main", id "about" ]
         (model.article
-            |> Result.mapBoth viewError
-                viewMArticle
+            |> Result.unpack viewError viewMArticle
         )
 
 

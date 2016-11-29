@@ -5,7 +5,6 @@ import App.Site.Home.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
-import Basics.Extra exposing (never)
 import Prismic as P
 import Prismic as P
 import Task
@@ -18,8 +17,7 @@ init prismic =
       , category = Documents.Macaron
       }
     , P.api prismic
-        |> Task.toResult
-        |> Task.perform never FetchData
+        |> Task.attempt FetchData
     )
 
 
@@ -43,13 +41,11 @@ update msg model =
                         [ Task.succeed prismicWithApi
                             |> P.form "products"
                             |> P.submit Documents.decodeProduct
-                            |> Task.toResult
-                            |> Task.perform never SetProducts
+                            |> Task.attempt SetProducts
                         , Task.succeed prismicWithApi
                             |> P.form "featured"
                             |> P.submit decodeFeatured
-                            |> Task.toResult
-                            |> Task.perform never SetFeatured
+                            |> Task.attempt SetFeatured
                         ]
                     , []
                     )

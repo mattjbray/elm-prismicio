@@ -1,17 +1,16 @@
 module Main exposing (main)
 
-import App.State exposing (init, update, urlUpdate)
-import App.Navigation exposing (hashParser)
+import App.State exposing (init, update)
 import App.View exposing (view)
+import App.Types exposing (..)
 import Navigation
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Navigation.program (Navigation.makeParser hashParser)
+    Navigation.program UrlChange
         { init = init
         , update = update
         , view = view
-        , urlUpdate = urlUpdate
         , subscriptions = always Sub.none
         }

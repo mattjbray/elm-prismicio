@@ -2,23 +2,25 @@ module App.Site.Search.Types exposing (..)
 
 import App.Site.Search.Results.Types as Results
 
+
 type alias Model =
-  { query : String
-  , page : Page
-  , content : Content
-  }
+    { query : String
+    , page : Page
+    , content : Content
+    }
+
 
 type Page
-  = IndexP
-  | ResultsP String
+    = IndexP
+    | ResultsP String
 
 
 type Content
-  = IndexC
-  | ResultsC Results.Model
+    = IndexC
+    | ResultsC Results.Model
 
 
 type Msg
-  = ResultsMsg Results.Msg
-  | SetQuery String
-  | Submit
+    = ResultsMsg Results.Msg
+    | SetQuery String
+    | Submit

@@ -11,7 +11,6 @@ import App.Site.Stores.View as Stores
 import App.Types as App
 import App.Common as Common
 import Html exposing (..)
-import Html.App exposing (map)
 
 
 view : Model -> Html Msg

@@ -7,7 +7,6 @@ import App.Navigation exposing (urlForHome)
 import App.Blog.View as Blog
 import App.Common as Common
 import Html exposing (..)
-import Html.App exposing (map)
 import Html.Attributes exposing (class, classList, disabled, href, id, rel, selected, style)
 
 

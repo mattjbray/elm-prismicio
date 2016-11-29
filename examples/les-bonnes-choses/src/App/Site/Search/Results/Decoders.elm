@@ -11,22 +11,21 @@ decodeArticleR =
         decodeOnType typeStr =
             case typeStr of
                 "article" ->
-                    object1 ArticleR Documents.decodeArticle
+                    map ArticleR Documents.decodeArticle
 
                 "blog-post" ->
-                    object1 BlogPostR Documents.decodeBlogPost
+                    map BlogPostR Documents.decodeBlogPost
 
                 "store" ->
-                    object1 StoreR Documents.decodeStore
+                    map StoreR Documents.decodeStore
 
                 "job-offer" ->
-                    object1 JobR Documents.decodeJobOffer
+                    map JobR Documents.decodeJobOffer
 
                 _ ->
                     fail ("Unexpected document type: " ++ typeStr)
     in
-        ("type" := string) `andThen` decodeOnType
-
+        field "type" string |> andThen decodeOnType
 
 
 decodeProductR : Decoder ProductR
@@ -35,12 +34,12 @@ decodeProductR =
         decodeOnType typeStr =
             case typeStr of
                 "product" ->
-                    object1 ProductR Documents.decodeProduct
+                    map ProductR Documents.decodeProduct
 
                 "selection" ->
-                    object1 SelectionR Documents.decodeSelection
+                    map SelectionR Documents.decodeSelection
 
                 _ ->
                     fail ("Unexpected document type: " ++ typeStr)
     in
-        ("type" := string) `andThen` decodeOnType
+        field "type" string |> andThen decodeOnType

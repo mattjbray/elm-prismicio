@@ -16,11 +16,9 @@ view : Model -> Html msg
 view model =
     section []
         [ model.products
-            |> Result.mapBoth viewError
-                viewProducts
+            |> Result.unpack viewError viewProducts
         , model.articles
-            |> Result.mapBoth viewError
-                (viewArticles model)
+            |> Result.unpack viewError (viewArticles model)
         ]
 
 

@@ -1,11 +1,11 @@
 module App.Site.Products.Show.State exposing (..)
 
 import App.Site.Products.Show.Types exposing (..)
+import App.Common exposing (performCompat)
 import App.Documents.Decoders as Documents
 import App.Documents.Types as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import Prismic as P
-import Task
 
 
 init : P.Model -> String -> ( Model, Cmd Msg )
@@ -18,7 +18,7 @@ init prismic docId =
         |> P.form "products"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeProduct
-        |> Task.perform SetError SetResponse
+        |> performCompat SetError SetResponse
     )
 
 
@@ -77,4 +77,4 @@ fetchRelatedProducts prismic product =
             |> P.form "products"
             |> P.query [ P.any "document.id" relatedDocIds ]
             |> P.submit Documents.decodeProduct
-            |> Task.perform SetError SetRelatedProducts
+            |> performCompat SetError SetRelatedProducts

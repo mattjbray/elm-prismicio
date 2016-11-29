@@ -8,6 +8,7 @@ import App.Types as App
 import Html exposing (..)
 import Html.Attributes exposing (classList, id, href, style)
 import Prismic as P
+import Task exposing (Task)
 
 
 structuredTextAsHtml : P.StructuredText -> List (Html msg)
@@ -69,3 +70,12 @@ viewHeader currentPage =
                     [ span [] [ text "Search" ] ]
                 ]
             ]
+
+performCompat : (x -> msg) -> (a -> msg) -> Task x a -> Cmd msg
+performCompat toErr toOk task =
+    Task.attempt
+        (\ result ->
+             case result of
+                 Ok val -> toOk val
+                 Err err -> toErr err)
+        task

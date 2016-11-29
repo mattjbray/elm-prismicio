@@ -1,6 +1,7 @@
 module App.Site.Products.Index.State exposing (..)
 
 import App.Site.Products.Index.Types exposing (..)
+import App.Common exposing (performCompat)
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic))
 import Prismic as P
@@ -19,7 +20,7 @@ init prismic mFlavour =
                 |> Maybe.withDefault P.none
            )
         |> P.submit Documents.decodeProduct
-        |> Task.perform SetError SetResponse
+        |> performCompat SetError SetResponse
     )
 
 

@@ -47,7 +47,7 @@ viewCaroussel model =
         , div [ class "products" ]
             [ ul [ class "current" ]
                 (model.products
-                    |> Result.mapBoth (\err -> [ li [] [ pre [] [ text (toString err) ] ] ])
+                    |> Result.unpack (\err -> [ li [] [ pre [] [ text (toString err) ] ] ])
                         (List.map Common.viewProductShort << filterProducts model.category)
                 )
             ]
@@ -73,7 +73,7 @@ viewFeatured : Model -> Html Msg
 viewFeatured model =
     section [ id "featured" ]
         (model.featured
-            |> Result.mapBoth (\err -> [ div [] [ pre [] [ text (toString err) ] ] ])
+            |> Result.unpack (\err -> [ div [] [ pre [] [ text (toString err) ] ] ])
                 (List.filterMap viewFeaturedItem)
         )
 
@@ -124,7 +124,7 @@ getFeaturedBlogPosts =
 viewBlog : Model -> Html Msg
 viewBlog model =
     model.featured
-        |> Result.mapBoth (\err -> pre [] [ text (toString err) ])
+        |> Result.unpack (\err -> pre [] [ text (toString err) ])
             (Maybe.withDefault (text "")
                 << Maybe.map viewFeaturedBlogPost
                 << List.head

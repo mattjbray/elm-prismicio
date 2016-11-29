@@ -17,7 +17,7 @@ view model =
         , id "store"
         ]
         (model.store
-            |> Result.mapBoth viewError
+            |> Result.unpack viewError
                 viewMStore
         )
 

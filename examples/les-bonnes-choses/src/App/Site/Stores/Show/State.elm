@@ -4,7 +4,6 @@ import App.Site.Stores.Show.Types exposing (..)
 import App.Documents.Decoders as Documents
 import App.Types exposing (GlobalMsg(SetPrismic, RenderNotFound))
 import App.Ports exposing (googleMap)
-import Basics.Extra exposing (never)
 import Prismic as P
 import Task
 import String
@@ -19,8 +18,7 @@ init prismic docId =
         |> P.form "everything"
         |> P.query [ P.at "document.id" docId ]
         |> P.submit Documents.decodeStore
-        |> Task.toResult
-        |> Task.perform never SetStore
+        |> Task.attempt SetStore
     )
 
 
@@ -65,6 +63,6 @@ update msg model =
                                 ( { model
                                     | store = Ok (Just store)
                                   }
-                                , googleMap ("map-canvas", address)
+                                , googleMap ( "map-canvas", address )
                                 , [ SetPrismic prismic ]
                                 )

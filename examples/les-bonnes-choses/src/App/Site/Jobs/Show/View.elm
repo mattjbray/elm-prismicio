@@ -16,7 +16,7 @@ view model =
         , id "job"
         ]
         (model.job
-            |> Result.mapBoth viewError
+            |> Result.unpack viewError
                 (viewMJob (getBackgroundImageUrl model))
         )
 

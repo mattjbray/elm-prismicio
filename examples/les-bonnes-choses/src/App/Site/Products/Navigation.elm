@@ -2,7 +2,7 @@ module App.Site.Products.Navigation exposing (..)
 
 import App.Site.Products.Types exposing (..)
 import String
-import UrlParser exposing (Parser, (</>), format, oneOf, s, string)
+import UrlParser exposing (Parser, (</>), map, oneOf, s, string)
 
 
 toUrl : Page -> String
@@ -21,7 +21,7 @@ toUrl page =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format (IndexP << Just) (s "by-flavour" </> string)
-        , format ShowP (string </> string)
-        , format (IndexP Nothing) (s "")
+        [ map (IndexP << Just) (s "by-flavour" </> string)
+        , map ShowP (string </> string)
+        , map (IndexP Nothing) (s "")
         ]
