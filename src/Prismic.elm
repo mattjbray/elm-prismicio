@@ -36,6 +36,9 @@ module Prismic
         , Block
         , Span
         , SpanElement(..)
+        , SliceZone
+        , Slice
+        , SliceField(..)
         , ImageViews
         , ImageView
         , ImageDimensions
@@ -110,6 +113,9 @@ following components.
 
 #### Link
 @docs Link, DocumentReference
+
+#### Slices
+@docs SliceZone, Slice, SliceField
 
 ### Custom document decoders
 
@@ -352,6 +358,7 @@ type DocumentField
     | Number Float
     | Date String
     | Link Link
+    | SliceZone SliceZone
 
 
 {-| `StructuredText` is a list of `StructuredTextBlock`s.
@@ -482,6 +489,34 @@ type alias DocumentReference =
     , tags : List String
     , linkedDocumentType : String
     }
+
+
+{-| Contains zero or more `Slice`s.
+-}
+type alias SliceZone =
+    List Slice
+
+
+{-| A Slice
+-}
+type alias Slice =
+    { sliceLabel : Maybe String
+    , sliceType : String
+    , sliceField : SliceField
+    }
+
+
+{-| The chosen field in a `Slice`.
+-}
+type SliceField
+    = SliceText String
+    | SliceStructuredText StructuredText
+    | SliceSelect String
+    | SliceColor String
+    | SliceImage ImageViews
+    | SliceNumber Float
+    | SliceDate String
+    | SliceLink Link
 
 
 
@@ -927,6 +962,9 @@ decodeDocumentField =
                 "Link.web" ->
                     Json.map Link decodeLink
 
+                "SliceZone" ->
+                    Json.map SliceZone (Json.field "value" decodeSliceZone)
+
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
     in
@@ -1108,6 +1146,33 @@ decodeLink =
         Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
+decodeSliceZone : Json.Decoder SliceZone
+decodeSliceZone =
+    Json.list decodeSlice
+
+
+decodeSlice : Json.Decoder Slice
+decodeSlice =
+    decode Slice
+        |> optional "slice_label" (Json.maybe Json.string) Nothing
+        |> required "slice_type" Json.string
+        |> required "value" decodeSliceField
+
+
+decodeSliceField : Json.Decoder SliceField
+decodeSliceField =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "StructuredText" ->
+                    Json.map SliceStructuredText (Json.field "value" decodeStructuredText)
+
+                _ ->
+                    Json.fail ("Unknown Slice field type: " ++ typeStr)
+    in
+        (Json.field "type" Json.string) |> Json.andThen decodeOnType
+
+
 
 -- Html
 
@@ -1163,6 +1228,9 @@ asHtml linkResolver field =
 
         StructuredText fields ->
             div [] (structuredTextAsHtml linkResolver fields)
+
+        SliceZone slices ->
+            div [] (List.map (sliceAsHtml linkResolver) slices)
 
 
 {-| Render some `StructuredText` as HTML.
@@ -1291,6 +1359,34 @@ linkAsHtmlWith linkResolver link childs =
 
         WebLink (Url url) ->
             a [ href url ] childs
+
+
+sliceAsHtml : (DocumentReference -> Url) -> Slice -> Html msg
+sliceAsHtml linkResolver slice =
+    case slice.sliceField of
+        SliceText string ->
+            span [] [ text string ]
+
+        SliceStructuredText structuredText ->
+            div [] (structuredTextAsHtml linkResolver structuredText)
+
+        SliceSelect string ->
+            span [] [ text string ]
+
+        SliceColor string ->
+            span [] [ text string ]
+
+        SliceImage imageViews ->
+            imageAsHtml (imageViews.main)
+
+        SliceNumber float ->
+            span [] [ text (toString float) ]
+
+        SliceDate string ->
+            span [] [ text string ]
+
+        SliceLink link ->
+            linkAsHtml linkResolver link
 
 
 {-| Provide a default URL for `linkedDocuments`:
