@@ -1,147 +1,169 @@
 module Prismic
     exposing
-        ( init
-        , api
-        , form
-        , bookmark
-        , ref
-        , query
-        , none
-        , submit
-        , collectResponses
-        , any
-        , at
-        , atL
-        , fulltext
-        , Url(Url)
-        , Model
-        , ModelWithApi
-        , Model_
-        , PrismicError(..)
-        , Api
-        , RefProperties
-        , Ref(Ref)
-        , Form
-        , FormField
-        , FieldType
-        , Experiments
-        , Predicate
-        , Request
-        , Response
-        , DefaultDocType
-        , DocumentField(..)
-        , decodeDefaultDocType
-        , StructuredText
-        , StructuredTextBlock(..)
+        ( Api
         , Block
-        , Span
-        , SpanElement(..)
-        , SliceZone
-        , Slice
-        , SliceField(..)
-        , ImageViews
-        , ImageView
-        , ImageDimensions
+        , Decoder
+        , Document
+        , DocumentReference
         , Embed(..)
         , EmbedRich
         , EmbedVideo
+        , Experiments
+        , FieldType
+        , Form
+        , FormField
+        , ImageDimensions
+        , ImageView
+        , ImageViews
         , Link(DocumentLink, WebLink)
-        , DocumentReference
-        , decodeStructuredText
-        , decodeImageViews
-        , decodeLink
-        , decodeEmbed
-        , structuredTextAsHtml
+        , Model
+        , ModelWithApi
+        , Model_
+        , Predicate
+        , PrismicError(..)
+        , Ref(Ref)
+        , RefProperties
+        , Request
+        , Response
+        , Span
+        , SpanElement(..)
+        , StructuredText
+        , StructuredTextBlock(..)
+        , Url(Url)
+        , any
+        , api
+        , at
+        , atL
+        , bookmark
+        , collectResponses
+        , decode
         , defaultLinkResolver
+        , field
+        , form
+        , fulltext
         , getFirstImage
         , getFirstParagraph
         , getText
         , getTexts
         , getTitle
+        , image
+        , init
+        , map
+        , none
+        , query
+        , ref
+        , slice
+        , sliceZone
+        , structuredText
+        , structuredTextAsHtml
+        , submit
+        , text
         )
 
-{-|
-An Elm SDK for [Prismic.io](https://prismic.io).
+{-| An Elm SDK for [Prismic.io](https://prismic.io).
+
 
 # Initialisation
+
 @docs init
 
+
 # Making a request
+
 @docs api, form, bookmark, submit, collectResponses
 
+
 # Customising the request
+
 @docs ref, query, none
 
+
 # Predicates
+
 @docs at, atL, any, fulltext
+
 
 # Types
 
+
 ## Models
+
 @docs Url, Model, ModelWithApi, Model_
 
+
 ## Errors
+
 @docs PrismicError
 
+
 ## Api
+
 @docs Api, RefProperties, Ref, Form, FormField, FieldType, Experiments
 
+
 ## Requests
+
 @docs Predicate, Request
 
+
 ## Response
+
 @docs Response
+
 
 ## Documents
 
-### Default document
-@docs DefaultDocType, DocumentField, decodeDefaultDocType
+@docs Document, Decoder, decode, map, field, text, structuredText, image, sliceZone, slice
 
-### Custom documents
+### Field types
 
 You can create your own Elm types to represent your documents using the
 following components.
 
+
 #### Structured Text
+
 @docs StructuredText, StructuredTextBlock, Block, Span, SpanElement
 
+
 #### Image
+
 @docs ImageViews, ImageView, ImageDimensions
 
+
 #### Embed
+
 @docs Embed, EmbedRich, EmbedVideo
 
+
 #### Link
+
 @docs Link, DocumentReference
 
-#### Slices
-@docs SliceZone, Slice, SliceField
-
-### Custom document decoders
-
-@docs decodeStructuredText
-@docs decodeImageViews
-@docs decodeLink
-@docs decodeEmbed
 
 ## Viewing documents
+
 @docs structuredTextAsHtml
 @docs defaultLinkResolver
 
+
 ### `StructuredText` helpers
+
 @docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+
 -}
 
 import Dict exposing (Dict)
-import Json.Decode as Json
-import Json.Decode.Pipeline exposing (decode, custom, required, requiredAt, optional)
-import Json.Encode
-import Http
 import Html exposing (..)
 import Html.Attributes exposing (href, property, src)
+import Http
+import Json.Decode as Json
+import Json.Decode.Pipeline as JDP exposing (custom, optional, requiredAt)
+import Json.Encode
+import Result.Extra as Result
+import String
 import Task exposing (Task)
 import Task.Extra as Task
-import String
 
 
 -- Types: Models
@@ -156,6 +178,7 @@ type Url
 {-| This is the main user-facing type for elm-prismicio's internal state.
 
 The `Api` is represented as `Maybe Api`, because we may not have fetched it yet.
+
 -}
 type alias Model =
     Model_ (Maybe Api)
@@ -164,6 +187,7 @@ type alias Model =
 {-| This variation of the Model type is returned by `api`, when we know we have successfully retreived the `Api`.
 
 It is used internally by elm-prismicio.
+
 -}
 type alias ModelWithApi =
     Model_ Api
@@ -172,12 +196,13 @@ type alias ModelWithApi =
 {-| The generic `Model'` type, where the `Api` is represented by a type parameter.
 
 You will be using the specialised `Model` type in user code.
+
 -}
 type alias Model_ api =
     { api : api
     , url : Url
     , nextRequestId : Int
-    , cache : Dict String Json.Value
+    , cache : Dict String (Response Document)
     }
 
 
@@ -193,6 +218,7 @@ type PrismicError
     | BookmarkDoesNotExist String
     | FetchApiError Http.Error
     | SubmitRequestError Http.Error
+    | DecodeDocumentError String
 
 
 
@@ -203,6 +229,7 @@ type PrismicError
 
 Your app can look things up in this if you need to (for example, to resolve
 links using the bookmarks `Dict`).
+
 -}
 type alias Api =
     { refs : List RefProperties
@@ -222,6 +249,7 @@ type alias Api =
 
 Most of the time you will be working with the `master` ref, which is added to
 all requests by default.
+
 -}
 type alias RefProperties =
     { id : String
@@ -240,6 +268,7 @@ type Ref
 {-| Properties representing a Prismic form.
 
 These are used to construct a default query.
+
 -}
 type alias Form =
     { method : String
@@ -254,6 +283,7 @@ type alias Form =
 {-| A field in a Prismic form.
 
 These are combined to construct query parameters for the eventual Http request.
+
 -}
 type alias FormField =
     { fieldType : FieldType
@@ -269,7 +299,7 @@ type FieldType
     | Integer
 
 
-{-| TODO: Experiments are not Strings.  Fill out this type.
+{-| TODO: Experiments are not Strings. Fill out this type.
 -}
 type alias Experiments =
     { draft : List String
@@ -307,6 +337,7 @@ type alias Request =
 
 This type is parameterized by `docType`, which is determined by the `Decoder`
 you pass to `submit`.
+
 -}
 type alias Response docType =
     { license : String
@@ -326,6 +357,7 @@ type alias Response docType =
 
 This type is parameterized by `docType`, which is determined by the `Json.Decoder`
 you pass to `submit`.
+
 -}
 type alias SearchResult docType =
     { data : docType
@@ -339,15 +371,17 @@ type alias SearchResult docType =
     }
 
 
-{-| A default document type.
+{-| Holds the Prismic document.
 
-Normally you will want to define your own document types and decoders.
+You will decode this into your own document type by passing a `Decoder MyDoc` to
+`submit`.
+
 -}
-type alias DefaultDocType =
-    Dict String (Dict String (List DocumentField))
+type Document
+    = Document (Dict String DocumentField)
 
 
-{-| A field in the `DefaultDocType`.
+{-| A field in the `Document`.
 -}
 type DocumentField
     = Text String
@@ -359,6 +393,215 @@ type DocumentField
     | Date String
     | Link Link
     | SliceZone SliceZone
+
+
+
+--  DOCUMENT DECODERS
+
+
+{-| A value that knows how to decode Documents.
+
+Construct a `Decoder` to pass to `submit`.
+
+-}
+type Decoder a
+    = Decoder (Document -> Result String a)
+
+
+type FieldDecoder a
+    = FieldDecoder (DocumentField -> Result String a)
+
+
+{-| Begin a decoding pipeline.
+
+    type alias MyDoc =
+        { title : StructuredText }
+
+    myDocDecoder : Decoder MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> field "title" structuredText
+
+-}
+decode : a -> Decoder a
+decode doc =
+    Decoder (\_ -> Ok doc)
+
+
+decodeValue : Decoder a -> Document -> Result String a
+decodeValue (Decoder decoder) doc =
+    decoder doc
+
+
+{-| Transform a decoder.
+-}
+map : (a -> b) -> Decoder a -> Decoder b
+map f (Decoder decoder) =
+    Decoder
+        (\doc ->
+            decoder doc |> Result.map f
+        )
+
+
+apply : Decoder (a -> b) -> Decoder a -> Decoder b
+apply (Decoder f) (Decoder a) =
+    Decoder
+        (\doc ->
+            case ( f doc, a doc ) of
+                ( Ok g, Ok x ) ->
+                    Ok (g x)
+
+                ( Err err, _ ) ->
+                    Err err
+
+                ( _, Err err ) ->
+                    Err err
+        )
+
+
+{-| Decode a field.
+-}
+field : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
+field key valDecoder decoder =
+    apply decoder (fieldKey key valDecoder)
+
+
+fieldKey : String -> FieldDecoder a -> Decoder a
+fieldKey key (FieldDecoder fieldDecoder) =
+    Decoder
+        (\(Document doc) ->
+            case Dict.get key doc of
+                Just field ->
+                    fieldDecoder field
+                        |> Result.mapError (\msg -> "While decoding field '" ++ key ++ "': " ++ msg)
+
+                Nothing ->
+                    Err ("No field at " ++ key)
+        )
+
+
+{-| Decode a Text field.
+-}
+text : FieldDecoder String
+text =
+    FieldDecoder
+        (\field ->
+            case field of
+                Text text ->
+                    Ok text
+
+                _ ->
+                    Err "Expected a Text field."
+        )
+
+
+{-| Decode a StructuredText field.
+-}
+structuredText : FieldDecoder StructuredText
+structuredText =
+    FieldDecoder
+        (\field ->
+            case field of
+                StructuredText x ->
+                    Ok x
+
+                _ ->
+                    Err "Expected a StructuredText field."
+        )
+
+
+{-| Decode an Image field.
+-}
+image : FieldDecoder ImageViews
+image =
+    FieldDecoder
+        (\field ->
+            case field of
+                Image x ->
+                    Ok x
+
+                _ ->
+                    Err "Expected an Image field."
+        )
+
+
+type SliceDecoder a
+    = SliceDecoder (Slice -> Result String a)
+
+
+oneOf : List (SliceDecoder a) -> Slice -> Result String a
+oneOf sliceDecoders slice =
+    let
+        go decoders errors =
+            case decoders of
+                [] ->
+                    Err
+                        ("No slices matched: \n* "
+                            ++ String.join "\n* " errors
+                        )
+
+                (SliceDecoder decoder) :: rest ->
+                    case decoder slice of
+                        Ok x ->
+                            Ok x
+
+                        Err err ->
+                            go rest (err :: errors)
+    in
+    go sliceDecoders []
+
+
+{-| Decode a Slice field.
+-}
+slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
+slice sliceType tagger (FieldDecoder fieldDecoder) =
+    SliceDecoder
+        (\slice ->
+            if sliceType == slice.sliceType then
+                fieldDecoder slice.sliceField
+                    |> Result.map tagger
+                    |> Result.mapError
+                        (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
+            else
+                Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
+        )
+
+
+{-| Decode a SliceZone.
+
+Pass this function a list of possible elements that can appear in the Slice.
+
+    type alias MyDoc =
+        { section : Section }
+
+    type Section
+        = MyContent StructuredText
+        | MyImage ImageViews
+
+    myDocDecoder : Decode MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> field "section"
+                (sliceZone
+                    [ slice "theContent" MyContent structuredText
+                    , slice "theImage" MyImage image
+                    ]
+                )
+
+-}
+sliceZone : List (SliceDecoder a) -> FieldDecoder (List a)
+sliceZone decoders =
+    FieldDecoder
+        (\field ->
+            case field of
+                SliceZone slices ->
+                    slices
+                        |> List.map (oneOf decoders)
+                        |> Result.collect
+
+                _ ->
+                    Err "Expected a SliceZone field."
+        )
 
 
 {-| `StructuredText` is a list of `StructuredTextBlock`s.
@@ -502,21 +745,11 @@ type alias SliceZone =
 type alias Slice =
     { sliceLabel : Maybe String
     , sliceType : String
-    , sliceField : SliceField
+    , sliceField :
+        DocumentField
+
+    -- TODO: SliceField to exclude nested Slices?
     }
-
-
-{-| The chosen field in a `Slice`.
--}
-type SliceField
-    = SliceText String
-    | SliceStructuredText StructuredText
-    | SliceSelect String
-    | SliceColor String
-    | SliceImage ImageViews
-    | SliceNumber Float
-    | SliceDate String
-    | SliceLink Link
 
 
 
@@ -533,6 +766,7 @@ this in your application's Model somewhere.
         { prismic =
             Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
         }
+
 -}
 init : Url -> Model
 init url =
@@ -557,10 +791,10 @@ api cache =
                 (Url url) =
                     cache.url
             in
-                Task.map (\api -> { cache | api = api })
-                    (Task.mapError FetchApiError
-                        (Http.get url decodeApi |> Http.toTask)
-                    )
+            Task.map (\api -> { cache | api = api })
+                (Task.mapError FetchApiError
+                    (Http.get url decodeApi |> Http.toTask)
+                )
 
 
 {-| Choose a form on which to base the rest of the Prismic request.
@@ -582,30 +816,30 @@ form formId apiTask =
                 mRef =
                     getRefById defaultRefId cache.api
             in
-                case ( mForm, mRef ) of
-                    ( Nothing, _ ) ->
-                        Task.fail (FormDoesNotExist formId)
+            case ( mForm, mRef ) of
+                ( Nothing, _ ) ->
+                    Task.fail (FormDoesNotExist formId)
 
-                    ( _, Nothing ) ->
-                        Task.fail (RefDoesNotExist defaultRefId)
+                ( _, Nothing ) ->
+                    Task.fail (RefDoesNotExist defaultRefId)
 
-                    ( Just form, Just masterRef ) ->
-                        let
-                            q =
-                                Maybe.withDefault ""
-                                    (Dict.get "q" form.fields
-                                        |> Maybe.andThen .default
-                                    )
-                        in
-                            Task.succeed
-                                ( { action = form.action
-                                  , ref = masterRef.ref
-                                  , q = q
-                                  }
-                                , cache
+                ( Just form, Just masterRef ) ->
+                    let
+                        q =
+                            Maybe.withDefault ""
+                                (Dict.get "q" form.fields
+                                    |> Maybe.andThen .default
                                 )
+                    in
+                    Task.succeed
+                        ( { action = form.action
+                          , ref = masterRef.ref
+                          , q = q
+                          }
+                        , cache
+                        )
     in
-        apiTask |> Task.andThen addForm
+    apiTask |> Task.andThen addForm
 
 
 {-| Convenience function for fetching a bookmarked document.
@@ -622,14 +856,14 @@ bookmark bookmarkId cacheTask =
                     mDocId =
                         Dict.get bookmarkId cacheWithApi.api.bookmarks
                 in
-                    case mDocId of
-                        Nothing ->
-                            Task.fail (BookmarkDoesNotExist bookmarkId)
+                case mDocId of
+                    Nothing ->
+                        Task.fail (BookmarkDoesNotExist bookmarkId)
 
-                        Just docId ->
-                            Task.succeed cacheWithApi
-                                |> form "everything"
-                                |> query [ at "document.id" docId ]
+                    Just docId ->
+                        Task.succeed cacheWithApi
+                            |> form "everything"
+                            |> query [ at "document.id" docId ]
             )
 
 
@@ -652,12 +886,13 @@ ref refId requestTask =
                         , cache
                         )
     in
-        requestTask |> Task.andThen addRef
+    requestTask |> Task.andThen addRef
 
 
 {-| Override a Form's default query.
 
 See the section on `Predicate`s below for how to construct a `Predicate`.
+
 -}
 query :
     List Predicate
@@ -671,12 +906,13 @@ query predicates requestTask =
                 , cache
                 )
     in
-        requestTask |> Task.andThen addQuery
+    requestTask |> Task.andThen addQuery
 
 
 {-| Pass the request through unmodified.
 
 Useful for conditionally adding a query.
+
 -}
 none :
     Task PrismicError ( Request, Model_ api )
@@ -687,11 +923,12 @@ none =
 
 {-| Submit the request.
 
-Pass this function a `Json.Decoder` to decode each document in the response into
-your own Elm type, or use `decodeDefaultDocType`.
+Pass this function a `Decoder` to decode each document in the response into your
+own Elm document type.
+
 -}
 submit :
-    Json.Decoder docType
+    Decoder docType
     -> Task PrismicError ( Request, ModelWithApi )
     -> Task PrismicError ( Response docType, Model )
 submit decodeDocType requestTask =
@@ -704,42 +941,39 @@ submit decodeDocType requestTask =
                 cacheWithApi =
                     { cache | api = Just cache.api }
 
-                fakeResponse =
-                    { url = ""
-                    , status = { code = 200, message = "OK" }
-                    , headers = Dict.empty
-                    , body = ""
-                    }
-
-                decodeResponseValue responseValue =
-                    Json.decodeValue (decodeResponse decodeDocType) responseValue
+                decodeResponseToUserDocType response =
+                    response.results
+                        |> List.map
+                            (\result ->
+                                decodeValue decodeDocType result.data
+                                    |> Result.map (\doc -> { result | data = doc })
+                            )
+                        |> Result.collect
+                        |> Result.map (\docs -> { response | results = docs })
                         |> Task.fromResult
-                        |> Task.mapError (\msg -> SubmitRequestError (Http.BadPayload msg fakeResponse))
+                        |> Task.mapError (\msg -> DecodeDocumentError msg)
             in
-                case getFromCache request cache of
-                    Just responseValue ->
-                        decodeResponseValue responseValue
-                            |> Task.map (\response -> ( response, cacheWithApi ))
+            case getFromCache request cache of
+                Just response ->
+                    decodeResponseToUserDocType response
+                        |> Task.map (\response -> ( response, cacheWithApi ))
 
-                    Nothing ->
-                        let
-                            fetchUrl =
-                                Http.get url Json.value
-                                    |> Http.toTask
-                                    |> Task.mapError SubmitRequestError
-
-                            decodeAndMkResult responseValue =
-                                decodeResponseValue responseValue
-                                    |> Task.map (mkResultTuple responseValue)
-
-                            mkResultTuple responseValue response =
-                                ( response
-                                , setInCache request responseValue cacheWithApi
-                                )
-                        in
-                            fetchUrl |> Task.andThen decodeAndMkResult
+                Nothing ->
+                    Http.get url decodeResponse
+                        |> Http.toTask
+                        |> Task.mapError SubmitRequestError
+                        |> Task.andThen
+                            (\origResponse ->
+                                decodeResponseToUserDocType origResponse
+                                    |> Task.map
+                                        (\response ->
+                                            ( response
+                                            , setInCache request origResponse cacheWithApi
+                                            )
+                                        )
+                            )
     in
-        requestTask |> Task.andThen doSubmit
+    requestTask |> Task.andThen doSubmit
 
 
 {-| The `submit` `Task` returns an updated Prismic `Model` with the request and
@@ -747,6 +981,15 @@ response cached.
 
 In your app's `update` function, you should merge this with the existing cache
 using `collectResponses`.
+
+    update msg model =
+        case msg of
+            MyPrismicMsg (Ok ( response, prismic )) ->
+                { model
+                    | prismic =
+                        collectResponses model.prismic prismic
+                }
+
 -}
 collectResponses : Model -> Model -> Model
 collectResponses model1 model2 =
@@ -793,7 +1036,7 @@ fulltext fragment value =
 
 maybeWithDefault : a -> Json.Decoder a -> Json.Decoder a
 maybeWithDefault default decoder =
-    Json.maybe decoder |> Json.andThen (Json.succeed << (Maybe.withDefault default))
+    Json.maybe decoder |> Json.andThen (Json.succeed << Maybe.withDefault default)
 
 
 decodeRef : Json.Decoder Ref
@@ -812,44 +1055,44 @@ decodeUrl =
 
 decodeApi : Json.Decoder Api
 decodeApi =
-    decode Api
-        |> required "refs" (Json.list decodeRefProperties)
-        |> required "bookmarks" (Json.dict Json.string)
-        |> required "types" (Json.dict Json.string)
-        |> required "tags" (Json.list Json.string)
-        |> required "version" (Json.string)
-        |> required "forms" (Json.dict decodeForm)
-        |> required "oauth_initiate" (Json.string)
-        |> required "oauth_token" (Json.string)
-        |> required "license" (Json.string)
-        |> required "experiments" (decodeExperiments)
+    JDP.decode Api
+        |> JDP.required "refs" (Json.list decodeRefProperties)
+        |> JDP.required "bookmarks" (Json.dict Json.string)
+        |> JDP.required "types" (Json.dict Json.string)
+        |> JDP.required "tags" (Json.list Json.string)
+        |> JDP.required "version" Json.string
+        |> JDP.required "forms" (Json.dict decodeForm)
+        |> JDP.required "oauth_initiate" Json.string
+        |> JDP.required "oauth_token" Json.string
+        |> JDP.required "license" Json.string
+        |> JDP.required "experiments" decodeExperiments
 
 
 decodeRefProperties : Json.Decoder RefProperties
 decodeRefProperties =
-    decode RefProperties
-        |> required "id" Json.string
-        |> required "ref" decodeRef
-        |> required "label" Json.string
+    JDP.decode RefProperties
+        |> JDP.required "id" Json.string
+        |> JDP.required "ref" decodeRef
+        |> JDP.required "label" Json.string
         |> optional "isMasterRef" Json.bool False
 
 
 decodeForm : Json.Decoder Form
 decodeForm =
-    decode Form
-        |> required "method" (Json.string)
-        |> required "enctype" (Json.string)
-        |> required "action" (decodeUrl)
-        |> required "fields" (Json.dict decodeFormField)
+    JDP.decode Form
+        |> JDP.required "method" Json.string
+        |> JDP.required "enctype" Json.string
+        |> JDP.required "action" decodeUrl
+        |> JDP.required "fields" (Json.dict decodeFormField)
         |> optional "rel" (Json.maybe Json.string) Nothing
         |> optional "name" (Json.maybe Json.string) Nothing
 
 
 decodeFormField : Json.Decoder FormField
 decodeFormField =
-    decode FormField
-        |> required "type" decodeFieldType
-        |> required "multiple" Json.bool
+    JDP.decode FormField
+        |> JDP.required "type" decodeFieldType
+        |> JDP.required "multiple" Json.bool
         |> optional "default" (Json.maybe Json.string) Nothing
 
 
@@ -867,67 +1110,63 @@ decodeFieldType =
                 _ ->
                     Json.fail ("Unknown field type: " ++ str)
     in
-        Json.string |> Json.andThen decodeOnType
+    Json.string |> Json.andThen decodeOnType
 
 
 decodeExperiments : Json.Decoder Experiments
 decodeExperiments =
-    decode Experiments
-        |> required "draft" (Json.list Json.string)
-        |> required "running" (Json.list Json.string)
+    JDP.decode Experiments
+        |> JDP.required "draft" (Json.list Json.string)
+        |> JDP.required "running" (Json.list Json.string)
 
 
-decodeResponse : Json.Decoder docType -> Json.Decoder (Response docType)
-decodeResponse decodeDocType =
-    decode Response
-        |> required "license" (Json.string)
-        |> required "next_page" (Json.nullable decodeUrl)
-        |> required "page" (Json.int)
-        |> required "prev_page" (Json.nullable decodeUrl)
-        |> required "results" (Json.list (decodeSearchResult decodeDocType))
-        |> required "results_per_page" (Json.int)
-        |> required "results_size" (Json.int)
-        |> required "total_pages" (Json.int)
-        |> required "total_results_size" (Json.int)
-        |> required "version" (Json.string)
+decodeResponse : Json.Decoder (Response Document)
+decodeResponse =
+    JDP.decode Response
+        |> JDP.required "license" Json.string
+        |> JDP.required "next_page" (Json.nullable decodeUrl)
+        |> JDP.required "page" Json.int
+        |> JDP.required "prev_page" (Json.nullable decodeUrl)
+        |> JDP.required "results" (Json.list decodeSearchResult)
+        |> JDP.required "results_per_page" Json.int
+        |> JDP.required "results_size" Json.int
+        |> JDP.required "total_pages" Json.int
+        |> JDP.required "total_results_size" Json.int
+        |> JDP.required "version" Json.string
 
 
-{-| Decode a result to a `DefaultDocType`.
+{-| Decode a result to a `Document`.
 -}
-decodeDefaultDocType : Json.Decoder DefaultDocType
-decodeDefaultDocType =
-    Json.field "data"
-        (Json.dict
-            (Json.dict
-                (Json.oneOf
-                    [ Json.map (\x -> [ x ]) decodeDocumentField
-                    , Json.list decodeDocumentField
-                    ]
-                )
+decodeDocument : Json.Decoder Document
+decodeDocument =
+    Json.field "type" Json.string
+        |> Json.andThen
+            (\docType ->
+                Json.at [ "data", docType ] (Json.dict decodeDocumentField)
             )
-        )
+        |> Json.map Document
 
 
-decodeSearchResult : Json.Decoder docType -> Json.Decoder (SearchResult docType)
-decodeSearchResult decodeDocType =
-    decode SearchResult
-        |> custom decodeDocType
-        |> required "href" (decodeUrl)
-        |> required "id" (Json.string)
-        |> required "linked_documents" (Json.list decodeDocumentReference)
-        |> required "slugs" (Json.list Json.string)
-        |> required "tags" (Json.list Json.string)
-        |> required "type" (Json.string)
-        |> required "uid" (Json.nullable Json.string)
+decodeSearchResult : Json.Decoder (SearchResult Document)
+decodeSearchResult =
+    JDP.decode SearchResult
+        |> custom decodeDocument
+        |> JDP.required "href" decodeUrl
+        |> JDP.required "id" Json.string
+        |> JDP.required "linked_documents" (Json.list decodeDocumentReference)
+        |> JDP.required "slugs" (Json.list Json.string)
+        |> JDP.required "tags" (Json.list Json.string)
+        |> JDP.required "type" Json.string
+        |> JDP.required "uid" (Json.nullable Json.string)
 
 
 decodeDocumentReference : Json.Decoder DocumentReference
 decodeDocumentReference =
-    decode DocumentReference
-        |> required "id" (Json.string)
-        |> required "slug" (Json.string)
-        |> required "tags" (Json.list Json.string)
-        |> required "type" (Json.string)
+    JDP.decode DocumentReference
+        |> JDP.required "id" Json.string
+        |> JDP.required "slug" Json.string
+        |> JDP.required "tags" (Json.list Json.string)
+        |> JDP.required "type" Json.string
 
 
 decodeDocumentField : Json.Decoder DocumentField
@@ -968,7 +1207,7 @@ decodeDocumentField =
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
     in
-        (Json.field "type" Json.string) |> Json.andThen decodeOnType
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 {-| Decode some `StructuredText`.
@@ -982,25 +1221,25 @@ decodeStructuredText =
 -}
 decodeImageViews : Json.Decoder ImageViews
 decodeImageViews =
-    decode ImageViews
-        |> required "main" decodeImageView
-        |> required "views" (Json.dict decodeImageView)
+    JDP.decode ImageViews
+        |> JDP.required "main" decodeImageView
+        |> JDP.required "views" (Json.dict decodeImageView)
 
 
 decodeImageView : Json.Decoder ImageView
 decodeImageView =
-    decode ImageView
-        |> required "alt" (Json.nullable Json.string)
-        |> required "copyright" (Json.nullable Json.string)
-        |> required "url" (decodeUrl)
-        |> required "dimensions" (decodeImageDimensions)
+    JDP.decode ImageView
+        |> JDP.required "alt" (Json.nullable Json.string)
+        |> JDP.required "copyright" (Json.nullable Json.string)
+        |> JDP.required "url" decodeUrl
+        |> JDP.required "dimensions" decodeImageDimensions
 
 
 decodeImageDimensions : Json.Decoder ImageDimensions
 decodeImageDimensions =
-    decode ImageDimensions
-        |> required "width" Json.int
-        |> required "height" Json.int
+    JDP.decode ImageDimensions
+        |> JDP.required "width" Json.int
+        |> JDP.required "height" Json.int
 
 
 decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
@@ -1032,21 +1271,21 @@ decodeStructuredTextBlock =
                 _ ->
                     Json.fail ("Unknown structured field type: " ++ toString typeStr)
     in
-        Json.field "type" Json.string |> Json.andThen decodeOnType
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 decodeBlock : Json.Decoder Block
 decodeBlock =
-    decode Block
-        |> required "text" Json.string
-        |> required "spans" (Json.list decodeSpan)
+    JDP.decode Block
+        |> JDP.required "text" Json.string
+        |> JDP.required "spans" (Json.list decodeSpan)
 
 
 decodeSpan : Json.Decoder Span
 decodeSpan =
-    decode Span
-        |> required "start" Json.int
-        |> required "end" Json.int
+    JDP.decode Span
+        |> JDP.required "start" Json.int
+        |> JDP.required "end" Json.int
         |> custom decodeSpanType
 
 
@@ -1067,7 +1306,7 @@ decodeSpanType =
                 _ ->
                     Json.fail ("Unknown span type: " ++ typeStr)
     in
-        Json.field "type" Json.string |> Json.andThen decodeOnType
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 {-| Decode an `Embed` field.
@@ -1086,42 +1325,42 @@ decodeEmbed =
                 _ ->
                     Json.fail ("Unknown embed type: " ++ typeStr)
     in
-        Json.field "type" Json.string |> Json.andThen decodeOnType
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 decodeEmbedVideo : Json.Decoder EmbedVideo
 decodeEmbedVideo =
-    decode EmbedVideo
-        |> required "author_name" Json.string
-        |> required "author_url" decodeUrl
-        |> required "embed_url" decodeUrl
-        |> required "height" Json.int
-        |> required "html" Json.string
-        |> required "provider_name" Json.string
-        |> required "provider_url" decodeUrl
-        |> required "thumbnail_height" Json.int
-        |> required "thumbnail_url" decodeUrl
-        |> required "thumbnail_width" Json.int
-        |> required "title" Json.string
-        |> required "version" Json.string
-        |> required "width" Json.int
+    JDP.decode EmbedVideo
+        |> JDP.required "author_name" Json.string
+        |> JDP.required "author_url" decodeUrl
+        |> JDP.required "embed_url" decodeUrl
+        |> JDP.required "height" Json.int
+        |> JDP.required "html" Json.string
+        |> JDP.required "provider_name" Json.string
+        |> JDP.required "provider_url" decodeUrl
+        |> JDP.required "thumbnail_height" Json.int
+        |> JDP.required "thumbnail_url" decodeUrl
+        |> JDP.required "thumbnail_width" Json.int
+        |> JDP.required "title" Json.string
+        |> JDP.required "version" Json.string
+        |> JDP.required "width" Json.int
 
 
 decodeEmbedRich : Json.Decoder EmbedRich
 decodeEmbedRich =
-    decode EmbedRich
-        |> required "author_name" Json.string
-        |> required "author_url" decodeUrl
-        |> required "cache_age" Json.string
-        |> required "embed_url" decodeUrl
-        |> required "height" (Json.maybe Json.int)
-        |> required "html" Json.string
-        |> required "provider_name" Json.string
-        |> required "provider_url" decodeUrl
-        |> required "title" Json.string
-        |> required "url" decodeUrl
-        |> required "version" Json.string
-        |> required "width" Json.int
+    JDP.decode EmbedRich
+        |> JDP.required "author_name" Json.string
+        |> JDP.required "author_url" decodeUrl
+        |> JDP.required "cache_age" Json.string
+        |> JDP.required "embed_url" decodeUrl
+        |> JDP.required "height" (Json.maybe Json.int)
+        |> JDP.required "html" Json.string
+        |> JDP.required "provider_name" Json.string
+        |> JDP.required "provider_url" decodeUrl
+        |> JDP.required "title" Json.string
+        |> JDP.required "url" decodeUrl
+        |> JDP.required "version" Json.string
+        |> JDP.required "width" Json.int
 
 
 {-| Decode a `Link`.
@@ -1132,45 +1371,31 @@ decodeLink =
         decodeOnType typeStr =
             case typeStr of
                 "Link.document" ->
-                    decode DocumentLink
+                    JDP.decode DocumentLink
                         |> requiredAt [ "value", "document" ] decodeDocumentReference
                         |> requiredAt [ "value", "isBroken" ] Json.bool
 
                 "Link.web" ->
-                    decode WebLink
+                    JDP.decode WebLink
                         |> requiredAt [ "value", "url" ] decodeUrl
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)
     in
-        Json.field "type" Json.string |> Json.andThen decodeOnType
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 decodeSliceZone : Json.Decoder SliceZone
 decodeSliceZone =
-    Json.list decodeSlice
+    Json.list (Json.lazy (\_ -> decodeSlice))
 
 
 decodeSlice : Json.Decoder Slice
 decodeSlice =
-    decode Slice
+    JDP.decode Slice
         |> optional "slice_label" (Json.maybe Json.string) Nothing
-        |> required "slice_type" Json.string
-        |> required "value" decodeSliceField
-
-
-decodeSliceField : Json.Decoder SliceField
-decodeSliceField =
-    let
-        decodeOnType typeStr =
-            case typeStr of
-                "StructuredText" ->
-                    Json.map SliceStructuredText (Json.field "value" decodeStructuredText)
-
-                _ ->
-                    Json.fail ("Unknown Slice field type: " ++ typeStr)
-    in
-        (Json.field "type" Json.string) |> Json.andThen decodeOnType
+        |> JDP.required "slice_type" Json.string
+        |> JDP.required "value" decodeDocumentField
 
 
 
@@ -1193,32 +1418,32 @@ asHtmlWithDefault linkResolver default documentType fieldName data =
                     Just
                         (case docs of
                             [ doc ] ->
-                                asHtml linkResolver doc
+                                fieldAsHtml linkResolver doc
 
                             _ ->
-                                div [] (List.map (asHtml linkResolver) docs)
+                                div [] (List.map (fieldAsHtml linkResolver) docs)
                         )
                 )
         )
 
 
-asHtml : (DocumentReference -> Url) -> DocumentField -> Html msg
-asHtml linkResolver field =
+fieldAsHtml : (DocumentReference -> Url) -> DocumentField -> Html msg
+fieldAsHtml linkResolver field =
     case field of
         Text t ->
-            span [] [ text t ]
+            span [] [ Html.text t ]
 
         Date t ->
-            span [] [ text t ]
+            span [] [ Html.text t ]
 
         Number n ->
-            span [] [ text (toString n) ]
+            span [] [ Html.text (toString n) ]
 
         Select t ->
-            span [] [ text t ]
+            span [] [ Html.text t ]
 
         Color t ->
-            span [] [ text ("<Color> " ++ t) ]
+            span [] [ Html.text ("<Color> " ++ t) ]
 
         Link l ->
             linkAsHtml linkResolver l
@@ -1237,6 +1462,7 @@ asHtml linkResolver field =
 
 You must supply a `linkResolver` to resolve any links in the `StructuredText`.
 If you don't care about this, you can use the `defaultLinkResolver`.
+
 -}
 structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
 structuredTextAsHtml linkResolver =
@@ -1302,16 +1528,16 @@ blockAsHtml el linkResolver field =
                 middle =
                     String.slice span.start span.end field.text
             in
-                ( childs ++ [ text beginning, (spanEl span) [ text middle ] ]
-                , span.end
-                )
-    in
-        el []
-            (field.spans
-                |> List.sortBy .start
-                |> List.foldl foldFn ( [], 0 )
-                |> (\( childs, index ) -> childs ++ [ text (String.dropLeft index field.text) ])
+            ( childs ++ [ Html.text beginning, spanEl span [ Html.text middle ] ]
+            , span.end
             )
+    in
+    el []
+        (field.spans
+            |> List.sortBy .start
+            |> List.foldl foldFn ( [], 0 )
+            |> (\( childs, index ) -> childs ++ [ Html.text (String.dropLeft index field.text) ])
+        )
 
 
 imageAsHtml : ImageView -> Html msg
@@ -1320,7 +1546,7 @@ imageAsHtml image =
         (Url urlStr) =
             image.url
     in
-        img [ src urlStr ] []
+    img [ src urlStr ] []
 
 
 embedAsHtml : Embed -> Html msg
@@ -1341,10 +1567,10 @@ linkAsHtml linkResolver link =
                 (Url url) =
                     linkResolver linkedDoc
             in
-                a [ href url ] [ text (toString linkedDoc.slug) ]
+            a [ href url ] [ Html.text (toString linkedDoc.slug) ]
 
         WebLink (Url url) ->
-            a [ href url ] [ text url ]
+            a [ href url ] [ Html.text url ]
 
 
 linkAsHtmlWith : (DocumentReference -> Url) -> Link -> List (Html msg) -> Html msg
@@ -1355,7 +1581,7 @@ linkAsHtmlWith linkResolver link childs =
                 (Url url) =
                     linkResolver linkedDoc
             in
-                a [ href url ] childs
+            a [ href url ] childs
 
         WebLink (Url url) ->
             a [ href url ] childs
@@ -1363,58 +1589,25 @@ linkAsHtmlWith linkResolver link childs =
 
 sliceAsHtml : (DocumentReference -> Url) -> Slice -> Html msg
 sliceAsHtml linkResolver slice =
-    case slice.sliceField of
-        SliceText string ->
-            span [] [ text string ]
-
-        SliceStructuredText structuredText ->
-            div [] (structuredTextAsHtml linkResolver structuredText)
-
-        SliceSelect string ->
-            span [] [ text string ]
-
-        SliceColor string ->
-            span [] [ text string ]
-
-        SliceImage imageViews ->
-            imageAsHtml (imageViews.main)
-
-        SliceNumber float ->
-            span [] [ text (toString float) ]
-
-        SliceDate string ->
-            span [] [ text string ]
-
-        SliceLink link ->
-            linkAsHtml linkResolver link
+    fieldAsHtml linkResolver slice.sliceField
 
 
 {-| Provide a default URL for `linkedDocuments`:
 
     Url "documents/doc.id/doc.slug"
+
 -}
 defaultLinkResolver : DocumentReference -> Url
 defaultLinkResolver linkedDoc =
     Url (String.join "/" [ "documents", linkedDoc.id, linkedDoc.slug ])
 
 
-viewDefaultDocType : DefaultDocType -> Html msg
-viewDefaultDocType doc =
-    let
-        allDocFields =
-            let
-                fieldsPerType =
-                    Dict.values doc
-
-                fieldsPerField =
-                    List.concatMap Dict.values fieldsPerType
-            in
-                List.concat fieldsPerField
-    in
-        div []
-            ([ h2 [] (List.map text (Dict.keys doc)) ]
-                ++ List.map (asHtml defaultLinkResolver) allDocFields
-            )
+viewDefaultDocType : Document -> Html msg
+viewDefaultDocType (Document doc) =
+    div []
+        ([ h2 [] (List.map Html.text (Dict.keys doc)) ]
+            ++ List.map (fieldAsHtml defaultLinkResolver) (Dict.values doc)
+        )
 
 
 {-| Get the first title out of some `StructuredText`, if there is one.
@@ -1436,7 +1629,7 @@ getTitle structuredText =
                 _ ->
                     False
     in
-        List.head (List.filter isTitle structuredText)
+    List.head (List.filter isTitle structuredText)
 
 
 {-| Get the first paragraph out of some `StructuredText`, if there is one.
@@ -1452,7 +1645,7 @@ getFirstParagraph structuredText =
                 _ ->
                     False
     in
-        List.head (List.filter isParagraph structuredText)
+    List.head (List.filter isParagraph structuredText)
 
 
 {-| Get the first image out of some `StructuredText`, if there is one.
@@ -1468,7 +1661,7 @@ getFirstImage structuredText =
                 _ ->
                     Nothing
     in
-        List.head (List.filterMap getImage structuredText)
+    List.head (List.filterMap getImage structuredText)
 
 
 {-| Get the contents of a single `StructuredText` element as a `String`.
@@ -1528,7 +1721,7 @@ mkUrl (Url base) params =
                 |> List.map joinParamPair
                 |> String.join "&"
     in
-        Url (base ++ sep ++ paramsPart)
+    Url (base ++ sep ++ paramsPart)
 
 
 requestToUrl : Request -> Url
@@ -1537,13 +1730,14 @@ requestToUrl request =
         (Ref refStr) =
             request.ref
     in
-        mkUrl request.action
-            (( "ref", refStr )
-                :: if String.isEmpty request.q then
+    mkUrl request.action
+        (( "ref", refStr )
+            :: (if String.isEmpty request.q then
                     []
-                   else
+                else
                     [ ( "q", request.q ) ]
-            )
+               )
+        )
 
 
 getRefById : String -> Api -> Maybe RefProperties
@@ -1566,7 +1760,7 @@ predicatesToStr predicates =
                         |> List.map wrapQuotes
                         |> String.join ", "
             in
-                "[" ++ valueStrs ++ "]"
+            "[" ++ valueStrs ++ "]"
 
         predicateToStr predicate =
             let
@@ -1584,22 +1778,22 @@ predicatesToStr predicates =
                         FullText fragment value ->
                             "fulltext(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
             in
-                "[:d = " ++ query ++ "]"
+            "[:d = " ++ query ++ "]"
     in
-        "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
+    "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
 
 
 getFromCache :
     Request
     -> Model_ api
-    -> Maybe Json.Value
+    -> Maybe (Response Document)
 getFromCache request prismic =
     Dict.get (requestToKey request) prismic.cache
 
 
 setInCache :
     Request
-    -> Json.Value
+    -> Response Document
     -> Model_ api
     -> Model_ api
 setInCache request response prismic =
