@@ -46,6 +46,7 @@ module Prismic
         , getText
         , getTexts
         , getTitle
+        , group
         , image
         , init
         , map
@@ -113,7 +114,8 @@ module Prismic
 
 ## Documents
 
-@docs Document, Decoder, decode, map, field, text, structuredText, image, sliceZone, slice
+@docs Document, Decoder, decode, map, field, text, structuredText, image, sliceZone, slice, group
+
 
 ### Field types
 
@@ -393,6 +395,7 @@ type DocumentField
     | Date String
     | Link Link
     | SliceZone SliceZone
+    | Groups (List Group)
 
 
 
@@ -491,7 +494,7 @@ text =
                     Ok text
 
                 _ ->
-                    Err "Expected a Text field."
+                    Err ("Expected a Text field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -506,7 +509,7 @@ structuredText =
                     Ok x
 
                 _ ->
-                    Err "Expected a StructuredText field."
+                    Err ("Expected a StructuredText field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -521,7 +524,7 @@ image =
                     Ok x
 
                 _ ->
-                    Err "Expected an Image field."
+                    Err ("Expected an Image field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -601,6 +604,26 @@ sliceZone decoders =
 
                 _ ->
                     Err "Expected a SliceZone field."
+        )
+
+
+{-| Decode a group.
+
+Groups are essentially Documents, so you pass `group` a Document `Decoder`.
+ -}
+group : Decoder a -> FieldDecoder (List a)
+group decoder =
+    FieldDecoder
+        (\field ->
+            case field of
+                Groups groups ->
+                    groups
+                        |> List.map Document
+                        |> List.map (decodeValue decoder)
+                        |> Result.collect
+
+                _ ->
+                    Err ("Expected a Group field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -750,6 +773,10 @@ type alias Slice =
 
     -- TODO: SliceField to exclude nested Slices?
     }
+
+
+type alias Group =
+    Dict String DocumentField
 
 
 
@@ -1204,6 +1231,9 @@ decodeDocumentField =
                 "SliceZone" ->
                     Json.map SliceZone (Json.field "value" decodeSliceZone)
 
+                "Group" ->
+                    Json.map Groups (Json.field "value" (Json.list (Json.dict (Json.lazy (\_ -> decodeDocumentField)))))
+
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
     in
@@ -1456,6 +1486,15 @@ fieldAsHtml linkResolver field =
 
         SliceZone slices ->
             div [] (List.map (sliceAsHtml linkResolver) slices)
+
+        Groups groups ->
+            div []
+                (groups
+                    |> List.map
+                        (\group ->
+                            div [] (Dict.values group |> List.map (fieldAsHtml linkResolver))
+                        )
+                )
 
 
 {-| Render some `StructuredText` as HTML.
