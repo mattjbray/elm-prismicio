@@ -46,5 +46,5 @@ watch:
 .PHONY: docs
 docs: documentation.json
 
-documentation.json: src/Prismic.elm
+documentation.json: $(shell find ./src -type f -name '*.elm')
 	elm-make --docs=documentation.json
