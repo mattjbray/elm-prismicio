@@ -7,7 +7,10 @@
         "src"
     ],
     "exposed-modules": [
-        "Prismic"
+        "Prismic",
+        "Prismic.Api",
+        "Prismic.Document",
+        "Prismic.Url"
     ],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
