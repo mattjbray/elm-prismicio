@@ -1,12 +1,18 @@
-module Prismic.Url exposing (Url(Url), withQuery)
+module Prismic.Url
+    exposing
+        ( Url(Url)
+        , decodeUrl
+        , withQuery
+        )
 
 {-|
 
-@docs Url, withQuery
+@docs Url, withQuery, decodeUrl
 
 -}
 
 import Http
+import Json.Decode as Json
 
 
 {-| Disambiguate `Url`s from `String`s
@@ -15,9 +21,17 @@ type Url
     = Url String
 
 
-{-| Add query parameters to a `Url` -}
-withQuery: List ( String, String ) -> Url -> Url
-withQuery  params (Url base) =
+{-| JSON Decoder for `Urls`.
+-}
+decodeUrl : Json.Decoder Url
+decodeUrl =
+    Json.map Url Json.string
+
+
+{-| Add query parameters to a `Url`
+-}
+withQuery : List ( String, String ) -> Url -> Url
+withQuery params (Url base) =
     let
         sep =
             if List.isEmpty params then

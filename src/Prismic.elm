@@ -65,8 +65,7 @@ module Prismic
 
 import Dict exposing (Dict)
 import Http
-import Prismic.Api exposing (..)
-import Prismic.Api.V1 exposing (..)
+import Prismic.Api exposing (Response, Api, Ref(Ref), RefProperties, decodeApi, decodeResponse)
 import Prismic.Document as Document exposing (Document)
 import Prismic.Url exposing (Url(Url), withQuery)
 import Result.Extra as Result

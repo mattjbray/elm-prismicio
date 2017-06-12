@@ -22,6 +22,8 @@ module Prismic.Document
         , StructuredTextBlock(..)
         , decode
         , decodeDocument
+        , decodeDocumentJson
+        , decodeDocumentReferenceJson
         , defaultLinkResolver
         , field
         , getFirstImage
@@ -93,13 +95,21 @@ following components.
 
 @docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
 
+## Internal
+
+JSON decoders used internally by `elm-prismicio`.
+
+@docs decodeDocumentJson, decodeDocumentReferenceJson
+
 -}
 
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, div, em, h1, h2, h3, img, li, p, strong, ul)
 import Html.Attributes exposing (href, property, src)
+import Json.Decode as Json
+import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
 import Json.Encode
-import Prismic.Url exposing (Url(Url))
+import Prismic.Url exposing (Url(Url), decodeUrl)
 import Result.Extra as Result
 
 
@@ -784,3 +794,257 @@ getTexts fields =
     fields
         |> List.map getText
         |> String.join " "
+
+
+{-| Decode a `Document` from JSON.
+-}
+decodeDocumentJson : Json.Decoder Document
+decodeDocumentJson =
+    Json.field "type" Json.string
+        |> Json.andThen
+            (\docType ->
+                Json.at [ "data", docType ] (Json.dict decodeDocumentField)
+            )
+        |> Json.map Document
+
+
+{-| Decode a `DocumentReference` from JSON. -}
+decodeDocumentReferenceJson : Json.Decoder DocumentReference
+decodeDocumentReferenceJson =
+    Json.decode DocumentReference
+        |> required "id" Json.string
+        |> required "slug" Json.string
+        |> required "tags" (Json.list Json.string)
+        |> required "type" Json.string
+
+
+decodeDocumentField : Json.Decoder DocumentField
+decodeDocumentField =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "Text" ->
+                    Json.map Text (Json.field "value" Json.string)
+
+                "Select" ->
+                    Json.map Select (Json.field "value" Json.string)
+
+                "Color" ->
+                    Json.map Color (Json.field "value" Json.string)
+
+                "Number" ->
+                    Json.map Number (Json.field "value" Json.float)
+
+                "Date" ->
+                    Json.map Date (Json.field "value" Json.string)
+
+                "Image" ->
+                    Json.map Image (Json.field "value" decodeImageViews)
+
+                "StructuredText" ->
+                    Json.map StructuredText (Json.field "value" decodeStructuredText)
+
+                "Link.document" ->
+                    Json.map Link decodeLink
+
+                "Link.web" ->
+                    Json.map Link decodeLink
+
+                "SliceZone" ->
+                    Json.map SliceZone (Json.field "value" decodeSliceZone)
+
+                "Group" ->
+                    Json.map Groups (Json.field "value" (Json.list (Json.dict (Json.lazy (\_ -> decodeDocumentField)))))
+
+                _ ->
+                    Json.fail ("Unknown document field type: " ++ typeStr)
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+{-| Decode some `StructuredText`.
+-}
+decodeStructuredText : Json.Decoder StructuredText
+decodeStructuredText =
+    Json.list decodeStructuredTextBlock
+
+
+{-| Decode an `ImageField`.
+-}
+decodeImageViews : Json.Decoder ImageViews
+decodeImageViews =
+    Json.decode ImageViews
+        |> required "main" decodeImageView
+        |> required "views" (Json.dict decodeImageView)
+
+
+decodeImageView : Json.Decoder ImageView
+decodeImageView =
+    Json.decode ImageView
+        |> required "alt" (Json.nullable Json.string)
+        |> required "copyright" (Json.nullable Json.string)
+        |> required "url" decodeUrl
+        |> required "dimensions" decodeImageDimensions
+
+
+decodeImageDimensions : Json.Decoder ImageDimensions
+decodeImageDimensions =
+    Json.decode ImageDimensions
+        |> required "width" Json.int
+        |> required "height" Json.int
+
+
+decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
+decodeStructuredTextBlock =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "heading1" ->
+                    Json.map Heading1 decodeBlock
+
+                "heading2" ->
+                    Json.map Heading2 decodeBlock
+
+                "heading3" ->
+                    Json.map Heading3 decodeBlock
+
+                "paragraph" ->
+                    Json.map Paragraph decodeBlock
+
+                "list-item" ->
+                    Json.map ListItem decodeBlock
+
+                "image" ->
+                    Json.map SImage decodeImageView
+
+                "embed" ->
+                    Json.map SEmbed (Json.field "oembed" decodeEmbed)
+
+                _ ->
+                    Json.fail ("Unknown structured field type: " ++ toString typeStr)
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+decodeBlock : Json.Decoder Block
+decodeBlock =
+    Json.decode Block
+        |> required "text" Json.string
+        |> required "spans" (Json.list decodeSpan)
+
+
+decodeSpan : Json.Decoder Span
+decodeSpan =
+    Json.decode Span
+        |> required "start" Json.int
+        |> required "end" Json.int
+        |> custom decodeSpanType
+
+
+decodeSpanType : Json.Decoder SpanElement
+decodeSpanType =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "em" ->
+                    Json.succeed Em
+
+                "strong" ->
+                    Json.succeed Strong
+
+                "hyperlink" ->
+                    Json.map Hyperlink (Json.field "data" decodeLink)
+
+                _ ->
+                    Json.fail ("Unknown span type: " ++ typeStr)
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+{-| Decode an `Embed` field.
+-}
+decodeEmbed : Json.Decoder Embed
+decodeEmbed =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "video" ->
+                    Json.map EVideo decodeEmbedVideo
+
+                "rich" ->
+                    Json.map ERich decodeEmbedRich
+
+                _ ->
+                    Json.fail ("Unknown embed type: " ++ typeStr)
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+decodeEmbedVideo : Json.Decoder EmbedVideo
+decodeEmbedVideo =
+    Json.decode EmbedVideo
+        |> required "author_name" Json.string
+        |> required "author_url" decodeUrl
+        |> required "embed_url" decodeUrl
+        |> required "height" Json.int
+        |> required "html" Json.string
+        |> required "provider_name" Json.string
+        |> required "provider_url" decodeUrl
+        |> required "thumbnail_height" Json.int
+        |> required "thumbnail_url" decodeUrl
+        |> required "thumbnail_width" Json.int
+        |> required "title" Json.string
+        |> required "version" Json.string
+        |> required "width" Json.int
+
+
+decodeEmbedRich : Json.Decoder EmbedRich
+decodeEmbedRich =
+    Json.decode EmbedRich
+        |> required "author_name" Json.string
+        |> required "author_url" decodeUrl
+        |> required "cache_age" Json.string
+        |> required "embed_url" decodeUrl
+        |> required "height" (Json.maybe Json.int)
+        |> required "html" Json.string
+        |> required "provider_name" Json.string
+        |> required "provider_url" decodeUrl
+        |> required "title" Json.string
+        |> required "url" decodeUrl
+        |> required "version" Json.string
+        |> required "width" Json.int
+
+
+{-| Decode a `Link`.
+-}
+decodeLink : Json.Decoder Link
+decodeLink =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "Link.document" ->
+                    Json.decode DocumentLink
+                        |> requiredAt [ "value", "document" ] decodeDocumentReferenceJson
+                        |> requiredAt [ "value", "isBroken" ] Json.bool
+
+                "Link.web" ->
+                    Json.decode WebLink
+                        |> requiredAt [ "value", "url" ] decodeUrl
+
+                _ ->
+                    Json.fail ("Unknown link type: " ++ typeStr)
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+decodeSliceZone : Json.Decoder SliceZone
+decodeSliceZone =
+    Json.list (Json.lazy (\_ -> decodeSlice))
+
+
+decodeSlice : Json.Decoder Slice
+decodeSlice =
+    Json.decode Slice
+        |> optional "slice_label" (Json.maybe Json.string) Nothing
+        |> required "slice_type" Json.string
+        |> required "value" decodeDocumentField

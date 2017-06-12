@@ -1,4 +1,17 @@
-module Prismic.Api exposing (..)
+module Prismic.Api
+    exposing
+        ( Api
+        , Experiments
+        , FieldType
+        , Form
+        , FormField
+        , Ref(Ref)
+        , RefProperties
+        , Response
+        , SearchResult
+        , decodeApi
+        , decodeResponse
+        )
 
 {-|
 
@@ -8,16 +21,22 @@ module Prismic.Api exposing (..)
 @docs Api, RefProperties, Ref, Form, FormField, FieldType, Experiments
 
 
-
 ## Response
 
 @docs Response, SearchResult
 
+
+## Internal
+
+@docs decodeApi, decodeResponse
+
 -}
 
 import Dict exposing (Dict)
-import Prismic.Document as Document
-import Prismic.Url exposing (Url)
+import Json.Decode as Json
+import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
+import Prismic.Document exposing (Document, DocumentReference, decodeDocumentJson, decodeDocumentReferenceJson)
+import Prismic.Url exposing (Url, decodeUrl)
 
 
 -- Types: API
@@ -106,8 +125,6 @@ type alias Experiments =
 
 
 
-
-
 -- RESPONSE
 
 
@@ -141,9 +158,117 @@ type alias SearchResult docType =
     { data : docType
     , href : Url
     , id : String
-    , linkedDocuments : List Document.DocumentReference
+    , linkedDocuments : List DocumentReference
     , slugs : List String
     , tags : List String
     , resultType : String
     , uid : Maybe String
     }
+
+
+
+-- DECODERS
+
+
+decodeRef : Json.Decoder Ref
+decodeRef =
+    Json.map Ref Json.string
+
+
+{-| Decode an `Api` from JSON.
+-}
+decodeApi : Json.Decoder Api
+decodeApi =
+    Json.decode Api
+        |> required "refs" (Json.list decodeRefProperties)
+        |> required "bookmarks" (Json.dict Json.string)
+        |> required "types" (Json.dict Json.string)
+        |> required "tags" (Json.list Json.string)
+        |> required "version" Json.string
+        |> required "forms" (Json.dict decodeForm)
+        |> required "oauth_initiate" Json.string
+        |> required "oauth_token" Json.string
+        |> required "license" Json.string
+        |> required "experiments" decodeExperiments
+
+
+decodeRefProperties : Json.Decoder RefProperties
+decodeRefProperties =
+    Json.decode RefProperties
+        |> required "id" Json.string
+        |> required "ref" decodeRef
+        |> required "label" Json.string
+        |> optional "isMasterRef" Json.bool False
+
+
+decodeForm : Json.Decoder Form
+decodeForm =
+    Json.decode Form
+        |> required "method" Json.string
+        |> required "enctype" Json.string
+        |> required "action" decodeUrl
+        |> required "fields" (Json.dict decodeFormField)
+        |> optional "rel" (Json.maybe Json.string) Nothing
+        |> optional "name" (Json.maybe Json.string) Nothing
+
+
+decodeFormField : Json.Decoder FormField
+decodeFormField =
+    Json.decode FormField
+        |> required "type" decodeFieldType
+        |> required "multiple" Json.bool
+        |> optional "default" (Json.maybe Json.string) Nothing
+
+
+decodeFieldType : Json.Decoder FieldType
+decodeFieldType =
+    let
+        decodeOnType str =
+            case str of
+                "String" ->
+                    Json.succeed String
+
+                "Integer" ->
+                    Json.succeed Integer
+
+                _ ->
+                    Json.fail ("Unknown field type: " ++ str)
+    in
+    Json.string |> Json.andThen decodeOnType
+
+
+decodeExperiments : Json.Decoder Experiments
+decodeExperiments =
+    Json.decode Experiments
+        |> required "draft" (Json.list Json.string)
+        |> required "running" (Json.list Json.string)
+
+
+{-| Decode a `Response` from JSON.
+-}
+decodeResponse : Json.Decoder (Response Document)
+decodeResponse =
+    Json.decode Response
+        |> required "license" Json.string
+        |> required "next_page" (Json.nullable decodeUrl)
+        |> required "page" Json.int
+        |> required "prev_page" (Json.nullable decodeUrl)
+        |> required "results" (Json.list decodeSearchResult)
+        |> required "results_per_page" Json.int
+        |> required "results_size" Json.int
+        |> required "total_pages" Json.int
+        |> required "total_results_size" Json.int
+        |> required "version" Json.string
+
+
+decodeSearchResult : Json.Decoder (SearchResult Document)
+decodeSearchResult =
+    Json.decode SearchResult
+        |> custom decodeDocumentJson
+        |> required "href" decodeUrl
+        |> required "id" Json.string
+        |> required "linked_documents" (Json.list decodeDocumentReferenceJson)
+        |> required "slugs" (Json.list Json.string)
+        |> required "tags" (Json.list Json.string)
+        |> required "type" Json.string
+        |> required "uid" (Json.nullable Json.string)
