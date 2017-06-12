@@ -15,7 +15,6 @@ module Prismic
         , fulltext
         , getApi
         , init
-        , none
         , query
         , ref
         , submit
@@ -36,7 +35,7 @@ module Prismic
 
 # Customising the request
 
-@docs ref, query, none
+@docs ref, query
 
 
 # Sending the request
@@ -301,28 +300,6 @@ query predicates requestTask =
                 )
     in
     requestTask |> Task.andThen addQuery
-
-
-{-| Pass the request through unmodified.
-
-Useful for conditionally adding a query.
-
-    fetchDocs model isQuery =
-        api model.prismic
-            |> form "everything"
-            |> (if isQuery then
-                    query [ at "title" "Hello World" ]
-                else
-                    none
-               )
-            |> submit myDocDecoder
-
--}
-none :
-    Task PrismicError ( Request, Model_ api )
-    -> Task PrismicError ( Request, Model_ api )
-none =
-    Task.map identity
 
 
 {-| Submit the request.
