@@ -1,9 +1,7 @@
 module Prismic.Document
     exposing
-        ( Block
-        , Decoder
-        , Document(..)
-        , DocumentField(..)
+        ( Decoder
+        , Document
         , DocumentReference
         , Embed(..)
         , EmbedRich
@@ -13,13 +11,9 @@ module Prismic.Document
         , ImageView
         , ImageViews
         , Link(DocumentLink, WebLink)
-        , Slice
         , SliceDecoder
-        , SliceZone
-        , Span
-        , SpanElement(..)
         , StructuredText
-        , StructuredTextBlock(..)
+        , StructuredTextBlock
         , decode
         , decodeDocument
         , decodeDocumentJson
@@ -38,6 +32,7 @@ module Prismic.Document
         , sliceZone
         , structuredText
         , structuredTextAsHtml
+        , structuredTextBlockAsHtml
         , text
         )
 
@@ -46,7 +41,7 @@ module Prismic.Document
 
 ## Documents
 
-@docs Document, DocumentField
+@docs Document
 
 
 ### Field types
@@ -57,7 +52,7 @@ following components.
 
 #### Structured Text
 
-@docs StructuredText, StructuredTextBlock, Block, Span, SpanElement
+@docs StructuredText, StructuredTextBlock
 
 
 #### Images
@@ -75,19 +70,14 @@ following components.
 @docs Link, DocumentReference
 
 
-#### Slices
-
-@docs SliceZone, Slice
-
-
 ## Decoding documents
 
-@docs Decoder, decode, decodeDocument, map, FieldDecoder, field, text, structuredText, image, SliceDecoder, sliceZone, slice, group
+@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, SliceDecoder, sliceZone, slice, group
 
 
 ## Viewing documents
 
-@docs structuredTextAsHtml
+@docs structuredTextAsHtml, structuredTextBlockAsHtml
 @docs defaultLinkResolver
 
 
@@ -95,11 +85,12 @@ following components.
 
 @docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
 
+
 ## Internal
 
 JSON decoders used internally by `elm-prismicio`.
 
-@docs decodeDocumentJson, decodeDocumentReferenceJson
+@docs decodeDocument, decodeDocumentJson, decodeDocumentReferenceJson
 
 -}
 
@@ -127,7 +118,7 @@ type Document
 -}
 type DocumentField
     = Text String
-    | StructuredText StructuredText
+    | StructuredTextField StructuredText
     | Select String
     | Color String
     | Image ImageViews
@@ -151,7 +142,7 @@ type Decoder a
     = Decoder (Document -> Result String a)
 
 
-{-| Decodes a `Document` field.
+{-| Decodes a field in a `Document`.
 -}
 type FieldDecoder a
     = FieldDecoder (DocumentField -> Result String a)
@@ -249,7 +240,7 @@ structuredText =
     FieldDecoder
         (\field ->
             case field of
-                StructuredText x ->
+                StructuredTextField x ->
                     Ok x
 
                 _ ->
@@ -300,7 +291,7 @@ oneOf sliceDecoders slice =
     go sliceDecoders []
 
 
-{-| Decode a Slice field.
+{-| Decode a slice in a slice zone.
 -}
 slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
 slice sliceType tagger (FieldDecoder fieldDecoder) =
@@ -357,7 +348,7 @@ sliceZone decoders =
 
 Groups are essentially Documents, so you pass `group` a Document `Decoder`.
 
-An example of a slice containing groups:
+Here is an example with a slice containing groups:
 
     type alias MyDoc =
         { slices : List Slice }
@@ -415,10 +406,13 @@ group decoder =
         )
 
 
-{-| `StructuredText` is a list of `StructuredTextBlock`s.
+{-| `StructuredText` can be rendered to HTML using `structuredTextAsHtml`.
+
+TODO: Custom rendering.
+
 -}
-type alias StructuredText =
-    List StructuredTextBlock
+type StructuredText
+    = StructuredText (List StructuredTextBlock)
 
 
 {-| An element of `StructuredText`.
@@ -485,6 +479,8 @@ type alias ImageDimensions =
 
 
 {-| Embed elements.
+
+TODO: Consolidate Embed types?
 -}
 type Embed
     = EVideo EmbedVideo
@@ -574,10 +570,12 @@ If you don't care about this, you can use the `defaultLinkResolver`.
 
 -}
 structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
-structuredTextAsHtml linkResolver =
-    List.map (structuredTextBlockAsHtml linkResolver)
+structuredTextAsHtml linkResolver (StructuredText blocks) =
+    List.map (structuredTextBlockAsHtml linkResolver) blocks
 
 
+{-| Render a single block of `StructuredText` as HTML.
+-}
 structuredTextBlockAsHtml : (DocumentReference -> Url) -> StructuredTextBlock -> Html msg
 structuredTextBlockAsHtml linkResolver field =
     case field of
@@ -709,7 +707,7 @@ defaultLinkResolver linkedDoc =
 {-| Get the first title out of some `StructuredText`, if there is one.
 -}
 getTitle : StructuredText -> Maybe StructuredTextBlock
-getTitle structuredText =
+getTitle (StructuredText structuredText) =
     let
         isTitle field =
             case field of
@@ -731,7 +729,7 @@ getTitle structuredText =
 {-| Get the first paragraph out of some `StructuredText`, if there is one.
 -}
 getFirstParagraph : StructuredText -> Maybe StructuredTextBlock
-getFirstParagraph structuredText =
+getFirstParagraph (StructuredText structuredText) =
     let
         isParagraph field =
             case field of
@@ -747,7 +745,7 @@ getFirstParagraph structuredText =
 {-| Get the first image out of some `StructuredText`, if there is one.
 -}
 getFirstImage : StructuredText -> Maybe ImageView
-getFirstImage structuredText =
+getFirstImage (StructuredText structuredText) =
     let
         getImage field =
             case field of
@@ -790,7 +788,7 @@ getText field =
 {-| Get the contents of a some `StructuredText` as a `String`.
 -}
 getTexts : StructuredText -> String
-getTexts fields =
+getTexts (StructuredText fields) =
     fields
         |> List.map getText
         |> String.join " "
@@ -808,7 +806,8 @@ decodeDocumentJson =
         |> Json.map Document
 
 
-{-| Decode a `DocumentReference` from JSON. -}
+{-| Decode a `DocumentReference` from JSON.
+-}
 decodeDocumentReferenceJson : Json.Decoder DocumentReference
 decodeDocumentReferenceJson =
     Json.decode DocumentReference
@@ -842,7 +841,7 @@ decodeDocumentField =
                     Json.map Image (Json.field "value" decodeImageViews)
 
                 "StructuredText" ->
-                    Json.map StructuredText (Json.field "value" decodeStructuredText)
+                    Json.map StructuredTextField (Json.field "value" decodeStructuredText)
 
                 "Link.document" ->
                     Json.map Link decodeLink
@@ -866,7 +865,7 @@ decodeDocumentField =
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
-    Json.list decodeStructuredTextBlock
+    Json.map StructuredText (Json.list decodeStructuredTextBlock)
 
 
 {-| Decode an `ImageField`.
