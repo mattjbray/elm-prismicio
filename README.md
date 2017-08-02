@@ -8,7 +8,7 @@ check out the `examples/` directory of this repo.
 
 ## Example
 
-First, you need to initialise the Prismic `Model`.
+First, you need to create your types and initialise the Prismic `Model`.
 
 ```elm
 import Prismic as P
@@ -53,9 +53,9 @@ init =
 To make a Prismic request, you need to do four things:
 
 1. Make sure we have fetched the API details.
-2. Select a Form.
+2. Select a Form (a kind of default query in Prismic).
 3. Optionally customise the Form's query.
-4. Submit the Request, providing a decoder to decode the documents in the
+4. Submit the Request, providing a decoder to marshal your documents from the
    result.
 
 In practice, it will look something like this:
@@ -83,7 +83,7 @@ update msg model =
         SetHomePage (Ok ( response, prismic )) ->
             ( { model
                   | prismic =
-                      P.collectResponses model.prismic prismic
+                      P.cache model.prismic prismic
                   , response =
                       Just response
               }
@@ -100,10 +100,3 @@ update msg model =
 If you have nested components that use Prismic, you'll need to thread the
 Prismic `Model` through your `init` and `update` functions. See the use of the
 `GlobalMsg` type in the `examples/` directory for one way of doing this.
-
-## Custom document types
-
-You should define your own Elm record type for each of your Prismic document
-types. You'll also need to define a Decoder for each of your Elm record types,
-and pass it to `Prismic.submit` so that the document can be marshalled into your
-Elm record type.

@@ -10,7 +10,7 @@ module Prismic
         , at
         , atL
         , bookmark
-        , collectResponses
+        , cache
         , form
         , fulltext
         , getApi
@@ -40,7 +40,7 @@ module Prismic
 
 # Sending the request
 
-@docs submit, collectResponses
+@docs submit, cache
 
 
 # Predicates
@@ -183,10 +183,10 @@ api (Model cache) =
                 (Url url) =
                     cache.url
             in
-            Task.map (\api -> ModelWithApi { cache | api = api })
-                (Task.mapError FetchApiError
-                    (Http.get url decodeApi |> Http.toTask)
-                )
+                Task.map (\api -> ModelWithApi { cache | api = api })
+                    (Task.mapError FetchApiError
+                        (Http.get url decodeApi |> Http.toTask)
+                    )
 
 
 {-| Choose a form on which to base the rest of the Prismic request.
@@ -208,31 +208,31 @@ form formId apiTask =
                 mRef =
                     getRefById defaultRefId cache.api
             in
-            case ( mForm, mRef ) of
-                ( Nothing, _ ) ->
-                    Task.fail (FormDoesNotExist formId)
+                case ( mForm, mRef ) of
+                    ( Nothing, _ ) ->
+                        Task.fail (FormDoesNotExist formId)
 
-                ( _, Nothing ) ->
-                    Task.fail (RefDoesNotExist defaultRefId)
+                    ( _, Nothing ) ->
+                        Task.fail (RefDoesNotExist defaultRefId)
 
-                ( Just form, Just masterRef ) ->
-                    let
-                        q =
-                            Maybe.withDefault ""
-                                (Dict.get "q" form.fields
-                                    |> Maybe.andThen .default
+                    ( Just form, Just masterRef ) ->
+                        let
+                            q =
+                                Maybe.withDefault ""
+                                    (Dict.get "q" form.fields
+                                        |> Maybe.andThen .default
+                                    )
+                        in
+                            Task.succeed
+                                ( Request
+                                    { action = form.action
+                                    , ref = masterRef.ref
+                                    , q = q
+                                    }
+                                , ModelWithApi cache
                                 )
-                    in
-                    Task.succeed
-                        ( Request
-                            { action = form.action
-                            , ref = masterRef.ref
-                            , q = q
-                            }
-                        , ModelWithApi cache
-                        )
     in
-    apiTask |> Task.andThen addForm
+        apiTask |> Task.andThen addForm
 
 
 {-| Convenience function for fetching a bookmarked document.
@@ -249,14 +249,14 @@ bookmark bookmarkId cacheTask =
                     mDocId =
                         Dict.get bookmarkId cacheWithApi.api.bookmarks
                 in
-                case mDocId of
-                    Nothing ->
-                        Task.fail (BookmarkDoesNotExist bookmarkId)
+                    case mDocId of
+                        Nothing ->
+                            Task.fail (BookmarkDoesNotExist bookmarkId)
 
-                    Just docId ->
-                        Task.succeed (ModelWithApi cacheWithApi)
-                            |> form "everything"
-                            |> query [ at "document.id" docId ]
+                        Just docId ->
+                            Task.succeed (ModelWithApi cacheWithApi)
+                                |> form "everything"
+                                |> query [ at "document.id" docId ]
             )
 
 
@@ -279,7 +279,7 @@ ref refId requestTask =
                         , ModelWithApi cache
                         )
     in
-    requestTask |> Task.andThen addRef
+        requestTask |> Task.andThen addRef
 
 
 {-| Override a Form's default query.
@@ -299,7 +299,7 @@ query predicates requestTask =
                 , cache
                 )
     in
-    requestTask |> Task.andThen addQuery
+        requestTask |> Task.andThen addQuery
 
 
 {-| Submit the request.
@@ -334,46 +334,46 @@ submit decodeDocType requestTask =
                         |> Task.fromResult
                         |> Task.mapError (\msg -> DecodeDocumentError msg)
             in
-            case getFromCache request cache of
-                Just response ->
-                    decodeResponseToUserDocType response
-                        |> Task.map (\response -> ( response, Model cacheWithApi ))
+                case getFromCache request cache of
+                    Just response ->
+                        decodeResponseToUserDocType response
+                            |> Task.map (\response -> ( response, Model cacheWithApi ))
 
-                Nothing ->
-                    Http.get url decodeResponse
-                        |> Http.toTask
-                        |> Task.mapError SubmitRequestError
-                        |> Task.andThen
-                            (\origResponse ->
-                                decodeResponseToUserDocType origResponse
-                                    |> Task.map
-                                        (\response ->
-                                            ( response
-                                            , Model (setInCache request origResponse cacheWithApi)
+                    Nothing ->
+                        Http.get url decodeResponse
+                            |> Http.toTask
+                            |> Task.mapError SubmitRequestError
+                            |> Task.andThen
+                                (\origResponse ->
+                                    decodeResponseToUserDocType origResponse
+                                        |> Task.map
+                                            (\response ->
+                                                ( response
+                                                , Model (setInCache request origResponse cacheWithApi)
+                                                )
                                             )
-                                        )
-                            )
+                                )
     in
-    requestTask |> Task.andThen doSubmit
+        requestTask |> Task.andThen doSubmit
 
 
 {-| The `submit` `Task` returns an updated Prismic `Model` with the request and
 response cached.
 
 In your app's `update` function, you should merge this with the existing cache
-using `collectResponses`.
+using `cache`.
 
     update msg model =
         case msg of
             MyPrismicMsg (Ok ( response, prismic )) ->
                 { model
                     | prismic =
-                        collectResponses model.prismic prismic
+                        cache model.prismic prismic
                 }
 
 -}
-collectResponses : Model -> Model -> Model
-collectResponses (Model model1) (Model model2) =
+cache : Model -> Model -> Model
+cache (Model model1) (Model model2) =
     Model
         { model2
             | cache = Dict.union model2.cache model1.cache
@@ -431,15 +431,15 @@ requestToUrl (Request request) =
         (Ref refStr) =
             request.ref
     in
-    request.action
-        |> withQuery
-            (( "ref", refStr )
-                :: (if String.isEmpty request.q then
-                        []
-                    else
-                        [ ( "q", request.q ) ]
-                   )
-            )
+        request.action
+            |> withQuery
+                (( "ref", refStr )
+                    :: (if String.isEmpty request.q then
+                            []
+                        else
+                            [ ( "q", request.q ) ]
+                       )
+                )
 
 
 getRefById : String -> Api -> Maybe RefProperties
@@ -462,7 +462,7 @@ predicatesToStr predicates =
                         |> List.map wrapQuotes
                         |> String.join ", "
             in
-            "[" ++ valueStrs ++ "]"
+                "[" ++ valueStrs ++ "]"
 
         predicateToStr predicate =
             let
@@ -480,9 +480,9 @@ predicatesToStr predicates =
                         FullText fragment value ->
                             "fulltext(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
             in
-            "[:d = " ++ query ++ "]"
+                "[:d = " ++ query ++ "]"
     in
-    "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
+        "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
 
 
 getFromCache :
