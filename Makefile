@@ -2,7 +2,7 @@
 all: docs examples
 
 .PHONY: examples
-examples: les-bonnes-choses
+examples: les-bonnes-choses sample-website
 
 .PHONY: les-bonnes-choses
 les-bonnes-choses: ../publish/js/app.js ../publish/index.html les-bonnes-choses-assets
@@ -19,6 +19,13 @@ les-bonnes-choses-assets: $(subst examples/les-bonnes-choses,../publish,$(shell 
 
 ../publish/assets/%: examples/les-bonnes-choses/assets/%
 	mkdir -p $(dir $@) && cp $< $@
+
+.PHONY: sample-website
+sample-website: examples/website/app.js
+
+examples/website/app.js: $(shell find . -type f -name '*.elm')
+	cd examples/website && \
+	elm-make --warn src/Main.elm --output app.js
 
 .PHONY: clean
 clean:
