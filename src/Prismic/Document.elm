@@ -280,8 +280,6 @@ link =
         )
 
 
-
-
 {-| Decodes a `Slice` field.
 -}
 type SliceDecoder a
@@ -313,6 +311,7 @@ oneOf sliceDecoders slice =
 {-| Decode a slice in a slice zone. The tagger is also passed the slice label.
 
 TODO: custom label decoders?
+
 -}
 labelledSlice : String -> (Maybe String -> a -> b) -> FieldDecoder a -> SliceDecoder b
 labelledSlice sliceType tagger (FieldDecoder fieldDecoder) =
@@ -327,12 +326,12 @@ labelledSlice sliceType tagger (FieldDecoder fieldDecoder) =
                 Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
         )
 
+
 {-| Decode a slice in a slice zone.
 -}
 slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
 slice sliceType tagger fieldDecoder =
     labelledSlice sliceType (\_ -> tagger) fieldDecoder
-
 
 
 {-| Decode a SliceZone.
@@ -509,6 +508,7 @@ type alias ImageDimensions =
 {-| Embed elements.
 
 TODO: Consolidate Embed types?
+
 -}
 type Embed
     = EVideo EmbedVideo
