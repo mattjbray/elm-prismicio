@@ -608,6 +608,7 @@ type Link
 -}
 type alias DocumentReference =
     { id : String
+    , uid : Maybe String
     , slug : String
     , tags : List String
     , linkedDocumentType : String
@@ -885,6 +886,7 @@ decodeDocumentReferenceJson : Json.Decoder DocumentReference
 decodeDocumentReferenceJson =
     Json.decode DocumentReference
         |> required "id" Json.string
+        |> Json.optional "uid" (Json.maybe Json.string) Nothing
         |> required "slug" Json.string
         |> required "tags" (Json.list Json.string)
         |> required "type" Json.string
