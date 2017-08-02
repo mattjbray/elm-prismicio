@@ -27,6 +27,7 @@ module Prismic.Document
         , getTitle
         , group
         , image
+        , link
         , map
         , slice
         , sliceZone
@@ -72,7 +73,7 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, SliceDecoder, sliceZone, slice, group
+@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, link, SliceDecoder, sliceZone, slice, group
 
 
 ## Viewing documents
@@ -261,6 +262,23 @@ image =
                 _ ->
                     Err ("Expected an Image field, but got '" ++ toString field ++ "'.")
         )
+
+
+{-| Decode a Link field.
+-}
+link : FieldDecoder Link
+link =
+    FieldDecoder
+        (\field ->
+            case field of
+                Link x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Link field, but got '" ++ toString field ++ "'.")
+        )
+
+
 
 
 {-| Decodes a `Slice` field.
