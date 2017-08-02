@@ -3,6 +3,7 @@ module Main exposing (main)
 import Documents.Homepage exposing (Homepage, decodeHomepage)
 import Documents.Menu exposing (Menu, decodeMenu)
 import Html exposing (Html)
+import Html.Attributes as Html
 import Pages.Homepage
 import Prismic
 import Prismic.Api as Prismic
@@ -45,10 +46,6 @@ init =
             }
     in
     ( model, fetchHomePage model.prismic )
-
-
-
--- model ! []
 
 
 type alias PrismicResult a =
@@ -126,14 +123,37 @@ fetchMenu prismic =
 
 view : Model -> Html Msg
 view model =
-    case model.page of
-        Homepage ->
-            Maybe.map2 Pages.Homepage.view
-                model.menu
-                model.doc
-                |> Maybe.withDefault loading
+    Html.div []
+        [ case model.page of
+            Homepage ->
+                Maybe.map2 Pages.Homepage.view
+                    model.menu
+                    model.doc
+                    |> Maybe.withDefault loading
+        , viewFooter
+        ]
 
 
 loading : Html msg
 loading =
     Html.text "..."
+
+
+viewFooter : Html msg
+viewFooter =
+    Html.footer []
+        [ Html.p []
+            [ Html.text "Proudly published with "
+            , Html.a [ Html.href "https://prismic.io", Html.target "_blank" ]
+                [ Html.text "prismic.io"
+                ]
+            , Html.br [] []
+            , Html.a [ Html.href "https://prismic.io", Html.target "_blank" ]
+                [ Html.img
+                    [ Html.class "footer-logo"
+                    , Html.src "https://website-sample.herokuapp.com/images/logo-prismic.svg"
+                    ]
+                    []
+                ]
+            ]
+        ]
