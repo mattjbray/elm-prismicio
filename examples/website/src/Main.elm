@@ -2,13 +2,14 @@ module Main exposing (main)
 
 import Documents.Homepage exposing (Homepage, decodeHomepage)
 import Documents.Menu exposing (Menu, decodeMenu)
-import Documents.Page exposing (Page, decodePage)
+import Documents.Page exposing (decodePage)
 import Html exposing (Html)
 import Html.Attributes as Html
 import Pages.Homepage
 import Pages.Page
 import Prismic
 import Prismic.Api as Prismic
+import Prismic.Document as Prismic
 import Prismic.Url exposing (Url(Url))
 import Task
 
@@ -29,12 +30,13 @@ type alias Model =
         Maybe Homepage
     , menu : Maybe Menu
     , page : Page
+    , pageDoc : Maybe Documents.Page.Page
     }
 
 
 type Page
     = Homepage
-    | Page Documents.Page.Page
+    | Page
 
 
 init : ( Model, Cmd Msg )
@@ -46,6 +48,7 @@ init =
             , doc = Nothing
             , menu = Nothing
             , page = Homepage
+            , pageDoc = Nothing
             }
     in
     ( model, fetchHomePage model.prismic )
@@ -58,6 +61,8 @@ type alias PrismicResult a =
 type Msg
     = HomepageResponse (PrismicResult Homepage)
     | MenuResponse (PrismicResult Menu)
+    | PageResponse (PrismicResult Documents.Page.Page)
+    | NavigateTo Prismic.DocumentReference
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -105,6 +110,38 @@ update msg model =
             in
             model ! []
 
+        PageResponse (Ok ( result, prismic )) ->
+            ( { model
+                | prismic =
+                    Prismic.cache model.prismic prismic
+                , pageDoc =
+                    result.results
+                        |> List.head
+                        |> Maybe.map .data
+              }
+            , Cmd.none
+            )
+
+        PageResponse (Err err) ->
+            let
+                _ =
+                    Debug.log "err" err
+            in
+            model ! []
+
+        NavigateTo ref ->
+            case ref.uid of
+                Just "homepage" ->
+                    ( { model | page = Homepage }, Cmd.none )
+
+                Just "about" ->
+                    ( { model | page = Page, pageDoc = Nothing }
+                    , fetchPage model.prismic "about"
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 fetchHomePage : Prismic.Model -> Cmd Msg
 fetchHomePage prismic =
@@ -124,6 +161,15 @@ fetchMenu prismic =
         |> Task.attempt MenuResponse
 
 
+fetchPage : Prismic.Model -> String -> Cmd Msg
+fetchPage prismic uid =
+    Prismic.api prismic
+        |> Prismic.form "everything"
+        |> Prismic.query [ Prismic.at "my.page.uid" uid ]
+        |> Prismic.submit decodePage
+        |> Task.attempt PageResponse
+
+
 view : Model -> Html Msg
 view model =
     Html.div []
@@ -134,9 +180,10 @@ view model =
                     model.doc
                     |> Maybe.withDefault loading
 
-            Page page ->
-                model.menu
-                    |> Maybe.map (\menu -> Pages.Page.view menu page)
+            Page ->
+                Maybe.map2 Pages.Page.view
+                    model.menu
+                    model.pageDoc
                     |> Maybe.withDefault loading
         , viewFooter
         ]
