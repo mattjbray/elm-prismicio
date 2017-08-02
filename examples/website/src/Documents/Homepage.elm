@@ -4,8 +4,8 @@ import Prismic.Document
     exposing
         ( Decoder
         , ImageViews
-        , StructuredText
         , Link
+        , StructuredText
         , decode
         , field
         , group
@@ -30,7 +30,8 @@ type alias Homepage =
 
 
 type BodySlice
-    = TextSection (Maybe String) StructuredText
+    = Heading StructuredText
+    | TextSection (Maybe String) StructuredText
     | Highlight (List HighlightGroup)
     | FullWidthImage ImageViews
     | Gallery (List GalleryGroup)
@@ -58,14 +59,17 @@ decodeHomepage =
         |> field "tagline" structuredText
         |> field "buttonText" text
         |> field "backgroundImage" image
-        |> field "body"
-            (sliceZone
-                [ labelledSlice "textSection" TextSection structuredText
-                , slice "highlight" Highlight (group decodeHighlightGroup)
-                , slice "fullWidthImage" FullWidthImage image
-                , slice "gallery" Gallery (group decodeGalleryGroup)
-                ]
-            )
+        |> field "body" bodySliceZone
+
+
+bodySliceZone : Prismic.Document.FieldDecoder (List BodySlice)
+bodySliceZone =
+    sliceZone
+        [ labelledSlice "textSection" TextSection structuredText
+        , slice "highlight" Highlight (group decodeHighlightGroup)
+        , slice "fullWidthImage" FullWidthImage image
+        , slice "gallery" Gallery (group decodeGalleryGroup)
+        ]
 
 
 decodeHighlightGroup : Decoder HighlightGroup
