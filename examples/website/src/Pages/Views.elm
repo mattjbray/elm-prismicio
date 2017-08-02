@@ -1,9 +1,10 @@
-module Pages.Views exposing (viewBodySlice, viewHeader)
+module Pages.Views exposing (linkAttrs, viewBodySlice, viewHeader)
 
 import Documents.Homepage exposing (BodySlice(..), GalleryGroup, HighlightGroup, Homepage)
 import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
+import Html.Events as Html
 import Prismic.Document as Prismic
 import Prismic.Url exposing (Url(Url))
 
@@ -13,12 +14,25 @@ asHtml =
     Prismic.structuredTextAsHtml Prismic.defaultLinkResolver
 
 
-viewHeader : Menu -> Html msg
+linkAttrs : Prismic.Link -> List (Html.Attribute Prismic.DocumentReference)
+linkAttrs link =
+    case link of
+        Prismic.DocumentLink ref _ ->
+            [ Html.onClick ref, Html.href "#" ]
+
+        Prismic.WebLink (Url url) ->
+            [ Html.href url ]
+
+
+viewHeader : Menu -> Html Prismic.DocumentReference
 viewHeader menu =
     let
         viewLink link =
             Html.li []
-                [ Html.a [ Html.href "/" ] [ Html.text link.label ] ]
+                [ Html.a
+                    (linkAttrs link.link)
+                    [ Html.text link.label ]
+                ]
     in
     Html.header [ Html.class "site-header" ]
         [ Html.a [ Html.href "./" ]

@@ -24,6 +24,7 @@ type alias Homepage =
     { title : StructuredText
     , tagline : StructuredText
     , buttonText : String
+    , buttonLink : Link
     , backgroundImage : ImageViews
     , body : List BodySlice
     }
@@ -58,6 +59,7 @@ decodeHomepage =
         |> field "title" structuredText
         |> field "tagline" structuredText
         |> field "buttonText" text
+        |> field "buttonLink" link
         |> field "backgroundImage" image
         |> field "body" bodySliceZone
 
@@ -65,7 +67,8 @@ decodeHomepage =
 bodySliceZone : Prismic.Document.FieldDecoder (List BodySlice)
 bodySliceZone =
     sliceZone
-        [ labelledSlice "textSection" TextSection structuredText
+        [ slice "heading" Heading structuredText
+        , labelledSlice "textSection" TextSection structuredText
         , slice "highlight" Highlight (group decodeHighlightGroup)
         , slice "fullWidthImage" FullWidthImage image
         , slice "gallery" Gallery (group decodeGalleryGroup)

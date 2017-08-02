@@ -4,12 +4,12 @@ import Documents.Homepage exposing (Homepage)
 import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
-import Pages.Views exposing (viewBodySlice, viewHeader)
+import Pages.Views exposing (linkAttrs, viewBodySlice, viewHeader)
 import Prismic.Document as Prismic
 import Prismic.Url exposing (Url(Url))
 
 
-view : Menu -> Homepage -> Html msg
+view : Menu -> Homepage -> Html Prismic.DocumentReference
 view menu homepage =
     Html.div [ Html.class "homepage" ]
         [ viewHeader menu
@@ -19,7 +19,7 @@ view menu homepage =
         ]
 
 
-viewBanner : Homepage -> Html msg
+viewBanner : Homepage -> Html Prismic.DocumentReference
 viewBanner homepage =
     let
         (Url imgSrc) =
@@ -40,7 +40,7 @@ viewBanner homepage =
                 [ Html.text (Prismic.getTexts homepage.title) ]
             , Html.p [ Html.class "banner-description" ]
                 [ Html.text (Prismic.getTexts homepage.tagline) ]
-            , Html.a [ Html.class "banner-button", Html.href "/about" ]
-                [ Html.text "Learn more" ]
+            , Html.a (Html.class "banner-button" :: linkAttrs homepage.buttonLink)
+                [ Html.text homepage.buttonText ]
             ]
         ]

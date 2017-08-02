@@ -4,7 +4,7 @@ import Documents.Homepage exposing (Homepage, decodeHomepage)
 import Documents.Menu exposing (Menu, decodeMenu)
 import Documents.Page exposing (decodePage)
 import Html exposing (Html)
-import Html.Attributes as Html
+import Html.Attributes exposing (class, href, src, target)
 import Pages.Homepage
 import Pages.Page
 import Prismic
@@ -130,13 +130,13 @@ update msg model =
             model ! []
 
         NavigateTo ref ->
-            case ref.uid of
-                Just "homepage" ->
+            case (ref.linkedDocumentType, ref.uid) of
+                ("homepage", Just "homepage") ->
                     ( { model | page = Homepage }, Cmd.none )
 
-                Just "about" ->
+                ("page", Just uid) ->
                     ( { model | page = Page, pageDoc = Nothing }
-                    , fetchPage model.prismic "about"
+                    , fetchPage model.prismic uid
                     )
 
                 _ ->
@@ -179,12 +179,14 @@ view model =
                     model.menu
                     model.doc
                     |> Maybe.withDefault loading
+                    |> Html.map NavigateTo
 
             Page ->
                 Maybe.map2 Pages.Page.view
                     model.menu
                     model.pageDoc
                     |> Maybe.withDefault loading
+                    |> Html.map NavigateTo
         , viewFooter
         ]
 
@@ -199,14 +201,14 @@ viewFooter =
     Html.footer []
         [ Html.p []
             [ Html.text "Proudly published with "
-            , Html.a [ Html.href "https://prismic.io", Html.target "_blank" ]
+            , Html.a [ href "https://prismic.io", target "_blank" ]
                 [ Html.text "prismic.io"
                 ]
             , Html.br [] []
-            , Html.a [ Html.href "https://prismic.io", Html.target "_blank" ]
+            , Html.a [ href "https://prismic.io", target "_blank" ]
                 [ Html.img
-                    [ Html.class "footer-logo"
-                    , Html.src "https://website-sample.herokuapp.com/images/logo-prismic.svg"
+                    [ class "footer-logo"
+                    , src "https://website-sample.herokuapp.com/images/logo-prismic.svg"
                     ]
                     []
                 ]
