@@ -27,6 +27,7 @@ module Prismic.Document
         , getTitle
         , group
         , image
+        , labelledSlice
         , link
         , map
         , slice
@@ -73,7 +74,7 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, link, SliceDecoder, sliceZone, slice, group
+@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
 
 
 ## Viewing documents
@@ -309,20 +310,29 @@ oneOf sliceDecoders slice =
     go sliceDecoders []
 
 
-{-| Decode a slice in a slice zone.
+{-| Decode a slice in a slice zone. The tagger is also passed the slice label.
+
+TODO: custom label decoders?
 -}
-slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
-slice sliceType tagger (FieldDecoder fieldDecoder) =
+labelledSlice : String -> (Maybe String -> a -> b) -> FieldDecoder a -> SliceDecoder b
+labelledSlice sliceType tagger (FieldDecoder fieldDecoder) =
     SliceDecoder
         (\slice ->
             if sliceType == slice.sliceType then
                 fieldDecoder slice.sliceField
-                    |> Result.map tagger
+                    |> Result.map (tagger slice.sliceLabel)
                     |> Result.mapError
                         (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
             else
                 Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
         )
+
+{-| Decode a slice in a slice zone.
+-}
+slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
+slice sliceType tagger fieldDecoder =
+    labelledSlice sliceType (\_ -> tagger) fieldDecoder
+
 
 
 {-| Decode a SliceZone.
