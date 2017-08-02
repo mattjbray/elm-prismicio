@@ -30,6 +30,7 @@ module Prismic.Document
         , labelledSlice
         , link
         , map
+        , optional
         , slice
         , sliceZone
         , structuredText
@@ -74,7 +75,7 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, field, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
+@docs Decoder, decode, map, FieldDecoder, field, optional, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
 
 
 ## Viewing documents
@@ -100,7 +101,7 @@ import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, div, em, h1, h2, h3, img, li, p, strong, ul)
 import Html.Attributes exposing (href, property, src)
 import Json.Decode as Json
-import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
+import Json.Decode.Pipeline as Json exposing (custom, required, requiredAt)
 import Json.Encode
 import Prismic.Url exposing (Url(Url), decodeUrl)
 import Result.Extra as Result
@@ -166,6 +167,11 @@ decode doc =
     Decoder (\_ -> Ok doc)
 
 
+fail : String -> Decoder a
+fail msg =
+    Decoder (\_ -> Err msg)
+
+
 {-| Internal: Run a `Decoder` against a `Document`.
 -}
 decodeDocument : Decoder a -> Document -> Result String a
@@ -199,25 +205,64 @@ apply (Decoder f) (Decoder a) =
         )
 
 
+andThen : (a -> Decoder b) -> Decoder a -> Decoder b
+andThen f (Decoder a) =
+    Decoder
+        (\doc ->
+            case a doc of
+                Ok x ->
+                    let
+                        (Decoder g) =
+                            f x
+                    in
+                    g doc
+
+                Err err ->
+                    Err err
+        )
+
+
 {-| Decode a field.
 -}
 field : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
 field key valDecoder decoder =
-    apply decoder (fieldKey key valDecoder)
+    apply decoder
+        (fieldKey key valDecoder
+            |> andThen
+                (\res ->
+                    case res of
+                        Just x ->
+                            decode x
+
+                        Nothing ->
+                            fail ("No field at " ++ key)
+                )
+        )
 
 
-fieldKey : String -> FieldDecoder a -> Decoder a
+fieldKey : String -> FieldDecoder a -> Decoder (Maybe a)
 fieldKey key (FieldDecoder fieldDecoder) =
     Decoder
         (\(Document doc) ->
             case Dict.get key doc of
                 Just field ->
                     fieldDecoder field
-                        |> Result.mapError (\msg -> "While decoding field '" ++ key ++ "': " ++ msg)
+                        |> Result.map Just
+                        |> Result.mapError
+                            (\msg ->
+                                "While decoding field '" ++ key ++ "': " ++ msg
+                            )
 
                 Nothing ->
-                    Err ("No field at " ++ key)
+                    Ok Nothing
         )
+
+
+{-| Decode a field that might be missing.
+-}
+optional : String -> FieldDecoder a -> Decoder (Maybe a -> b) -> Decoder b
+optional key valDecoder decoder =
+    apply decoder (fieldKey key valDecoder)
 
 
 {-| Decode a Text field.
@@ -1072,6 +1117,6 @@ decodeSliceZone =
 decodeSlice : Json.Decoder Slice
 decodeSlice =
     Json.decode Slice
-        |> optional "slice_label" (Json.maybe Json.string) Nothing
+        |> Json.optional "slice_label" (Json.maybe Json.string) Nothing
         |> required "slice_type" Json.string
         |> required "value" decodeDocumentField
