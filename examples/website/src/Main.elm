@@ -2,9 +2,11 @@ module Main exposing (main)
 
 import Documents.Homepage exposing (Homepage, decodeHomepage)
 import Documents.Menu exposing (Menu, decodeMenu)
+import Documents.Page exposing (Page, decodePage)
 import Html exposing (Html)
 import Html.Attributes as Html
 import Pages.Homepage
+import Pages.Page
 import Prismic
 import Prismic.Api as Prismic
 import Prismic.Url exposing (Url(Url))
@@ -32,6 +34,7 @@ type alias Model =
 
 type Page
     = Homepage
+    | Page Documents.Page.Page
 
 
 init : ( Model, Cmd Msg )
@@ -129,6 +132,11 @@ view model =
                 Maybe.map2 Pages.Homepage.view
                     model.menu
                     model.doc
+                    |> Maybe.withDefault loading
+
+            Page page ->
+                model.menu
+                    |> Maybe.map (\menu -> Pages.Page.view menu page)
                     |> Maybe.withDefault loading
         , viewFooter
         ]
