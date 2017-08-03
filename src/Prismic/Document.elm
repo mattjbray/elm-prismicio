@@ -11,10 +11,10 @@ module Prismic.Document
         , ImageView
         , ImageViews
         , Link(DocumentLink, WebLink)
+        , LinkResolver
         , SliceDecoder
         , StructuredText
         , StructuredTextBlock
-        , LinkResolver
         , decode
         , decodeDocument
         , decodeDocumentJson
@@ -638,13 +638,15 @@ type alias Slice =
 type alias Group =
     Dict String DocumentField
 
+
 {-| A `LinkResolver` simply converts a Prismic `DocumentReference` to a list of
 `Html.Attribute`s. `structuredTextAsHtml` and friends add these attributes to
 links in the text.
 
 For example, you can use this to add `onClick` handlers to links:
 
-    type Msg = NavigateTo DocumentReference
+    type Msg
+        = NavigateTo DocumentReference
 
     myLinkResolver : LinkResolver Msg
     myLinkResolver docRef =
@@ -658,8 +660,10 @@ For example, you can use this to add `onClick` handlers to links:
 
 Your `update` function would handle the `NavigateTo` message and perform the
 appropriate routing.
+
 -}
-type alias LinkResolver msg = DocumentReference -> List (Html.Attribute msg)
+type alias LinkResolver msg =
+    DocumentReference -> List (Html.Attribute msg)
 
 
 {-| Render some `StructuredText` as HTML.
@@ -769,15 +773,11 @@ embedAsHtml embed =
             div [ property "innerHTML" (Json.Encode.string props.html) ] []
 
 
-linkAsHtml : (DocumentReference -> Url) -> Link -> Html msg
+linkAsHtml : LinkResolver msg -> Link -> Html msg
 linkAsHtml linkResolver link =
     case link of
         DocumentLink linkedDoc isBroken ->
-            let
-                (Url url) =
-                    linkResolver linkedDoc
-            in
-            a [ href url ] [ Html.text (toString linkedDoc.slug) ]
+            a (linkResolver linkedDoc) [ Html.text (toString linkedDoc.slug) ]
 
         WebLink (Url url) ->
             a [ href url ] [ Html.text url ]
