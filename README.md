@@ -3,7 +3,7 @@
 
 An Elm SDK for [Prismic.io](https://prismic.io).
 
-For a complete [example application](http://blog.mattjbray.com/elm-prismicio),
+For a complete [example application](https://mattjbray.github.io/elm-prismicio),
 check out the `examples/` directory of this repo.
 
 ## Usage
