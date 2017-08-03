@@ -11,7 +11,6 @@ import Pages.Page
 import Prismic
 import Prismic.Api as Prismic
 import Prismic.Document as Prismic
-import Prismic.Url exposing (Url(Url))
 import Task
 
 
@@ -44,7 +43,7 @@ init =
     let
         model =
             { prismic =
-                Prismic.init (Url "https://mattjbray-testing.prismic.io/api")
+                Prismic.init "https://mattjbray-testing.prismic.io/api"
             , currentPage = Homepage
             , menu = Nothing
             , homepage = Nothing

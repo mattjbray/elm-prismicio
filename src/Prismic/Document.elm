@@ -104,7 +104,6 @@ import Html.Attributes exposing (class, href, property, src)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
 import Json.Encode
-import Prismic.Url exposing (Url(Url), decodeUrl)
 import Result.Extra as Result
 
 
@@ -539,7 +538,7 @@ type alias ImageViews =
 type alias ImageView =
     { alt : Maybe String
     , copyright : Maybe String
-    , url : Url
+    , url : String
     , dimensions : ImageDimensions
     }
 
@@ -566,14 +565,14 @@ type Embed
 -}
 type alias EmbedVideo =
     { authorName : String
-    , authorUrl : Url
-    , embedUrl : Url
+    , authorUrl : String
+    , embedUrl : String
     , height : Int
     , html : String
     , providerName : String
-    , providerUrl : Url
+    , providerUrl : String
     , thumbnailHeight : Int
-    , thumbnailUrl : Url
+    , thumbnailUrl : String
     , thumbnailWidth : Int
     , title : String
     , version : String
@@ -585,15 +584,15 @@ type alias EmbedVideo =
 -}
 type alias EmbedRich =
     { authorName : String
-    , authorUrl : Url
+    , authorUrl : String
     , cacheAge : String
-    , embedUrl : Url
+    , embedUrl : String
     , height : Maybe Int
     , html : String
     , providerName : String
-    , providerUrl : Url
+    , providerUrl : String
     , title : String
-    , url : Url
+    , url : String
     , version : String
     , width : Int
     }
@@ -603,7 +602,7 @@ type alias EmbedRich =
 -}
 type Link
     = DocumentLink DocumentReference Bool
-    | WebLink Url
+    | WebLink String
 
 
 {-| A reference to a Prismic document.
@@ -756,11 +755,7 @@ blockAsHtml el linkResolver field =
 
 imageAsHtml : ImageView -> Html msg
 imageAsHtml image =
-    let
-        (Url urlStr) =
-            image.url
-    in
-    img [ src urlStr ] []
+    img [ src image.url ] []
 
 
 embedAsHtml : Embed -> Html msg
@@ -779,7 +774,7 @@ linkAsHtml linkResolver link =
         DocumentLink linkedDoc isBroken ->
             a (linkResolver linkedDoc) [ Html.text (toString linkedDoc.slug) ]
 
-        WebLink (Url url) ->
+        WebLink url ->
             a [ href url ] [ Html.text url ]
 
 
@@ -789,7 +784,7 @@ linkAsHtmlWith linkResolver link childs =
         DocumentLink linkedDoc isBroken ->
             a (linkResolver linkedDoc) childs
 
-        WebLink (Url url) ->
+        WebLink url ->
             a [ href url ] childs
 
 
@@ -982,7 +977,7 @@ decodeImageView =
     Json.decode ImageView
         |> Json.required "alt" (Json.nullable Json.string)
         |> Json.required "copyright" (Json.nullable Json.string)
-        |> Json.required "url" decodeUrl
+        |> Json.required "url" Json.string
         |> Json.required "dimensions" decodeImageDimensions
 
 
@@ -1084,14 +1079,14 @@ decodeEmbedVideo : Json.Decoder EmbedVideo
 decodeEmbedVideo =
     Json.decode EmbedVideo
         |> Json.required "author_name" Json.string
-        |> Json.required "author_url" decodeUrl
-        |> Json.required "embed_url" decodeUrl
+        |> Json.required "author_url" Json.string
+        |> Json.required "embed_url" Json.string
         |> Json.required "height" Json.int
         |> Json.required "html" Json.string
         |> Json.required "provider_name" Json.string
-        |> Json.required "provider_url" decodeUrl
+        |> Json.required "provider_url" Json.string
         |> Json.required "thumbnail_height" Json.int
-        |> Json.required "thumbnail_url" decodeUrl
+        |> Json.required "thumbnail_url" Json.string
         |> Json.required "thumbnail_width" Json.int
         |> Json.required "title" Json.string
         |> Json.required "version" Json.string
@@ -1102,15 +1097,15 @@ decodeEmbedRich : Json.Decoder EmbedRich
 decodeEmbedRich =
     Json.decode EmbedRich
         |> Json.required "author_name" Json.string
-        |> Json.required "author_url" decodeUrl
+        |> Json.required "author_url" Json.string
         |> Json.required "cache_age" Json.string
-        |> Json.required "embed_url" decodeUrl
+        |> Json.required "embed_url" Json.string
         |> Json.required "height" (Json.maybe Json.int)
         |> Json.required "html" Json.string
         |> Json.required "provider_name" Json.string
-        |> Json.required "provider_url" decodeUrl
+        |> Json.required "provider_url" Json.string
         |> Json.required "title" Json.string
-        |> Json.required "url" decodeUrl
+        |> Json.required "url" Json.string
         |> Json.required "version" Json.string
         |> Json.required "width" Json.int
 
@@ -1129,7 +1124,7 @@ decodeLink =
 
                 "Link.web" ->
                     Json.decode WebLink
-                        |> Json.requiredAt [ "value", "url" ] decodeUrl
+                        |> Json.requiredAt [ "value", "url" ] Json.string
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)

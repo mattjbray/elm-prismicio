@@ -64,9 +64,8 @@ module Prismic
 
 import Dict exposing (Dict)
 import Http
-import Prismic.Api exposing (Response, Api, Ref(Ref), RefProperties, decodeApi, decodeResponse)
+import Prismic.Api exposing (Api, Ref(Ref), RefProperties, Response, decodeApi, decodeResponse)
 import Prismic.Document as Document exposing (Document)
-import Prismic.Url exposing (Url(Url), withQuery)
 import Result.Extra as Result
 import String
 import Task exposing (Task)
@@ -101,7 +100,7 @@ You will be using the specialised `Model` type in user code.
 -}
 type alias Model_ api =
     { api : api
-    , url : Url
+    , url : String
     , nextRequestId : Int
     , cache : Dict String (Response Document.Document)
     }
@@ -137,7 +136,7 @@ type PrismicError
 -}
 type Request
     = Request
-        { action : Url
+        { action : String
         , ref : Ref
         , q : String
         }
@@ -155,11 +154,11 @@ this in your application's Model somewhere.
 
     init =
         { prismic =
-            Prismic.init (Url "https://lesbonneschoses.prismic.io/api")
+            Prismic.init "https://lesbonneschoses.prismic.io/api"
         }
 
 -}
-init : Url -> Model
+init : String -> Model
 init url =
     Model
         { api = Nothing
@@ -179,14 +178,10 @@ api (Model cache) =
             Task.succeed (ModelWithApi { cache | api = api })
 
         Nothing ->
-            let
-                (Url url) =
-                    cache.url
-            in
-                Task.map (\api -> ModelWithApi { cache | api = api })
-                    (Task.mapError FetchApiError
-                        (Http.get url decodeApi |> Http.toTask)
-                    )
+            Task.map (\api -> ModelWithApi { cache | api = api })
+                (Task.mapError FetchApiError
+                    (Http.get cache.url decodeApi |> Http.toTask)
+                )
 
 
 {-| Choose a form on which to base the rest of the Prismic request.
@@ -208,31 +203,31 @@ form formId apiTask =
                 mRef =
                     getRefById defaultRefId cache.api
             in
-                case ( mForm, mRef ) of
-                    ( Nothing, _ ) ->
-                        Task.fail (FormDoesNotExist formId)
+            case ( mForm, mRef ) of
+                ( Nothing, _ ) ->
+                    Task.fail (FormDoesNotExist formId)
 
-                    ( _, Nothing ) ->
-                        Task.fail (RefDoesNotExist defaultRefId)
+                ( _, Nothing ) ->
+                    Task.fail (RefDoesNotExist defaultRefId)
 
-                    ( Just form, Just masterRef ) ->
-                        let
-                            q =
-                                Maybe.withDefault ""
-                                    (Dict.get "q" form.fields
-                                        |> Maybe.andThen .default
-                                    )
-                        in
-                            Task.succeed
-                                ( Request
-                                    { action = form.action
-                                    , ref = masterRef.ref
-                                    , q = q
-                                    }
-                                , ModelWithApi cache
+                ( Just form, Just masterRef ) ->
+                    let
+                        q =
+                            Maybe.withDefault ""
+                                (Dict.get "q" form.fields
+                                    |> Maybe.andThen .default
                                 )
+                    in
+                    Task.succeed
+                        ( Request
+                            { action = form.action
+                            , ref = masterRef.ref
+                            , q = q
+                            }
+                        , ModelWithApi cache
+                        )
     in
-        apiTask |> Task.andThen addForm
+    apiTask |> Task.andThen addForm
 
 
 {-| Convenience function for fetching a bookmarked document.
@@ -249,14 +244,14 @@ bookmark bookmarkId cacheTask =
                     mDocId =
                         Dict.get bookmarkId cacheWithApi.api.bookmarks
                 in
-                    case mDocId of
-                        Nothing ->
-                            Task.fail (BookmarkDoesNotExist bookmarkId)
+                case mDocId of
+                    Nothing ->
+                        Task.fail (BookmarkDoesNotExist bookmarkId)
 
-                        Just docId ->
-                            Task.succeed (ModelWithApi cacheWithApi)
-                                |> form "everything"
-                                |> query [ at "document.id" docId ]
+                    Just docId ->
+                        Task.succeed (ModelWithApi cacheWithApi)
+                            |> form "everything"
+                            |> query [ at "document.id" docId ]
             )
 
 
@@ -279,7 +274,7 @@ ref refId requestTask =
                         , ModelWithApi cache
                         )
     in
-        requestTask |> Task.andThen addRef
+    requestTask |> Task.andThen addRef
 
 
 {-| Override a Form's default query.
@@ -299,7 +294,7 @@ query predicates requestTask =
                 , cache
                 )
     in
-        requestTask |> Task.andThen addQuery
+    requestTask |> Task.andThen addQuery
 
 
 {-| Submit the request.
@@ -316,9 +311,6 @@ submit decodeDocType requestTask =
     let
         doSubmit ( request, ModelWithApi cache ) =
             let
-                (Url url) =
-                    requestToUrl request
-
                 cacheWithApi =
                     { cache | api = Just cache.api }
 
@@ -334,27 +326,27 @@ submit decodeDocType requestTask =
                         |> Task.fromResult
                         |> Task.mapError (\msg -> DecodeDocumentError msg)
             in
-                case getFromCache request cache of
-                    Just response ->
-                        decodeResponseToUserDocType response
-                            |> Task.map (\response -> ( response, Model cacheWithApi ))
+            case getFromCache request cache of
+                Just response ->
+                    decodeResponseToUserDocType response
+                        |> Task.map (\response -> ( response, Model cacheWithApi ))
 
-                    Nothing ->
-                        Http.get url decodeResponse
-                            |> Http.toTask
-                            |> Task.mapError SubmitRequestError
-                            |> Task.andThen
-                                (\origResponse ->
-                                    decodeResponseToUserDocType origResponse
-                                        |> Task.map
-                                            (\response ->
-                                                ( response
-                                                , Model (setInCache request origResponse cacheWithApi)
-                                                )
+                Nothing ->
+                    Http.get (requestToUrl request) decodeResponse
+                        |> Http.toTask
+                        |> Task.mapError SubmitRequestError
+                        |> Task.andThen
+                            (\origResponse ->
+                                decodeResponseToUserDocType origResponse
+                                    |> Task.map
+                                        (\response ->
+                                            ( response
+                                            , Model (setInCache request origResponse cacheWithApi)
                                             )
-                                )
+                                        )
+                            )
     in
-        requestTask |> Task.andThen doSubmit
+    requestTask |> Task.andThen doSubmit
 
 
 {-| The `submit` `Task` returns an updated Prismic `Model` with the request and
@@ -425,21 +417,41 @@ fulltext fragment value =
 -- INTERNAL: State
 
 
-requestToUrl : Request -> Url
+withQuery : List ( String, String ) -> String -> String
+withQuery params base =
+    let
+        sep =
+            if List.isEmpty params then
+                ""
+            else
+                "?"
+
+        joinParamPair ( key, val ) =
+            Http.encodeUri key ++ "=" ++ Http.encodeUri val
+
+        paramsPart =
+            params
+                |> List.map joinParamPair
+                |> String.join "&"
+    in
+    base ++ sep ++ paramsPart
+
+
+requestToUrl : Request -> String
 requestToUrl (Request request) =
     let
         (Ref refStr) =
             request.ref
     in
-        request.action
-            |> withQuery
-                (( "ref", refStr )
-                    :: (if String.isEmpty request.q then
-                            []
-                        else
-                            [ ( "q", request.q ) ]
-                       )
-                )
+    request.action
+        |> withQuery
+            (( "ref", refStr )
+                :: (if String.isEmpty request.q then
+                        []
+                    else
+                        [ ( "q", request.q ) ]
+                   )
+            )
 
 
 getRefById : String -> Api -> Maybe RefProperties
@@ -462,7 +474,7 @@ predicatesToStr predicates =
                         |> List.map wrapQuotes
                         |> String.join ", "
             in
-                "[" ++ valueStrs ++ "]"
+            "[" ++ valueStrs ++ "]"
 
         predicateToStr predicate =
             let
@@ -480,9 +492,9 @@ predicatesToStr predicates =
                         FullText fragment value ->
                             "fulltext(" ++ fragment ++ ", " ++ wrapQuotes value ++ ")"
             in
-                "[:d = " ++ query ++ "]"
+            "[:d = " ++ query ++ "]"
     in
-        "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
+    "[" ++ String.concat (List.map predicateToStr predicates) ++ "]"
 
 
 getFromCache :

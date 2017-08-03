@@ -5,7 +5,6 @@ import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
 import Prismic.Document as Prismic
-import Prismic.Url exposing (Url(Url))
 
 
 asHtml : Prismic.StructuredText -> List (Html msg)
@@ -19,11 +18,11 @@ linkAttrs linkResolver link =
         Prismic.DocumentLink ref _ ->
             linkResolver ref
 
-        Prismic.WebLink (Url url) ->
+        Prismic.WebLink url ->
             [ Html.href url ]
 
 
-viewHeader :(Prismic.LinkResolver msg) -> Menu -> Html msg
+viewHeader : Prismic.LinkResolver msg -> Menu -> Html msg
 viewHeader linkResolver menu =
     let
         viewLink link =
@@ -92,10 +91,6 @@ viewHighlights groups =
     let
         viewGroup : HighlightGroup -> Html msg
         viewGroup group =
-            let
-                (Url imgSrc) =
-                    group.image.main.url
-            in
             Html.section
                 [ Html.class "highlight"
                 , Html.class "content-section"
@@ -119,7 +114,7 @@ viewHighlights groups =
                         ]
                     )
                 , Html.div [ Html.class "highlight-right" ]
-                    [ Html.img [ Html.src imgSrc ] [] ]
+                    [ Html.img [ Html.src group.image.main.url ] [] ]
                 ]
     in
     Html.div []
@@ -128,12 +123,8 @@ viewHighlights groups =
 
 viewFullWidthImage : Prismic.ImageViews -> Html msg
 viewFullWidthImage image =
-    let
-        (Url imgSrc) =
-            image.main.url
-    in
     Html.section [ Html.class "full-width-image", Html.class "content-section" ]
-        [ Html.img [ Html.src imgSrc ] [] ]
+        [ Html.img [ Html.src image.main.url ] [] ]
 
 
 viewGallery : List GalleryGroup -> Html msg
@@ -141,12 +132,8 @@ viewGallery groups =
     let
         viewItem : GalleryGroup -> Html msg
         viewItem item =
-            let
-                (Url imgSrc) =
-                    item.image.main.url
-            in
             Html.div [ Html.class "gallery-item" ]
-                (Html.img [ Html.src imgSrc ] []
+                (Html.img [ Html.src item.image.main.url ] []
                     :: asHtml item.description
                 )
     in

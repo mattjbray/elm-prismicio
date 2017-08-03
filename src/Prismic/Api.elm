@@ -36,7 +36,6 @@ import Dict exposing (Dict)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
 import Prismic.Document exposing (Document, DocumentReference, decodeDocumentJson, decodeDocumentReferenceJson)
-import Prismic.Url exposing (Url, decodeUrl)
 
 
 -- Types: API
@@ -90,7 +89,7 @@ These are used to construct a default query.
 type alias Form =
     { method : String
     , enctype : String
-    , action : Url
+    , action : String
     , fields : Dict String FormField
     , rel : Maybe String
     , name : Maybe String
@@ -136,9 +135,9 @@ you pass to `submit`.
 -}
 type alias Response docType =
     { license : String
-    , nextPage : Maybe Url
+    , nextPage : Maybe String
     , page : Int
-    , prevPage : Maybe Url
+    , prevPage : Maybe String
     , results : List (SearchResult docType)
     , resultsPerPage : Int
     , resultsSize : Int
@@ -156,7 +155,7 @@ you pass to `submit`.
 -}
 type alias SearchResult docType =
     { data : docType
-    , href : Url
+    , href : String
     , id : String
     , linkedDocuments : List DocumentReference
     , slugs : List String
@@ -206,7 +205,7 @@ decodeForm =
     Json.decode Form
         |> required "method" Json.string
         |> required "enctype" Json.string
-        |> required "action" decodeUrl
+        |> required "action" Json.string
         |> required "fields" (Json.dict decodeFormField)
         |> optional "rel" (Json.maybe Json.string) Nothing
         |> optional "name" (Json.maybe Json.string) Nothing
@@ -250,9 +249,9 @@ decodeResponse : Json.Decoder (Response Document)
 decodeResponse =
     Json.decode Response
         |> required "license" Json.string
-        |> required "next_page" (Json.nullable decodeUrl)
+        |> required "next_page" (Json.nullable Json.string)
         |> required "page" Json.int
-        |> required "prev_page" (Json.nullable decodeUrl)
+        |> required "prev_page" (Json.nullable Json.string)
         |> required "results" (Json.list decodeSearchResult)
         |> required "results_per_page" Json.int
         |> required "results_size" Json.int
@@ -265,7 +264,7 @@ decodeSearchResult : Json.Decoder (SearchResult Document)
 decodeSearchResult =
     Json.decode SearchResult
         |> custom decodeDocumentJson
-        |> required "href" decodeUrl
+        |> required "href" Json.string
         |> required "id" Json.string
         |> required "linked_documents" (Json.list decodeDocumentReferenceJson)
         |> required "slugs" (Json.list Json.string)

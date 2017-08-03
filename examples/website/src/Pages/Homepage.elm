@@ -6,7 +6,6 @@ import Html exposing (Html)
 import Html.Attributes as Html
 import Pages.Views exposing (linkAttrs, viewBodySlice, viewHeader)
 import Prismic.Document as Prismic
-import Prismic.Url exposing (Url(Url))
 
 
 view : Prismic.LinkResolver msg -> Menu -> Homepage -> Html msg
@@ -21,16 +20,12 @@ view linkResolver menu homepage =
 
 viewBanner : Prismic.LinkResolver msg -> Homepage -> Html msg
 viewBanner linkResolver homepage =
-    let
-        (Url imgSrc) =
-            homepage.backgroundImage.main.url
-    in
     Html.section
         [ Html.class "homepage-banner"
         , Html.attribute "style"
             ([ "background-image: linear-gradient(rgba(0, 0, 0, 0.4)"
              , "rgba(0, 0, 0, 0.6))"
-             , "url(" ++ imgSrc ++ ")"
+             , "url(" ++ homepage.backgroundImage.main.url ++ ")"
              ]
                 |> String.join ", "
             )

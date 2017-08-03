@@ -9,8 +9,7 @@
     "exposed-modules": [
         "Prismic",
         "Prismic.Api",
-        "Prismic.Document",
-        "Prismic.Url"
+        "Prismic.Document"
     ],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
