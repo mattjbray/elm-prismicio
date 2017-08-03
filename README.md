@@ -6,7 +6,7 @@ An Elm SDK for [Prismic.io](https://prismic.io).
 For a complete [example application](http://blog.mattjbray.com/elm-prismicio),
 check out the `examples/` directory of this repo.
 
-## Example
+## Usage
 
 First, you need to create your types and initialise the Prismic `Model`.
 
@@ -100,3 +100,16 @@ update msg model =
 If you have nested components that use Prismic, you'll need to thread the
 Prismic `Model` through your `init` and `update` functions. See the use of the
 `GlobalMsg` type in the `examples/` directory for one way of doing this.
+
+
+## Example
+
+The example appliation in `examples/website` implements the [sample website from
+Prismic.io](https://user-guides.prismic.io/examples/nodejs-samples/sample-multi-page-site-with-navigation-in-nodejs).
+
+To run it:
+
+```
+make examples
+open examples/website/index.html
+```
