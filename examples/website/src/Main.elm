@@ -1,8 +1,8 @@
 module Main exposing (main)
 
-import Documents.Homepage exposing (Homepage, decodeHomepage)
-import Documents.Menu exposing (Menu, decodeMenu)
-import Documents.Page exposing (decodePage)
+import Documents.Homepage
+import Documents.Menu
+import Documents.Page
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src, target)
 import Html.Events exposing (onClick)
@@ -27,11 +27,10 @@ main =
 
 type alias Model =
     { prismic : Prismic.Model
-    , doc :
-        Maybe Homepage
-    , menu : Maybe Menu
-    , page : Page
-    , pageDoc : Maybe Documents.Page.Page
+    , currentPage : Page
+    , menu : Maybe Documents.Menu.Menu
+    , homepage : Maybe Documents.Homepage.Homepage
+    , page : Maybe Documents.Page.Page
     }
 
 
@@ -46,10 +45,10 @@ init =
         model =
             { prismic =
                 Prismic.init (Url "https://mattjbray-testing.prismic.io/api")
-            , doc = Nothing
+            , currentPage = Homepage
             , menu = Nothing
-            , page = Homepage
-            , pageDoc = Nothing
+            , homepage = Nothing
+            , page = Nothing
             }
     in
     ( model, fetchHomePage model.prismic )
@@ -60,8 +59,8 @@ type alias PrismicResult a =
 
 
 type Msg
-    = HomepageResponse (PrismicResult Homepage)
-    | MenuResponse (PrismicResult Menu)
+    = HomepageResponse (PrismicResult Documents.Homepage.Homepage)
+    | MenuResponse (PrismicResult Documents.Menu.Menu)
     | PageResponse (PrismicResult Documents.Page.Page)
     | NavigateTo Prismic.DocumentReference
 
@@ -82,7 +81,7 @@ update msg model =
             ( { model
                 | prismic =
                     newPrismic
-                , doc =
+                , homepage =
                     result.results
                         |> List.head
                         |> Maybe.map .data
@@ -120,7 +119,7 @@ update msg model =
             ( { model
                 | prismic =
                     Prismic.cache model.prismic prismic
-                , pageDoc =
+                , page =
                     result.results
                         |> List.head
                         |> Maybe.map .data
@@ -136,12 +135,12 @@ update msg model =
             model ! []
 
         NavigateTo ref ->
-            case (ref.linkedDocumentType, ref.uid) of
-                ("homepage", Just "homepage") ->
-                    ( { model | page = Homepage }, Cmd.none )
+            case ( ref.linkedDocumentType, ref.uid ) of
+                ( "homepage", Just "homepage" ) ->
+                    ( { model | currentPage = Homepage }, Cmd.none )
 
-                ("page", Just uid) ->
-                    ( { model | page = Page, pageDoc = Nothing }
+                ( "page", Just uid ) ->
+                    ( { model | currentPage = Page, page = Nothing }
                     , fetchPage model.prismic uid
                     )
 
@@ -154,7 +153,7 @@ fetchHomePage prismic =
     Prismic.api prismic
         |> Prismic.form "everything"
         |> Prismic.query [ Prismic.at "my.homepage.uid" "homepage" ]
-        |> Prismic.submit decodeHomepage
+        |> Prismic.submit Documents.Homepage.decodeHomepage
         |> Task.attempt HomepageResponse
 
 
@@ -163,7 +162,7 @@ fetchMenu prismic =
     Prismic.api prismic
         |> Prismic.form "everything"
         |> Prismic.query [ Prismic.at "my.menu.uid" "main-nav" ]
-        |> Prismic.submit decodeMenu
+        |> Prismic.submit Documents.Menu.decodeMenu
         |> Task.attempt MenuResponse
 
 
@@ -172,24 +171,24 @@ fetchPage prismic uid =
     Prismic.api prismic
         |> Prismic.form "everything"
         |> Prismic.query [ Prismic.at "my.page.uid" uid ]
-        |> Prismic.submit decodePage
+        |> Prismic.submit Documents.Page.decodePage
         |> Task.attempt PageResponse
 
 
 view : Model -> Html Msg
 view model =
     Html.div []
-        [ case model.page of
+        [ case model.currentPage of
             Homepage ->
                 Maybe.map2 (Pages.Homepage.view linkResolver)
                     model.menu
-                    model.doc
+                    model.homepage
                     |> Maybe.withDefault loading
 
             Page ->
                 Maybe.map2 (Pages.Page.view linkResolver)
                     model.menu
-                    model.pageDoc
+                    model.page
                     |> Maybe.withDefault loading
         , viewFooter
         ]
