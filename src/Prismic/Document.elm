@@ -99,7 +99,7 @@ JSON decoders used internally by `elm-prismicio`.
 
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, div, em, h1, h2, h3, img, li, p, strong, ul)
-import Html.Attributes exposing (href, property, src)
+import Html.Attributes exposing (class, href, property, src)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json exposing (custom, required, requiredAt)
 import Json.Encode
@@ -504,6 +504,7 @@ type StructuredTextBlock
 type alias Block =
     { text : String
     , spans : List Span
+    , label : Maybe String
     }
 
 
@@ -713,7 +714,11 @@ blockAsHtml el linkResolver field =
             , span.end
             )
     in
-    el []
+    el
+        (field.label
+            |> Maybe.map (\label -> [ class label ])
+            |> Maybe.withDefault []
+        )
         (field.spans
             |> List.sortBy .start
             |> List.foldl foldFn ( [], 0 )
@@ -1005,6 +1010,7 @@ decodeBlock =
     Json.decode Block
         |> required "text" Json.string
         |> required "spans" (Json.list decodeSpan)
+        |> Json.optional "label" (Json.maybe Json.string) Nothing
 
 
 decodeSpan : Json.Decoder Span
