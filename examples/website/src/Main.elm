@@ -5,6 +5,7 @@ import Documents.Menu exposing (Menu, decodeMenu)
 import Documents.Page exposing (decodePage)
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src, target)
+import Html.Events exposing (onClick)
 import Pages.Homepage
 import Pages.Page
 import Prismic
@@ -63,6 +64,11 @@ type Msg
     | MenuResponse (PrismicResult Menu)
     | PageResponse (PrismicResult Documents.Page.Page)
     | NavigateTo Prismic.DocumentReference
+
+
+linkResolver : Prismic.DocumentReference -> List (Html.Attribute Msg)
+linkResolver ref =
+    [ onClick (NavigateTo ref), href "#" ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -175,18 +181,16 @@ view model =
     Html.div []
         [ case model.page of
             Homepage ->
-                Maybe.map2 Pages.Homepage.view
+                Maybe.map2 (Pages.Homepage.view linkResolver)
                     model.menu
                     model.doc
                     |> Maybe.withDefault loading
-                    |> Html.map NavigateTo
 
             Page ->
-                Maybe.map2 Pages.Page.view
+                Maybe.map2 (Pages.Page.view linkResolver)
                     model.menu
                     model.pageDoc
                     |> Maybe.withDefault loading
-                    |> Html.map NavigateTo
         , viewFooter
         ]
 

@@ -9,18 +9,18 @@ import Prismic.Document as Prismic
 import Prismic.Url exposing (Url(Url))
 
 
-view : Menu -> Homepage -> Html Prismic.DocumentReference
-view menu homepage =
+view : Prismic.LinkResolver msg -> Menu -> Homepage -> Html msg
+view linkResolver menu homepage =
     Html.div [ Html.class "homepage" ]
-        [ viewHeader menu
-        , viewBanner homepage
+        [ viewHeader linkResolver menu
+        , viewBanner linkResolver homepage
         , Html.div [ Html.class "container" ]
             (List.map viewBodySlice homepage.body)
         ]
 
 
-viewBanner : Homepage -> Html Prismic.DocumentReference
-viewBanner homepage =
+viewBanner : Prismic.LinkResolver msg -> Homepage -> Html msg
+viewBanner linkResolver homepage =
     let
         (Url imgSrc) =
             homepage.backgroundImage.main.url
@@ -40,7 +40,7 @@ viewBanner homepage =
                 [ Html.text (Prismic.getTexts homepage.title) ]
             , Html.p [ Html.class "banner-description" ]
                 [ Html.text (Prismic.getTexts homepage.tagline) ]
-            , Html.a (Html.class "banner-button" :: linkAttrs homepage.buttonLink)
+            , Html.a (Html.class "banner-button" :: linkAttrs linkResolver homepage.buttonLink)
                 [ Html.text homepage.buttonText ]
             ]
         ]

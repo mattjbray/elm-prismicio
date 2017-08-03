@@ -8,10 +8,10 @@ import Pages.Views exposing (viewBodySlice, viewHeader)
 import Prismic.Document as Prismic
 
 
-view : Menu -> Page -> Html Prismic.DocumentReference
-view menu page =
+view : Prismic.LinkResolver msg -> Menu -> Page -> Html msg
+view linkResolver menu page =
     Html.div []
-        [ viewHeader menu
+        [ viewHeader linkResolver menu
         , Html.div [ Html.class "container" ]
             (List.map viewBodySlice page.body)
         ]
