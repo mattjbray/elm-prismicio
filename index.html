@@ -1,73 +1,19 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8"/>
-        <title>Les bonnes choses</title>
+        <meta charset="UTF-8" />
+        <title>Sample Elm Primic.io website</title>
+        <link rel="stylesheet" href="https://website-sample.herokuapp.com/stylesheets/reset.css">
+        <link rel="stylesheet" href="https://website-sample.herokuapp.com/stylesheets/common.css">
+        <link rel="stylesheet" href="https://website-sample.herokuapp.com/stylesheets/style.css">
+        <link href="https://fonts.googleapis.com/css?family=Lato:400,700,900,400italic,700italic" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body>
-        <script src="//maps.googleapis.com/maps/api/js"></script>
-        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript" src="app.js"></script>
         <script type="text/javascript">
          var app = Elm.Main.fullscreen();
-
-         app.ports.googleMap.subscribe(function(args) {
-
-             var elementId = args[0],
-                 address = args[1];
-
-             function doIt() {
-
-                 var mapDiv = document.getElementById(elementId);
-
-                 if (!mapDiv) {
-
-                     // Element hasn't been created yet, try again later.
-                     setTimeout(doIt, 100);
-                     return;
-
-                 }
-
-                 new google.maps.Geocoder().geocode({'address': address}, function(results, status) {
-
-                     if (results && results[0]) {
-
-                         var location = results[0].geometry.location;
-
-                         var mapOptions = {
-                             center: location,
-                             zoom: 16,
-                             mapTypeId: google.maps.MapTypeId.ROADMAP
-                         };
-
-                         var map = new google.maps.Map(mapDiv, mapOptions);
-
-                         map.setOptions({styles: [
-                             {
-                                 "featureType": "poi",
-                                 "stylers": [
-                                     { "saturation": -100 },
-                                     { "visibility": "off" }
-                                 ]
-                             },{
-                                 "stylers": [
-                                     { "saturation": -100 }
-                                 ]
-                             }
-                         ]});
-
-                         var marker = new google.maps.Marker({
-                             position: results[0].geometry.location,
-                             map: map,
-                             title: 'Les Bonnes Choses'
-                         });
-
-                     }
-
-                 });
-             }
-
-             doIt();
-         });
         </script>
     </body>
 </html>
