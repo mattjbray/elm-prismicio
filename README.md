@@ -52,7 +52,7 @@ init =
 
 To make a Prismic request, you need to do four things:
 
-1. Make sure we have fetched the API details.
+1. Make sure we have fetched the API metadata.
 2. Select a Form (a kind of default query in Prismic).
 3. Optionally customise the Form's query.
 4. Submit the Request, providing a decoder to marshal your documents from the
@@ -76,6 +76,9 @@ fetchHomePage prismic =
 
 When you handle `SetHomePage` in your app's `update` function, you should
 combine the `prismic` value in your model with the one returned in the tuple.
+
+This adds the API metadata and document results to the cache in the Prismic
+model, so we don't have to fetch them again next time.
 
 ```elm
 update msg model =
