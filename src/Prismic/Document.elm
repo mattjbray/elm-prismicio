@@ -14,6 +14,7 @@ module Prismic.Document
         , SliceDecoder
         , StructuredText
         , StructuredTextBlock
+        , LinkResolver
         , decode
         , decodeDocument
         , decodeDocumentJson
@@ -81,7 +82,7 @@ following components.
 ## Viewing documents
 
 @docs structuredTextAsHtml, structuredTextBlockAsHtml
-@docs defaultLinkResolver
+@docs LinkResolver, defaultLinkResolver
 
 
 ### `StructuredText` helpers
@@ -637,21 +638,44 @@ type alias Slice =
 type alias Group =
     Dict String DocumentField
 
+{-| A `LinkResolver` simply converts a Prismic `DocumentReference` to a list of
+`Html.Attribute`s. `structuredTextAsHtml` and friends add these attributes to
+links in the text.
+
+For example, you can use this to add `onClick` handlers to links:
+
+    type Msg = NavigateTo DocumentReference
+
+    myLinkResolver : LinkResolver Msg
+    myLinkResolver docRef =
+        [ Html.Attributes.href ""
+        , Html.Events.onClick (NavigateTo docRef)
+        ]
+
+    view : StructuredText -> Html Msg
+    view myStructuredText =
+        structuredTextAsHtml myLinkResolver myStructuredText
+
+Your `update` function would handle the `NavigateTo` message and perform the
+appropriate routing.
+-}
+type alias LinkResolver msg = DocumentReference -> List (Html.Attribute msg)
+
 
 {-| Render some `StructuredText` as HTML.
 
-You must supply a `linkResolver` to resolve any links in the `StructuredText`.
+You must supply a `LinkResolver` to resolve any links in the `StructuredText`.
 If you don't care about this, you can use the `defaultLinkResolver`.
 
 -}
-structuredTextAsHtml : (DocumentReference -> Url) -> StructuredText -> List (Html msg)
+structuredTextAsHtml : LinkResolver msg -> StructuredText -> List (Html msg)
 structuredTextAsHtml linkResolver (StructuredText blocks) =
     List.map (structuredTextBlockAsHtml linkResolver) blocks
 
 
 {-| Render a single block of `StructuredText` as HTML.
 -}
-structuredTextBlockAsHtml : (DocumentReference -> Url) -> StructuredTextBlock -> Html msg
+structuredTextBlockAsHtml : LinkResolver msg -> StructuredTextBlock -> Html msg
 structuredTextBlockAsHtml linkResolver field =
     case field of
         SImage image ->
@@ -686,7 +710,7 @@ blockAsHtml :
      -> List (Html msg)
      -> Html msg
     )
-    -> (DocumentReference -> Url)
+    -> LinkResolver msg
     -> Block
     -> Html msg
 blockAsHtml el linkResolver field =
@@ -759,28 +783,24 @@ linkAsHtml linkResolver link =
             a [ href url ] [ Html.text url ]
 
 
-linkAsHtmlWith : (DocumentReference -> Url) -> Link -> List (Html msg) -> Html msg
+linkAsHtmlWith : LinkResolver msg -> Link -> List (Html msg) -> Html msg
 linkAsHtmlWith linkResolver link childs =
     case link of
         DocumentLink linkedDoc isBroken ->
-            let
-                (Url url) =
-                    linkResolver linkedDoc
-            in
-            a [ href url ] childs
+            a (linkResolver linkedDoc) childs
 
         WebLink (Url url) ->
             a [ href url ] childs
 
 
-{-| Provide a default URL for `linkedDocuments`:
+{-| Adds a default `href` attribute to links:
 
-    Url "documents/doc.id/doc.slug"
+    [ href "documents/{doc.id}/{doc.slug}" ]
 
 -}
-defaultLinkResolver : DocumentReference -> Url
+defaultLinkResolver : LinkResolver msg
 defaultLinkResolver linkedDoc =
-    Url (String.join "/" [ "documents", linkedDoc.id, linkedDoc.slug ])
+    [ href (String.join "/" [ "documents", linkedDoc.id, linkedDoc.slug ]) ]
 
 
 {-| Get the first title out of some `StructuredText`, if there is one.
