@@ -23,7 +23,7 @@ type alias MyDocType =
 myDocDecoder : P.Decoder MyDocType
 myDocDecoder =
     P.decode MyDocType
-        |> P.field "content" P.structuredText
+        |> P.required "content" P.structuredText
 
 
 -- Add the Prismic Model to your Model.

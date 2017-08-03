@@ -5,15 +5,15 @@ import Prismic.Document
     exposing
         ( Decoder
         , ImageViews
-        , StructuredText
         , Link
+        , StructuredText
         , decode
-        , field
         , group
         , image
         , labelledSlice
         , link
         , optional
+        , required
         , slice
         , sliceZone
         , structuredText
@@ -29,4 +29,4 @@ type alias Page =
 decodePage : Decoder Page
 decodePage =
     decode Page
-        |> field "body" bodySliceZone
+        |> required "body" bodySliceZone

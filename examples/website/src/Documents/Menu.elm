@@ -6,9 +6,9 @@ import Prismic.Document
         , Link
         , StructuredText
         , decode
-        , field
         , group
         , link
+        , required
         , structuredText
         , text
         )
@@ -29,12 +29,12 @@ type alias MenuLink =
 decodeMenu : Decoder Menu
 decodeMenu =
     decode Menu
-        |> field "title" structuredText
-        |> field "menuLinks" (group decodeMenuLink)
+        |> required "title" structuredText
+        |> required "menuLinks" (group decodeMenuLink)
 
 
 decodeMenuLink : Decoder MenuLink
 decodeMenuLink =
     decode MenuLink
-        |> field "label" text
-        |> field "link" link
+        |> required "label" text
+        |> required "link" link

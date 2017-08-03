@@ -19,7 +19,6 @@ module Prismic.Document
         , decodeDocumentJson
         , decodeDocumentReferenceJson
         , defaultLinkResolver
-        , field
         , getFirstImage
         , getFirstParagraph
         , getText
@@ -31,6 +30,7 @@ module Prismic.Document
         , link
         , map
         , optional
+        , required
         , slice
         , sliceZone
         , structuredText
@@ -75,7 +75,7 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, field, optional, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
+@docs Decoder, decode, map, FieldDecoder, required, optional, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
 
 
 ## Viewing documents
@@ -101,7 +101,7 @@ import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, div, em, h1, h2, h3, img, li, p, strong, ul)
 import Html.Attributes exposing (class, href, property, src)
 import Json.Decode as Json
-import Json.Decode.Pipeline as Json exposing (custom, required, requiredAt)
+import Json.Decode.Pipeline as Json
 import Json.Encode
 import Prismic.Url exposing (Url(Url), decodeUrl)
 import Result.Extra as Result
@@ -159,7 +159,7 @@ type FieldDecoder a
     myDocDecoder : Decoder MyDoc
     myDocDecoder =
         decode MyDoc
-            |> field "title" structuredText
+            |> required "title" structuredText
 
 -}
 decode : a -> Decoder a
@@ -222,10 +222,10 @@ andThen f (Decoder a) =
         )
 
 
-{-| Decode a field.
+{-| Decode a required field.
 -}
-field : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
-field key valDecoder decoder =
+required : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
+required key valDecoder decoder =
     apply decoder
         (fieldKey key valDecoder
             |> andThen
@@ -245,8 +245,8 @@ fieldKey key (FieldDecoder fieldDecoder) =
     Decoder
         (\(Document doc) ->
             case Dict.get key doc of
-                Just field ->
-                    fieldDecoder field
+                Just required ->
+                    fieldDecoder required
                         |> Result.map Just
                         |> Result.mapError
                             (\msg ->
@@ -393,7 +393,7 @@ Pass this function a list of possible elements that can appear in the Slice.
     myDocDecoder : Decode MyDoc
     myDocDecoder =
         decode MyDoc
-            |> field "section"
+            |> required "section"
                 (sliceZone
                     [ slice "theContent" MyContent structuredText
                     , slice "theImage" MyImage image
@@ -442,19 +442,19 @@ Here is an example with a slice containing groups:
     albumDecoder : Decoder Album
     albumDecoder =
         decode Album
-            |> field "title" text
-            |> field "cover" image
+            |> required "title" text
+            |> required "cover" image
 
     bookDecoder : Decoder Book
     bookDecoder =
         decode Book
-            |> field "title" text
-            |> field "blurb" structuredText
+            |> required "title" text
+            |> required "blurb" structuredText
 
     myDocDecoder : Decoder MyDoc
     myDocDecoder =
         decode MyDoc
-            |> field "slices"
+            |> required "slices"
                 (sliceZone
                     [ slice "album" (group albumDecoder)
                     , slice "book" (group bookDecoder)
@@ -890,11 +890,11 @@ decodeDocumentJson =
 decodeDocumentReferenceJson : Json.Decoder DocumentReference
 decodeDocumentReferenceJson =
     Json.decode DocumentReference
-        |> required "id" Json.string
+        |> Json.required "id" Json.string
         |> Json.optional "uid" (Json.maybe Json.string) Nothing
-        |> required "slug" Json.string
-        |> required "tags" (Json.list Json.string)
-        |> required "type" Json.string
+        |> Json.required "slug" Json.string
+        |> Json.required "tags" (Json.list Json.string)
+        |> Json.required "type" Json.string
 
 
 decodeDocumentField : Json.Decoder DocumentField
@@ -953,24 +953,24 @@ decodeStructuredText =
 decodeImageViews : Json.Decoder ImageViews
 decodeImageViews =
     Json.decode ImageViews
-        |> required "main" decodeImageView
-        |> required "views" (Json.dict decodeImageView)
+        |> Json.required "main" decodeImageView
+        |> Json.required "views" (Json.dict decodeImageView)
 
 
 decodeImageView : Json.Decoder ImageView
 decodeImageView =
     Json.decode ImageView
-        |> required "alt" (Json.nullable Json.string)
-        |> required "copyright" (Json.nullable Json.string)
-        |> required "url" decodeUrl
-        |> required "dimensions" decodeImageDimensions
+        |> Json.required "alt" (Json.nullable Json.string)
+        |> Json.required "copyright" (Json.nullable Json.string)
+        |> Json.required "url" decodeUrl
+        |> Json.required "dimensions" decodeImageDimensions
 
 
 decodeImageDimensions : Json.Decoder ImageDimensions
 decodeImageDimensions =
     Json.decode ImageDimensions
-        |> required "width" Json.int
-        |> required "height" Json.int
+        |> Json.required "width" Json.int
+        |> Json.required "height" Json.int
 
 
 decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
@@ -1008,17 +1008,17 @@ decodeStructuredTextBlock =
 decodeBlock : Json.Decoder Block
 decodeBlock =
     Json.decode Block
-        |> required "text" Json.string
-        |> required "spans" (Json.list decodeSpan)
+        |> Json.required "text" Json.string
+        |> Json.required "spans" (Json.list decodeSpan)
         |> Json.optional "label" (Json.maybe Json.string) Nothing
 
 
 decodeSpan : Json.Decoder Span
 decodeSpan =
     Json.decode Span
-        |> required "start" Json.int
-        |> required "end" Json.int
-        |> custom decodeSpanType
+        |> Json.required "start" Json.int
+        |> Json.required "end" Json.int
+        |> Json.custom decodeSpanType
 
 
 decodeSpanType : Json.Decoder SpanElement
@@ -1063,36 +1063,36 @@ decodeEmbed =
 decodeEmbedVideo : Json.Decoder EmbedVideo
 decodeEmbedVideo =
     Json.decode EmbedVideo
-        |> required "author_name" Json.string
-        |> required "author_url" decodeUrl
-        |> required "embed_url" decodeUrl
-        |> required "height" Json.int
-        |> required "html" Json.string
-        |> required "provider_name" Json.string
-        |> required "provider_url" decodeUrl
-        |> required "thumbnail_height" Json.int
-        |> required "thumbnail_url" decodeUrl
-        |> required "thumbnail_width" Json.int
-        |> required "title" Json.string
-        |> required "version" Json.string
-        |> required "width" Json.int
+        |> Json.required "author_name" Json.string
+        |> Json.required "author_url" decodeUrl
+        |> Json.required "embed_url" decodeUrl
+        |> Json.required "height" Json.int
+        |> Json.required "html" Json.string
+        |> Json.required "provider_name" Json.string
+        |> Json.required "provider_url" decodeUrl
+        |> Json.required "thumbnail_height" Json.int
+        |> Json.required "thumbnail_url" decodeUrl
+        |> Json.required "thumbnail_width" Json.int
+        |> Json.required "title" Json.string
+        |> Json.required "version" Json.string
+        |> Json.required "width" Json.int
 
 
 decodeEmbedRich : Json.Decoder EmbedRich
 decodeEmbedRich =
     Json.decode EmbedRich
-        |> required "author_name" Json.string
-        |> required "author_url" decodeUrl
-        |> required "cache_age" Json.string
-        |> required "embed_url" decodeUrl
-        |> required "height" (Json.maybe Json.int)
-        |> required "html" Json.string
-        |> required "provider_name" Json.string
-        |> required "provider_url" decodeUrl
-        |> required "title" Json.string
-        |> required "url" decodeUrl
-        |> required "version" Json.string
-        |> required "width" Json.int
+        |> Json.required "author_name" Json.string
+        |> Json.required "author_url" decodeUrl
+        |> Json.required "cache_age" Json.string
+        |> Json.required "embed_url" decodeUrl
+        |> Json.required "height" (Json.maybe Json.int)
+        |> Json.required "html" Json.string
+        |> Json.required "provider_name" Json.string
+        |> Json.required "provider_url" decodeUrl
+        |> Json.required "title" Json.string
+        |> Json.required "url" decodeUrl
+        |> Json.required "version" Json.string
+        |> Json.required "width" Json.int
 
 
 {-| Decode a `Link`.
@@ -1104,12 +1104,12 @@ decodeLink =
             case typeStr of
                 "Link.document" ->
                     Json.decode DocumentLink
-                        |> requiredAt [ "value", "document" ] decodeDocumentReferenceJson
-                        |> requiredAt [ "value", "isBroken" ] Json.bool
+                        |> Json.requiredAt [ "value", "document" ] decodeDocumentReferenceJson
+                        |> Json.requiredAt [ "value", "isBroken" ] Json.bool
 
                 "Link.web" ->
                     Json.decode WebLink
-                        |> requiredAt [ "value", "url" ] decodeUrl
+                        |> Json.requiredAt [ "value", "url" ] decodeUrl
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)
@@ -1126,5 +1126,5 @@ decodeSlice : Json.Decoder Slice
 decodeSlice =
     Json.decode Slice
         |> Json.optional "slice_label" (Json.maybe Json.string) Nothing
-        |> required "slice_type" Json.string
-        |> required "value" decodeDocumentField
+        |> Json.required "slice_type" Json.string
+        |> Json.required "value" decodeDocumentField

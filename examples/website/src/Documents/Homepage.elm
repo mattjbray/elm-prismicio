@@ -7,12 +7,12 @@ import Prismic.Document
         , Link
         , StructuredText
         , decode
-        , field
         , group
         , image
         , labelledSlice
         , link
         , optional
+        , required
         , slice
         , sliceZone
         , structuredText
@@ -56,12 +56,12 @@ type alias GalleryGroup =
 decodeHomepage : Decoder Homepage
 decodeHomepage =
     decode Homepage
-        |> field "title" structuredText
-        |> field "tagline" structuredText
-        |> field "buttonText" text
-        |> field "buttonLink" link
-        |> field "backgroundImage" image
-        |> field "body" bodySliceZone
+        |> required "title" structuredText
+        |> required "tagline" structuredText
+        |> required "buttonText" text
+        |> required "buttonLink" link
+        |> required "backgroundImage" image
+        |> required "body" bodySliceZone
 
 
 bodySliceZone : Prismic.Document.FieldDecoder (List BodySlice)
@@ -78,9 +78,9 @@ bodySliceZone =
 decodeHighlightGroup : Decoder HighlightGroup
 decodeHighlightGroup =
     decode HighlightGroup
-        |> field "title" structuredText
-        |> field "headline" structuredText
-        |> field "image" image
+        |> required "title" structuredText
+        |> required "headline" structuredText
+        |> required "image" image
         |> optional "link" link
         |> optional "linkText" text
 
@@ -88,5 +88,5 @@ decodeHighlightGroup =
 decodeGalleryGroup : Decoder GalleryGroup
 decodeGalleryGroup =
     decode GalleryGroup
-        |> field "description" structuredText
-        |> field "image" image
+        |> required "description" structuredText
+        |> required "image" image
