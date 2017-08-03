@@ -20,3 +20,20 @@ clean:
 	       examples/website/elm-stuff/build-artifacts \
 	       examples/website/app.js \
 	       documentation.json
+
+.PHONY: publish-example
+publish-example: sample-website
+	mkdir -p publish
+	cp examples/website/app.js publish/app.js
+	cp examples/website/index.html publish/index.html
+	git stash
+	git checkout gh-pages
+	git pull
+	cp publish/app.js .
+	cp publish/index.html .
+	git add app.js index.html
+	git commit -m "Update example."
+	git push origin gh-pages
+	git checkout -
+	rm -rf publish
+	git stash pop
