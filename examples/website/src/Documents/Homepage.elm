@@ -7,6 +7,7 @@ import Prismic.Document
         , Link
         , StructuredText
         , decode
+        , field
         , group
         , image
         , labelledSlice
@@ -14,6 +15,7 @@ import Prismic.Document
         , optional
         , required
         , slice
+        , sliceV1
         , sliceZone
         , structuredText
         , text
@@ -36,6 +38,8 @@ type BodySlice
     | Highlight (List HighlightGroup)
     | FullWidthImage ImageViews
     | Gallery (List GalleryGroup)
+    | GalleryV2 GalleryWithTitle
+    | SingleRepeat (List StructuredText)
 
 
 type alias HighlightGroup =
@@ -53,6 +57,12 @@ type alias GalleryGroup =
     }
 
 
+type alias GalleryWithTitle =
+    { title : StructuredText
+    , groups : List GalleryGroup
+    }
+
+
 decodeHomepage : Decoder Homepage
 decodeHomepage =
     decode Homepage
@@ -67,11 +77,19 @@ decodeHomepage =
 bodySliceZone : Prismic.Document.FieldDecoder (List BodySlice)
 bodySliceZone =
     sliceZone
-        [ slice "heading" Heading structuredText
+        [ sliceV1 "heading" Heading structuredText
         , labelledSlice "textSection" TextSection structuredText
-        , slice "highlight" Highlight (group decodeHighlightGroup)
-        , slice "fullWidthImage" FullWidthImage image
-        , slice "gallery" Gallery (group decodeGalleryGroup)
+        , sliceV1 "highlight" Highlight (group decodeHighlightGroup)
+        , sliceV1 "fullWidthImage" FullWidthImage image
+        , sliceV1 "gallery" Gallery (group decodeGalleryGroup)
+        , slice "new_image_gallery"
+            (\title groups -> GalleryV2 (GalleryWithTitle title groups))
+            (field "title" structuredText)
+            decodeGalleryGroup
+        , slice "single_repeat"
+            (\() texts -> SingleRepeat texts)
+            (decode ())
+            (field "title" structuredText)
         ]
 
 

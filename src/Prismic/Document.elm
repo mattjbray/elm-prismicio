@@ -21,6 +21,7 @@ module Prismic.Document
         , decodeDocumentJson
         , decodeDocumentReferenceJson
         , defaultLinkResolver
+        , field
         , getFirstImage
         , getFirstParagraph
         , getText
@@ -34,6 +35,7 @@ module Prismic.Document
         , optional
         , required
         , slice
+        , sliceV1
         , sliceZone
         , structuredText
         , structuredTextAsHtml
@@ -77,7 +79,10 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, required, optional, text, structuredText, image, date, link, SliceDecoder, sliceZone, slice, labelledSlice, group
+@docs Decoder, decode, map
+@docs FieldDecoder, field, required, optional
+@docs text, structuredText, image, date, link
+@docs SliceDecoder, sliceZone, sliceV1, labelledSlice, slice, group
 
 
 ## Viewing documents
@@ -165,8 +170,13 @@ type FieldDecoder a
 
 -}
 decode : a -> Decoder a
-decode doc =
-    Decoder (\_ -> Ok doc)
+decode =
+    succeed
+
+
+succeed : a -> Decoder a
+succeed x =
+    Decoder (\_ -> Ok x)
 
 
 fail : String -> Decoder a
@@ -224,22 +234,20 @@ andThen f (Decoder a) =
         )
 
 
-{-| Decode a required field.
+{-| Decode a field
 -}
-required : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
-required key valDecoder decoder =
-    apply decoder
-        (fieldKey key valDecoder
-            |> andThen
-                (\res ->
-                    case res of
-                        Just x ->
-                            decode x
+field : String -> FieldDecoder a -> Decoder a
+field key fieldDecoder =
+    fieldKey key fieldDecoder
+        |> andThen
+            (\res ->
+                case res of
+                    Just x ->
+                        succeed x
 
-                        Nothing ->
-                            fail ("No field at " ++ key)
-                )
-        )
+                    Nothing ->
+                        fail ("No field at " ++ key)
+            )
 
 
 fieldKey : String -> FieldDecoder a -> Decoder (Maybe a)
@@ -258,6 +266,13 @@ fieldKey key (FieldDecoder fieldDecoder) =
                 Nothing ->
                     Ok Nothing
         )
+
+
+{-| Decode a required field.
+-}
+required : String -> FieldDecoder a -> Decoder (a -> b) -> Decoder b
+required key valDecoder decoder =
+    apply decoder (field key valDecoder)
 
 
 {-| Decode a field that might be missing.
@@ -370,7 +385,7 @@ oneOf sliceDecoders slice =
     go sliceDecoders []
 
 
-{-| Decode a slice in a slice zone. The tagger is also passed the slice label.
+{-| Decode a (deprecated) old-style slice in a slice zone. The tagger is also passed the slice label.
 
 TODO: custom label decoders?
 
@@ -380,20 +395,54 @@ labelledSlice sliceType tagger (FieldDecoder fieldDecoder) =
     SliceDecoder
         (\slice ->
             if sliceType == slice.sliceType then
-                fieldDecoder slice.sliceField
-                    |> Result.map (tagger slice.sliceLabel)
-                    |> Result.mapError
-                        (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
+                case slice.sliceContent of
+                    SliceContentField sliceField ->
+                        fieldDecoder sliceField
+                            |> Result.map (tagger slice.sliceLabel)
+                            |> Result.mapError
+                                (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
+
+                    SliceContent _ _ ->
+                        Err "Expected an old-style slice but got a new-style one."
             else
                 Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
         )
 
 
+{-| Decode a (deprecated) old-style slice in a slice zone.
+-}
+sliceV1 : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
+sliceV1 sliceType tagger fieldDecoder =
+    labelledSlice sliceType (\_ -> tagger) fieldDecoder
+
+
 {-| Decode a slice in a slice zone.
 -}
-slice : String -> (a -> b) -> FieldDecoder a -> SliceDecoder b
-slice sliceType tagger fieldDecoder =
-    labelledSlice sliceType (\_ -> tagger) fieldDecoder
+slice : String -> (a -> List b -> c) -> Decoder a -> Decoder b -> SliceDecoder c
+slice sliceType tagger (Decoder nonRepeatDecoder) (Decoder repeatDecoder) =
+    SliceDecoder
+        (\slice ->
+            if sliceType == slice.sliceType then
+                case slice.sliceContent of
+                    SliceContent doc docs ->
+                        Result.map2 tagger
+                            (nonRepeatDecoder doc
+                                |> Result.mapError
+                                    (\msg -> "While decoding non-repeating part: " ++ msg)
+                            )
+                            (List.map repeatDecoder docs
+                                |> Result.collect
+                                |> Result.mapError
+                                    (\msg -> "While decoding repeating part: " ++ msg)
+                            )
+                            |> Result.mapError
+                                (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
+
+                    SliceContentField _ ->
+                        Err "Expected a new-style slice but got an old-style one. Try using sliceV1 instead."
+            else
+                Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
+        )
 
 
 {-| Decode a SliceZone.
@@ -401,19 +450,41 @@ slice sliceType tagger fieldDecoder =
 Pass this function a list of possible elements that can appear in the Slice.
 
     type alias MyDoc =
-        { section : Section }
+        { section : List Section }
 
     type Section
         = MyContent StructuredText
-        | MyImage ImageViews
+        | MyImageGallery (List ImageViews)
+        | MyLinksSection LinksSection
+
+    type alias LinksSection =
+        { title : StructuredText
+        , links : List Link
+        }
 
     myDocDecoder : Decode MyDoc
     myDocDecoder =
         decode MyDoc
             |> required "section"
                 (sliceZone
-                    [ slice "theContent" MyContent structuredText
-                    , slice "theImage" MyImage image
+                    [ -- The "my-content" slice type has a non-repeatable zone, but
+                      -- no repeatable zone.
+                      slice "my-content"
+                        (\content () -> MyContent content)
+                        structuredText
+                        (decode ())
+                    , -- The "my-image-gallery" slice type has a repeatable
+                      -- zone, but no non-repeatable zone.
+                      slice "my-image-gallery"
+                        (\() images -> MyImageGallery images)
+                        (decode ())
+                        image
+                    , -- The "my-links-section" slice type has both repeatable
+                      -- and non-repeatable zones.
+                      slice "my-links-section"
+                        (\title links -> MyLinksSection (LinksSection title links))
+                        (field "title" structuredText)
+                        (field "link" link)
                     ]
                 )
 
@@ -644,11 +715,15 @@ type alias SliceZone =
 type alias Slice =
     { sliceLabel : Maybe String
     , sliceType : String
-    , sliceField :
-        DocumentField
-
-    -- TODO: SliceField to exclude nested Slices?
+    , sliceContent : SliceContentVersion
     }
+
+
+type SliceContentVersion
+    = -- Deprecated slice format.
+      SliceContentField DocumentField
+    | -- New slices: repeating and non-repeating parts.
+      SliceContent Document (List Document)
 
 
 type alias Group =
@@ -1173,4 +1248,19 @@ decodeSlice =
     Json.decode Slice
         |> Json.optional "slice_label" (Json.maybe Json.string) Nothing
         |> Json.required "slice_type" Json.string
-        |> Json.required "value" decodeDocumentField
+        |> Json.custom decodeSliceContent
+
+
+decodeSliceContent : Json.Decoder SliceContentVersion
+decodeSliceContent =
+    Json.oneOf
+        [ Json.field "value" (Json.lazy (\_ -> decodeDocumentField))
+            |> Json.map SliceContentField
+        , let
+            miniDocument =
+                Json.dict (Json.lazy (\_ -> decodeDocumentField)) |> Json.map Document
+          in
+          Json.decode SliceContent
+            |> Json.required "non-repeat" miniDocument
+            |> Json.required "repeat" (Json.list miniDocument)
+        ]

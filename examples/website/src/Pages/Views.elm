@@ -66,6 +66,15 @@ viewBodySlice bodySlice =
         Gallery groups ->
             viewGallery groups
 
+        GalleryV2 gallery ->
+            Html.div []
+                [ viewHeading gallery.title
+                , viewGallery gallery.groups
+                ]
+
+        SingleRepeat texts ->
+            Html.div [] (List.concatMap asHtml texts)
+
 
 viewHeading : Prismic.StructuredText -> Html msg
 viewHeading text =
