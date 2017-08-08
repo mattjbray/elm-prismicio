@@ -15,6 +15,7 @@ module Prismic.Document
         , SliceDecoder
         , StructuredText
         , StructuredTextBlock
+        , date
         , decode
         , decodeDocument
         , decodeDocumentJson
@@ -76,7 +77,7 @@ following components.
 
 ## Decoding documents
 
-@docs Decoder, decode, map, FieldDecoder, required, optional, text, structuredText, image, link, SliceDecoder, sliceZone, slice, labelledSlice, group
+@docs Decoder, decode, map, FieldDecoder, required, optional, text, structuredText, image, date, link, SliceDecoder, sliceZone, slice, labelledSlice, group
 
 
 ## Viewing documents
@@ -98,6 +99,7 @@ JSON decoders used internally by `elm-prismicio`.
 
 -}
 
+import Date
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, div, em, h1, h2, h3, img, li, p, strong, ul)
 import Html.Attributes exposing (class, href, property, src)
@@ -126,7 +128,7 @@ type DocumentField
     | Color String
     | Image ImageViews
     | Number Float
-    | Date String
+    | Date Date.Date
     | Link Link
     | SliceZone SliceZone
     | Groups (List Group)
@@ -307,6 +309,21 @@ image =
 
                 _ ->
                     Err ("Expected an Image field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode a Date field.
+-}
+date : FieldDecoder Date.Date
+date =
+    FieldDecoder
+        (\field ->
+            case field of
+                Date x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Date field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -912,6 +929,20 @@ decodeDocumentReferenceJson =
         |> Json.required "type" Json.string
 
 
+decodeDate : Json.Decoder Date.Date
+decodeDate =
+    Json.string
+        |> Json.andThen
+            (\str ->
+                case Date.fromString str of
+                    Ok date ->
+                        Json.succeed date
+
+                    Err msg ->
+                        Json.fail msg
+            )
+
+
 decodeDocumentField : Json.Decoder DocumentField
 decodeDocumentField =
     let
@@ -930,7 +961,7 @@ decodeDocumentField =
                     Json.map Number (Json.field "value" Json.float)
 
                 "Date" ->
-                    Json.map Date (Json.field "value" Json.string)
+                    Json.map Date (Json.field "value" decodeDate)
 
                 "Image" ->
                     Json.map Image (Json.field "value" decodeImageViews)
