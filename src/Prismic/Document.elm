@@ -1,4 +1,14 @@
-module Prismic.Document exposing (..)
+module Prismic.Document
+    exposing
+        ( Decoder
+        , Document
+        , field
+        , group
+        , optional
+        , optionalField
+        , required
+        , sliceZone
+        )
 
 {-|
 
@@ -7,16 +17,16 @@ module Prismic.Document exposing (..)
 
 ## Decoding documents
 
-@docs Decoder, succeed, fail, map, apply, andThen
+@docs Decoder
 @docs field, optionalField
-@docs decode, required, optional, custom
-@docs sliceZone
-@docs decodeDocument
+@docs required, optional
+@docs group, sliceZone
 
 -}
 
 import Dict exposing (Dict)
 import Prismic.Document.Field as Field
+import Prismic.Document.Group as Group
 import Prismic.Document.Internal as Internal exposing (..)
 import Prismic.Document.Slice as Slice
 import Result.Extra as Result
@@ -41,154 +51,62 @@ type alias Document =
 Construct a `Decoder` to pass to `submit`.
 
 -}
-type Decoder a
-    = Decoder (Document -> Result String a)
+type alias Decoder a =
+    Internal.Decoder Document a
 
 
-{-| -}
-succeed : a -> Decoder a
-succeed x =
-    Decoder (\_ -> Ok x)
+getKey : String -> Document -> Maybe (Result String Field)
+getKey key (Document doc) =
+    case Dict.get key doc of
+        Just (Field field) ->
+            Just (Ok field)
 
+        Just (SliceZone _) ->
+            [ "Expected a Field but got a SliceZone."
+            , "(Hint: use sliceZone to decode this.)"
+            ]
+                |> String.join " "
+                |> Err
+                |> Just
 
-{-| -}
-fail : String -> Decoder a
-fail msg =
-    Decoder (\_ -> Err msg)
+        Just (Groups _) ->
+            [ "Expected a Field but got a Group."
+            , "(Hint: use group to decode this.)"
+            ]
+                |> String.join " "
+                |> Err
+                |> Just
 
-
-{-| Internal: Run a `Decoder` against a `Document`.
--}
-decodeDocument : Decoder a -> Document -> Result String a
-decodeDocument (Decoder decoder) doc =
-    decoder doc
-
-
-{-| Transform a decoder.
--}
-map : (a -> b) -> Decoder a -> Decoder b
-map f (Decoder decoder) =
-    Decoder
-        (\doc ->
-            decoder doc |> Result.map f
-        )
-
-
-{-| -}
-apply : Decoder (a -> b) -> Decoder a -> Decoder b
-apply (Decoder f) (Decoder a) =
-    Decoder
-        (\doc ->
-            case ( f doc, a doc ) of
-                ( Ok g, Ok x ) ->
-                    Ok (g x)
-
-                ( Err err, _ ) ->
-                    Err err
-
-                ( _, Err err ) ->
-                    Err err
-        )
-
-
-{-| -}
-andThen : (a -> Decoder b) -> Decoder a -> Decoder b
-andThen f (Decoder a) =
-    Decoder
-        (\doc ->
-            case a doc of
-                Ok x ->
-                    let
-                        (Decoder g) =
-                            f x
-                    in
-                    g doc
-
-                Err err ->
-                    Err err
-        )
+        Nothing ->
+            Nothing
 
 
 {-| Decode a field
 -}
 field : String -> Field.Decoder a -> Decoder a
-field key fieldDecoder =
-    optionalField key (fieldDecoder |> Field.map Just) Nothing
-        |> andThen
-            (\res ->
-                case res of
-                    Just x ->
-                        succeed x
-
-                    Nothing ->
-                        fail ("No field at " ++ key)
-            )
+field =
+    Internal.field getKey
 
 
 {-| Decode a field that might be missing.
 -}
 optionalField : String -> Field.Decoder a -> a -> Decoder a
-optionalField key fieldDecoder default =
-    Decoder
-        (\(Document doc) ->
-            case Dict.get key doc of
-                Just (Field field) ->
-                    Field.decodeField fieldDecoder field
-                        |> Result.mapError
-                            (\msg ->
-                                "While decoding field '" ++ key ++ "': " ++ msg
-                            )
-
-                Just (SliceZone _) ->
-                    [ "Expected a Field but got a SliceZone."
-                    , "(Hint: use sliceZone to decode this.)"
-                    ]
-                        |> String.join " "
-                        |> Err
-
-                Nothing ->
-                    Ok default
-        )
-
-
-
--- Decoding Pipelines
-
-
-{-| Begin a decoding pipeline.
-
-    type alias MyDoc =
-        { title : StructuredText }
-
-    myDocDecoder : Decoder MyDoc
-    myDocDecoder =
-        decode MyDoc
-            |> required "title" structuredText
-
--}
-decode : a -> Decoder a
-decode =
-    succeed
-
-
-{-| -}
-custom : Decoder a -> Decoder (a -> b) -> Decoder b
-custom a f =
-    apply f a
+optionalField =
+    Internal.optionalField getKey
 
 
 {-| Decode a required field.
 -}
 required : String -> Field.Decoder a -> Decoder (a -> b) -> Decoder b
-required key fieldDecoder decoder =
-    custom (field key fieldDecoder) decoder
+required =
+    Internal.required getKey
 
 
 {-| Decode a field that might be missing.
 -}
 optional : String -> Field.Decoder a -> a -> Decoder (a -> b) -> Decoder b
-optional key fieldDecoder default decoder =
-    custom (optionalField key fieldDecoder default) decoder
+optional =
+    Internal.optional getKey
 
 
 {-| Decode a SliceZone.
@@ -243,9 +161,73 @@ sliceZone key sliceDecoder rest =
                 case Dict.get key doc of
                     Just (SliceZone slices) ->
                         slices
-                            |> List.map (Slice.decodeSlice sliceDecoder)
+                            |> List.map (decodeValue sliceDecoder)
                             |> Result.collect
 
                     _ ->
                         Err "Expected a SliceZone field."
             )
+
+
+{-| Decode a group.
+
+Groups are essentially Documents, so you pass `group` a Document `Decoder`.
+
+Here is an example with a slice containing groups:
+
+    type alias MyDoc =
+        { slices : List Slice }
+
+    type Slice
+        = SAlbum Album
+        | SBook Book
+
+    type alias Album =
+        { title : String
+        , cover : ImageViews
+        }
+
+    type alias Book =
+        { title : String
+        , blurb : StructuredText
+        }
+
+    albumDecoder : Decoder Album
+    albumDecoder =
+        decode Album
+            |> required "title" text
+            |> required "cover" image
+
+    bookDecoder : Decoder Book
+    bookDecoder =
+        decode Book
+            |> required "title" text
+            |> required "blurb" structuredText
+
+    myDocDecoder : Decoder MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> required "slices"
+                (sliceZone
+                    [ slice "album" (group albumDecoder)
+                    , slice "book" (group bookDecoder)
+                    ]
+                )
+
+-}
+group : String -> Group.Decoder a -> Decoder (List a)
+group key decoder =
+    Decoder
+        (\(Document doc) ->
+            case Dict.get key doc of
+                Just (Groups groups) ->
+                    groups
+                        |> List.map (decodeValue decoder)
+                        |> Result.collect
+
+                Just field ->
+                    Err ("Expected a Group field, but got '" ++ toString field ++ "'.")
+
+                Nothing ->
+                    Ok []
+        )

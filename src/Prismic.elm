@@ -66,6 +66,7 @@ import Dict exposing (Dict)
 import Http
 import Prismic.Api exposing (Api, Ref(Ref), RefProperties, Response, decodeApi, decodeResponse)
 import Prismic.Document as Document exposing (Document)
+import Prismic.Document.Internal as Internal
 import Result.Extra as Result
 import String
 import Task exposing (Task)
@@ -318,7 +319,7 @@ submit decodeDocType requestTask =
                     response.results
                         |> List.map
                             (\result ->
-                                Document.decodeDocument decodeDocType result.data
+                                Internal.decodeValue decodeDocType result.data
                                     |> Result.map (\doc -> { result | data = doc })
                             )
                         |> Result.collect

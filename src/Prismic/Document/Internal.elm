@@ -8,56 +8,11 @@ module Prismic.Document.Internal exposing (..)
 @docs Document
 
 
-### Field types
-
-You can create your own Elm types to represent your documents using the
-following components.
-
-
-#### Structured Text
-
-@docs StructuredText, StructuredTextBlock
-
-
-#### Images
-
-@docs ImageViews, ImageView, ImageDimensions
-
-
-#### Embeds
-
-@docs Embed, EmbedRich, EmbedVideo
-
-
-#### Links
-
-@docs Link, DocumentReference
-
-
 ## Decoding documents
 
 @docs Decoder, decode, map
 @docs FieldDecoder, field, required, optional
-@docs text, structuredText, image, date, link
-@docs Slice.Decoder, sliceZone, sliceV1, labelledSlice, slice, group
-
-
-## Viewing documents
-
-@docs structuredTextAsHtml, structuredTextBlockAsHtml
-@docs LinkResolver, defaultLinkResolver
-
-
-### `StructuredText` helpers
-
-@docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
-
-
-## Internal
-
-JSON decoders used internally by `elm-prismicio`.
-
-@docs decodeDocument, decodeDocumentJson, decodeDocumentReferenceJson
+@docs Slice.Decoder, sliceZone, v1Slice, labelledV1Slice, slice, group
 
 -}
 
@@ -81,6 +36,7 @@ type Document
 -}
 type DocumentField
     = Field Field
+    | Groups (List Group)
     | SliceZone SliceZone
 
 
@@ -93,13 +49,9 @@ type Field
     | Number Float
     | Date Date.Date
     | Link Link
-    | Groups (List Group)
 
 
 {-| `StructuredText` can be rendered to HTML using `structuredTextAsHtml`.
-
-TODO: Custom rendering.
-
 -}
 type StructuredText
     = StructuredText (List StructuredTextBlock)
@@ -253,9 +205,124 @@ type alias Slice =
 
 type SliceContentVersion
     = -- Deprecated slice format.
-      SliceContentField Field
+      SliceContentV1 SliceContentV1
     | -- New slices: repeating and non-repeating parts.
-      SliceContent Group (List Group)
+      SliceContentV2 Group (List Group)
+
+
+type SliceContentV1
+    = SliceContentV1Field Field
+    | SliceContentV1Groups (List Group)
+
+
+
+-- DECODER HELPERS
+
+
+type Decoder val a
+    = Decoder (val -> Result String a)
+
+
+decodeValue : Decoder val a -> val -> Result String a
+decodeValue (Decoder decoder) val =
+    decoder val
+
+
+succeed : a -> Decoder val a
+succeed x =
+    Decoder (\_ -> Ok x)
+
+
+fail : String -> Decoder val a
+fail msg =
+    Decoder (\_ -> Err msg)
+
+
+map : (a -> b) -> Decoder val a -> Decoder val b
+map f decoder =
+    Decoder
+        (\x ->
+            decodeValue decoder x |> Result.map f
+        )
+
+
+apply : Decoder val (a -> b) -> Decoder val a -> Decoder val b
+apply f a =
+    Decoder
+        (\doc ->
+            Result.map2 (<|)
+                (decodeValue f doc)
+                (decodeValue a doc)
+        )
+
+
+andThen : (a -> Decoder val b) -> Decoder val a -> Decoder val b
+andThen f a =
+    Decoder
+        (\val ->
+            decodeValue a val
+                |> Result.andThen
+                    (\x ->
+                        decodeValue (f x) val
+                    )
+        )
+
+
+type alias GetKey doc field =
+    String -> doc -> Maybe (Result String field)
+
+
+field : GetKey doc field -> String -> Decoder field a -> Decoder doc a
+field getKey key fieldDecoder =
+    optionalField getKey key (fieldDecoder |> map Just) Nothing
+        |> andThen (Maybe.withDefault (fail ("No field at " ++ key)) << Maybe.map succeed)
+
+
+{-| Decode a field that might be missing.
+-}
+optionalField : GetKey doc field -> String -> Decoder field a -> a -> Decoder doc a
+optionalField getKey key fieldDecoder default =
+    let
+        addContext msg =
+            "While decoding field '" ++ key ++ "': " ++ msg
+    in
+    Decoder
+        (\doc ->
+            case getKey key doc of
+                Just (Ok field) ->
+                    decodeValue fieldDecoder field
+                        |> Result.mapError addContext
+
+                Just (Err msg) ->
+                    Err (addContext msg)
+
+                Nothing ->
+                    Ok default
+        )
+
+
+
+-- PIPELINE DECODERS
+
+
+decode : a -> Decoder val a
+decode =
+    succeed
+
+
+custom : Decoder val a -> Decoder val (a -> b) -> Decoder val b
+custom a f =
+    apply f a
+
+
+required : GetKey doc field -> String -> Decoder field a -> Decoder doc (a -> b) -> Decoder doc b
+required getKey key fieldDecoder decoder =
+    apply decoder (field getKey key fieldDecoder)
+
+
+optional : GetKey doc field -> String -> Decoder field a -> a -> Decoder doc (a -> b) -> Decoder doc b
+optional getKey key fieldDecoder default decoder =
+    custom (optionalField getKey key fieldDecoder default) decoder
 
 
 
@@ -279,6 +346,9 @@ decodeDocumentField =
     let
         decodeOnType typeStr =
             case typeStr of
+                "Group" ->
+                    Json.map Groups (Json.field "value" decodeGroups)
+
                 "SliceZone" ->
                     Json.map SliceZone (Json.field "value" decodeSliceZone)
 
@@ -287,6 +357,11 @@ decodeDocumentField =
     in
     Json.field "type" Json.string
         |> Json.andThen decodeOnType
+
+
+decodeGroups : Json.Decoder (List Group)
+decodeGroups =
+    Json.list (Json.dict decodeField)
 
 
 decodeField : Json.Decoder Field
@@ -320,9 +395,6 @@ decodeField =
 
                 "Link.web" ->
                     Json.map Link decodeLink
-
-                "Group" ->
-                    Json.map Groups (Json.field "value" (Json.list (Json.dict (Json.lazy (\_ -> decodeField)))))
 
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
@@ -441,10 +513,10 @@ decodeSpanType =
     let
         decodeOnType typeStr =
             case typeStr of
-                "Html.em" ->
+                "em" ->
                     Json.succeed Em
 
-                "Html.strong" ->
+                "strong" ->
                     Json.succeed Strong
 
                 "hyperlink" ->
@@ -548,13 +620,27 @@ decodeSlice =
 decodeSliceContent : Json.Decoder SliceContentVersion
 decodeSliceContent =
     Json.oneOf
-        [ Json.field "value" (Json.lazy (\_ -> decodeField))
-            |> Json.map SliceContentField
+        [ Json.field "value" (Json.lazy (\_ -> decodeSliceContentField))
+            |> Json.map SliceContentV1
         , let
             miniDocument =
                 Json.dict (Json.lazy (\_ -> decodeField))
           in
-          Json.decode SliceContent
+          Json.decode SliceContentV2
             |> Json.required "non-repeat" miniDocument
             |> Json.required "repeat" (Json.list miniDocument)
         ]
+
+
+decodeSliceContentField : Json.Decoder SliceContentV1
+decodeSliceContentField =
+    let
+        decodeOnType typeStr =
+            case typeStr of
+                "Group" ->
+                    Json.map SliceContentV1Groups (Json.field "value" decodeGroups)
+
+                _ ->
+                    Json.map SliceContentV1Field decodeField
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType

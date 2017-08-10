@@ -1,46 +1,149 @@
-module Prismic.Document.Field exposing (..)
+module Prismic.Document.Field
+    exposing
+        ( Decoder
+        , DocumentReference
+        , Embed
+        , Field
+        , ImageDimensions
+        , ImageView
+        , ImageViews
+        , Link
+        , LinkResolver
+        , StructuredText
+        , StructuredTextBlock
+        , date
+        , defaultLinkResolver
+        , embedAsHtml
+        , getFirstImage
+        , getFirstParagraph
+        , getText
+        , getTexts
+        , getTitle
+        , image
+        , imageAsHtml
+        , link
+        , linkAsHtml
+        , resolveLink
+        , structuredText
+        , structuredTextAsHtml
+        , structuredTextBlockAsHtml
+        , text
+        )
+
+{-|
+
+
+### Field types
+
+You can create your own Elm types to represent your documents using the
+following components.
+
+@docs Field
+
+
+#### Structured Text
+
+@docs StructuredText, StructuredTextBlock
+
+
+#### Images
+
+@docs ImageViews, ImageView, ImageDimensions
+
+
+#### Embeds
+
+@docs Embed
+
+
+#### Links
+
+@docs Link, DocumentReference
+
+
+## Decoding fields
+
+@docs Decoder
+@docs text, structuredText, image, date, link
+
+
+## Viewing fields
+
+@docs structuredTextAsHtml, structuredTextBlockAsHtml
+@docs imageAsHtml, embedAsHtml, linkAsHtml
+@docs LinkResolver, defaultLinkResolver, resolveLink
+
+
+### `StructuredText` helpers
+
+@docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+
+@docs date, image, link, structuredText, text
+
+-}
 
 import Date
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
 import Json.Encode
 import Prismic.Document.Internal as Internal exposing (..)
-import Result.Extra as Result
 
 
 -- TYPES
 
 
-type alias DocumentReference =
-    Internal.DocumentReference
-
-
+{-| A field in the `Document`.
+-}
 type alias Field =
     Internal.Field
 
 
+{-| `StructuredText` can be rendered to HTML using `structuredTextAsHtml`.
+-}
 type alias StructuredText =
     Internal.StructuredText
 
 
+{-| An element of `StructuredText`.
+-}
 type alias StructuredTextBlock =
     Internal.StructuredTextBlock
 
 
+{-| A collection of image views.
+-}
 type alias ImageViews =
     Internal.ImageViews
 
 
+{-| Properties for Html.a single image view.
+-}
 type alias ImageView =
     Internal.ImageView
 
 
+{-| Dimensions of an image view.
+-}
+type alias ImageDimensions =
+    Internal.ImageDimensions
+
+
+{-| Embed elements.
+-}
 type alias Embed =
     Internal.Embed
 
 
+{-| Links to other documents or to the web.
+-}
 type alias Link =
     Internal.Link
+
+
+{-| A reference to Html.a Prismic document.
+-}
+type alias DocumentReference =
+    Internal.DocumentReference
 
 
 
@@ -180,11 +283,13 @@ blockAsHtml el linkResolver field =
         )
 
 
+{-| -}
 imageAsHtml : ImageView -> Html msg
 imageAsHtml image =
     Html.img [ src image.url ] []
 
 
+{-| -}
 embedAsHtml : Embed -> Html msg
 embedAsHtml embed =
     case embed of
@@ -195,6 +300,7 @@ embedAsHtml embed =
             Html.div [ Html.Attributes.property "innerHTML" (Json.Encode.string props.html) ] []
 
 
+{-| -}
 resolveLink : LinkResolver msg -> Link -> List (Html.Attribute msg)
 resolveLink linkResolver link =
     case link of
@@ -205,6 +311,7 @@ resolveLink linkResolver link =
             linkResolver.resolveUrl url
 
 
+{-| -}
 linkAsHtml : LinkResolver msg -> Link -> Html msg
 linkAsHtml linkResolver link =
     let
@@ -313,23 +420,9 @@ getTexts (StructuredText fields) =
 -- DECODERS
 
 
-type Decoder a
-    = Decoder (Field -> Result String a)
-
-
-decodeField : Decoder a -> Field -> Result String a
-decodeField (Decoder f) field =
-    f field
-
-
-succeed : a -> Decoder a
-succeed x =
-    Decoder (\_ -> Ok x)
-
-
-fail : String -> Decoder a
-fail msg =
-    Decoder (\_ -> Err msg)
+{-| -}
+type alias Decoder a =
+    Internal.Decoder Field a
 
 
 {-| Decode Html.a Text field.
@@ -405,107 +498,3 @@ link =
                 _ ->
                     Err ("Expected Html.a Link field, but got '" ++ toString field ++ "'.")
         )
-
-
-type GroupDecoder a
-    = GroupDecoder (Group -> Result String a)
-
-
-{-| Decode a group.
-
-Groups are essentially Documents, so you pass `group` a Document `Decoder`.
-
-Here is an example with a slice containing groups:
-
-    type alias MyDoc =
-        { slices : List Slice }
-
-    type Slice
-        = SAlbum Album
-        | SBook Book
-
-    type alias Album =
-        { title : String
-        , cover : ImageViews
-        }
-
-    type alias Book =
-        { title : String
-        , blurb : StructuredText
-        }
-
-    albumDecoder : Decoder Album
-    albumDecoder =
-        decode Album
-            |> required "title" text
-            |> required "cover" image
-
-    bookDecoder : Decoder Book
-    bookDecoder =
-        decode Book
-            |> required "title" text
-            |> required "blurb" structuredText
-
-    myDocDecoder : Decoder MyDoc
-    myDocDecoder =
-        decode MyDoc
-            |> required "slices"
-                (sliceZone
-                    [ slice "album" (group albumDecoder)
-                    , slice "book" (group bookDecoder)
-                    ]
-                )
-
--}
-group : GroupDecoder a -> Decoder (List a)
-group (GroupDecoder decoder) =
-    Decoder
-        (\field ->
-            case field of
-                Groups groups ->
-                    groups
-                        |> List.map decoder
-                        |> Result.collect
-
-                _ ->
-                    Err ("Expected a Group field, but got '" ++ toString field ++ "'.")
-        )
-
-
-{-| Decode a field
--}
-field : String -> Decoder a -> GroupDecoder a
-field =
-    Debug.crash "field"
-
-
-{-| Decode a field that might be missing.
--}
-optionalField : String -> Decoder a -> a -> GroupDecoder a
-optionalField =
-    Debug.crash "optionalField"
-
-
-map : (a -> b) -> Decoder a -> Decoder b
-map =
-    Debug.crash "map"
-
-
-decode : a -> GroupDecoder a
-decode =
-    Debug.crash "decode"
-
-
-required : String -> Decoder a -> GroupDecoder (a -> b) -> GroupDecoder b
-required =
-    Debug.crash "required"
-
-
-optional : String -> Decoder a -> a -> GroupDecoder (a -> b) -> GroupDecoder b
-optional =
-    Debug.crash "optional"
-
-
-decodeGroup : GroupDecoder a -> Group -> Result String a
-decodeGroup (GroupDecoder f) group =
-    f group

@@ -9,6 +9,10 @@
     "exposed-modules": [
         "Prismic",
         "Prismic.Api",
+        "Prismic.Document.Decoders",
+        "Prismic.Document.Field",
+        "Prismic.Document.Group",
+        "Prismic.Document.Slice",
         "Prismic.Document"
     ],
     "dependencies": {

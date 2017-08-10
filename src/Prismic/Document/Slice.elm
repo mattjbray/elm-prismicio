@@ -1,6 +1,28 @@
-module Prismic.Document.Slice exposing (..)
+module Prismic.Document.Slice
+    exposing
+        ( Decoder
+        , FieldDecoder
+        , field
+        , group
+        , labelledV1Slice
+        , oneOf
+        , slice
+        , v1Slice
+        )
 
-import Prismic.Document.Field as Field exposing (GroupDecoder, decodeGroup)
+{-|
+
+@docs Decoder, oneOf, slice
+
+
+## Deprecated Slices
+
+@docs FieldDecoder, field, group, labelledV1Slice, v1Slice
+
+-}
+
+import Prismic.Document.Field as Field
+import Prismic.Document.Group as Group
 import Prismic.Document.Internal as Internal exposing (..)
 import Result.Extra as Result
 
@@ -11,10 +33,11 @@ import Result.Extra as Result
 
 {-| Decodes a `Slice` field.
 -}
-type Decoder a
-    = Decoder (Slice -> Result String a)
+type alias Decoder a =
+    Internal.Decoder Slice a
 
 
+{-| -}
 oneOf : List (Decoder a) -> Decoder a
 oneOf sliceDecoders =
     Decoder
@@ -40,24 +63,33 @@ oneOf sliceDecoders =
         )
 
 
+
+-- V1 SLICES (deprecated)
+
+
+{-| -}
+type alias FieldDecoder a =
+    Internal.Decoder SliceContentV1 a
+
+
 {-| Decode a (deprecated) old-style slice in a slice zone. The tagger is also passed the slice label.
 
 TODO: custom label decoders?
 
 -}
-labelledSlice : String -> (Maybe String -> a -> b) -> Field.Decoder a -> Decoder b
-labelledSlice sliceType tagger (Field.Decoder fieldDecoder) =
+labelledV1Slice : String -> (Maybe String -> a -> b) -> FieldDecoder a -> Decoder b
+labelledV1Slice sliceType tagger fieldDecoder =
     Decoder
         (\slice ->
             if sliceType == slice.sliceType then
                 case slice.sliceContent of
-                    SliceContentField sliceField ->
-                        fieldDecoder sliceField
+                    SliceContentV1 sliceField ->
+                        decodeValue fieldDecoder sliceField
                             |> Result.map (tagger slice.sliceLabel)
                             |> Result.mapError
                                 (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
 
-                    SliceContent _ _ ->
+                    SliceContentV2 _ _ ->
                         Err "Expected an old-style slice but got a new-style one."
             else
                 Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
@@ -66,26 +98,60 @@ labelledSlice sliceType tagger (Field.Decoder fieldDecoder) =
 
 {-| Decode a (deprecated) old-style slice in a slice zone.
 -}
-sliceV1 : String -> (a -> b) -> Field.Decoder a -> Decoder b
-sliceV1 sliceType tagger fieldDecoder =
-    labelledSlice sliceType (\_ -> tagger) fieldDecoder
+v1Slice : String -> (a -> b) -> FieldDecoder a -> Decoder b
+v1Slice sliceType tagger fieldDecoder =
+    labelledV1Slice sliceType (\_ -> tagger) fieldDecoder
+
+
+{-| -}
+field : Field.Decoder a -> FieldDecoder a
+field fieldDecoder =
+    Decoder
+        (\sliceContent ->
+            case sliceContent of
+                SliceContentV1Field field ->
+                    decodeValue fieldDecoder field
+
+                SliceContentV1Groups _ ->
+                    Err "Expected a Field but got a Group. (Hint: use group to decode Groups.)"
+        )
+
+
+{-| -}
+group : Group.Decoder a -> FieldDecoder (List a)
+group groupDecoder =
+    Decoder
+        (\sliceContent ->
+            case sliceContent of
+                SliceContentV1Field field ->
+                    Err "Expected a Field but got a Group. (Hint: use group to decode Groups.)"
+
+                SliceContentV1Groups groups ->
+                    groups
+                        |> List.map (decodeValue groupDecoder)
+                        |> Result.collect
+        )
+
+
+
+-- V2 Slices
 
 
 {-| Decode a slice in a slice zone.
 -}
-slice : String -> (a -> List b -> c) -> GroupDecoder a -> GroupDecoder b -> Decoder c
+slice : String -> (a -> List b -> c) -> Group.Decoder a -> Group.Decoder b -> Decoder c
 slice sliceType tagger nonRepeatDecoder repeatDecoder =
     Decoder
         (\slice ->
             if sliceType == slice.sliceType then
                 case slice.sliceContent of
-                    SliceContent doc docs ->
+                    SliceContentV2 doc docs ->
                         Result.map2 tagger
-                            (decodeGroup nonRepeatDecoder doc
+                            (decodeValue nonRepeatDecoder doc
                                 |> Result.mapError
                                     (\msg -> "While decoding non-repeating part: " ++ msg)
                             )
-                            (List.map (decodeGroup repeatDecoder) docs
+                            (List.map (decodeValue repeatDecoder) docs
                                 |> Result.collect
                                 |> Result.mapError
                                     (\msg -> "While decoding repeating part: " ++ msg)
@@ -93,13 +159,8 @@ slice sliceType tagger nonRepeatDecoder repeatDecoder =
                             |> Result.mapError
                                 (\msg -> "While decoding slice with type '" ++ slice.sliceType ++ "': " ++ msg)
 
-                    SliceContentField _ ->
-                        Err "Expected a new-style slice but got an old-style one. Try using sliceV1 instead."
+                    SliceContentV1 _ ->
+                        Err "Expected a new-style slice but got an old-style one. Try using v1Slice instead."
             else
                 Err ("Expected slice with type '" ++ sliceType ++ "' but got '" ++ slice.sliceType ++ "'.")
         )
-
-
-decodeSlice : Decoder a -> Slice -> Result String a
-decodeSlice (Decoder f) slice =
-    f slice
