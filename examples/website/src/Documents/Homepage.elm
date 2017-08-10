@@ -1,5 +1,6 @@
 module Documents.Homepage exposing (..)
 
+import Prismic.Decode exposing (custom, decode, map)
 import Prismic.Document
     exposing
         ( Decoder
@@ -9,7 +10,6 @@ import Prismic.Document
         , required
         , sliceZone
         )
-import Prismic.Document.Decoders exposing (custom, decode, map)
 import Prismic.Document.Field as Field
     exposing
         ( ImageViews

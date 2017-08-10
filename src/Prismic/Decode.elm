@@ -1,4 +1,4 @@
-module Prismic.Document.Decoders
+module Prismic.Decode
     exposing
         ( Decoder
         , andThen

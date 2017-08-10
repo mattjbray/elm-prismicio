@@ -1,12 +1,12 @@
 module Documents.Menu exposing (..)
 
+import Prismic.Decode exposing (custom, decode)
 import Prismic.Document
     exposing
         ( Decoder
         , group
         , required
         )
-import Prismic.Document.Decoders exposing (custom, decode)
 import Prismic.Document.Field as Field
     exposing
         ( Link
