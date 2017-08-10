@@ -19,8 +19,12 @@ module Prismic.Document
 
 @docs Decoder
 @docs field, optionalField
-@docs required, optional
 @docs group, sliceZone
+
+
+## Pipeline decoders
+
+@docs required, optional
 
 -}
 
@@ -33,6 +37,8 @@ import Result.Extra as Result
 
 
 {-| Holds the Prismic document.
+
+`Documents` consist of basic `Fields`, `Groups` and `Slices`.
 
 You will decode this into your own document type by passing a `Decoder MyDoc` to
 `submit`.
@@ -111,6 +117,8 @@ optional =
 
 {-| Decode a SliceZone.
 
+TODO: Update this example.
+
 Pass this function a list of possible elements that can appear in the Slice.
 
     type alias MyDoc =
@@ -169,6 +177,8 @@ sliceZone key sliceDecoder =
 
 
 {-| Decode a group.
+
+TODO: Update this example.
 
 Groups are essentially Documents, so you pass `group` a Document `Decoder`.
 

@@ -1,6 +1,7 @@
 module Prismic.Document.Group
     exposing
         ( Decoder
+        , Group
         , field
         , optional
         , optionalField
@@ -9,13 +10,32 @@ module Prismic.Document.Group
 
 {-|
 
-@docs Decoder, field, optional, optionalField, required
+@docs Group
+
+
+## Decoders
+
+@docs Decoder, field, optionalField
+
+
+## Pipeline decoders
+
+@docs optional, required
 
 -}
 
 import Dict exposing (Dict)
 import Prismic.Document.Field as Field
 import Prismic.Document.Internal as Internal exposing (..)
+
+
+{-| A `Group` is a collection of basic `Fields`.
+
+`Groups` cannot contain `Slices` or other `Groups`.
+
+-}
+type alias Group =
+    Internal.Group
 
 
 {-| -}

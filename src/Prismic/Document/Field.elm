@@ -33,7 +33,7 @@ module Prismic.Document.Field
 {-|
 
 
-### Field types
+## Field types
 
 You can create your own Elm types to represent your documents using the
 following components.
@@ -41,22 +41,22 @@ following components.
 @docs Field
 
 
-#### Structured Text
+### Structured Text
 
 @docs StructuredText, StructuredTextBlock
 
 
-#### Images
+### Images
 
 @docs ImageViews, ImageView, ImageDimensions
 
 
-#### Embeds
+### Embeds
 
 @docs Embed
 
 
-#### Links
+### Links
 
 @docs Link, DocumentReference
 
@@ -74,11 +74,9 @@ following components.
 @docs LinkResolver, defaultLinkResolver, resolveLink
 
 
-### `StructuredText` helpers
+## `StructuredText` helpers
 
 @docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
-
-@docs date, image, link, structuredText, text
 
 -}
 

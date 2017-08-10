@@ -2,6 +2,7 @@ module Prismic.Document.Slice
     exposing
         ( Decoder
         , FieldDecoder
+        , Slice
         , field
         , group
         , labelledV1Slice
@@ -11,6 +12,8 @@ module Prismic.Document.Slice
         )
 
 {-|
+
+@docs Slice
 
 @docs Decoder, oneOf, slice
 
@@ -28,6 +31,14 @@ import Result.Extra as Result
 
 
 -- TYPES
+
+
+{-| -}
+type alias Slice =
+    Internal.Slice
+
+
+
 -- DECODERS
 
 

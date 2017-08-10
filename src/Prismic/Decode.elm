@@ -10,12 +10,16 @@ module Prismic.Decode
         , succeed
         )
 
-{-|
+{-| Helpers for decoding various parts of a Document.
 
 
-## Decoding
+## Decoder combinators
 
 @docs Decoder, succeed, fail, map, apply, andThen
+
+
+## Pipeline decoders
+
 @docs decode, custom
 
 -}
