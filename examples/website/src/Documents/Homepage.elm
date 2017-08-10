@@ -78,7 +78,7 @@ decodeHomepage =
         |> required "buttonText" text
         |> required "buttonLink" link
         |> required "backgroundImage" image
-        |> sliceZone "body" bodySliceZone
+        |> custom (sliceZone "body" bodySliceZone)
 
 
 bodySliceZone : Slice.Decoder BodySlice

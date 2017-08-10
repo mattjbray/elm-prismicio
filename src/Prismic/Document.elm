@@ -153,20 +153,19 @@ Pass this function a list of possible elements that can appear in the Slice.
                 )
 
 -}
-sliceZone : String -> Slice.Decoder a -> Decoder (List a -> b) -> Decoder b
-sliceZone key sliceDecoder rest =
-    apply rest <|
-        Decoder
-            (\(Document doc) ->
-                case Dict.get key doc of
-                    Just (SliceZone slices) ->
-                        slices
-                            |> List.map (decodeValue sliceDecoder)
-                            |> Result.collect
+sliceZone : String -> Slice.Decoder a -> Decoder (List a)
+sliceZone key sliceDecoder =
+    Decoder
+        (\(Document doc) ->
+            case Dict.get key doc of
+                Just (SliceZone slices) ->
+                    slices
+                        |> List.map (decodeValue sliceDecoder)
+                        |> Result.collect
 
-                    _ ->
-                        Err "Expected a SliceZone field."
-            )
+                _ ->
+                    Err "Expected a SliceZone field."
+        )
 
 
 {-| Decode a group.
