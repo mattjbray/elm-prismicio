@@ -3,22 +3,28 @@ module Documents.Homepage exposing (..)
 import Prismic.Document
     exposing
         ( Decoder
-        , ImageViews
-        , Link
-        , StructuredText
         , decode
         , field
-        , group
-        , image
-        , labelledSlice
-        , link
         , optional
         , required
-        , slice
-        , sliceV1
         , sliceZone
+        )
+import Prismic.Document.Field as Field
+    exposing
+        ( ImageViews
+        , Link
+        , StructuredText
+        , group
+        , image
+        , link
         , structuredText
         , text
+        )
+import Prismic.Document.Slice as Slice
+    exposing
+        ( labelledSlice
+        , slice
+        , sliceV1
         )
 
 
@@ -71,12 +77,12 @@ decodeHomepage =
         |> required "buttonText" text
         |> required "buttonLink" link
         |> required "backgroundImage" image
-        |> required "body" bodySliceZone
+        |> sliceZone "body" bodySliceZone
 
 
-bodySliceZone : Prismic.Document.FieldDecoder (List BodySlice)
+bodySliceZone : Slice.Decoder BodySlice
 bodySliceZone =
-    sliceZone
+    Slice.oneOf
         [ sliceV1 "heading" Heading structuredText
         , labelledSlice "textSection" TextSection structuredText
         , sliceV1 "highlight" Highlight (group decodeHighlightGroup)
@@ -84,27 +90,27 @@ bodySliceZone =
         , sliceV1 "gallery" Gallery (group decodeGalleryGroup)
         , slice "new_image_gallery"
             (\title groups -> GalleryV2 (GalleryWithTitle title groups))
-            (field "title" structuredText)
+            (Field.field "title" structuredText)
             decodeGalleryGroup
         , slice "single_repeat"
             (\() texts -> SingleRepeat texts)
-            (decode ())
-            (field "title" structuredText)
+            (Field.decode ())
+            (Field.field "title" structuredText)
         ]
 
 
-decodeHighlightGroup : Decoder HighlightGroup
+decodeHighlightGroup : Field.GroupDecoder HighlightGroup
 decodeHighlightGroup =
-    decode HighlightGroup
-        |> required "title" structuredText
-        |> required "headline" structuredText
-        |> required "image" image
-        |> optional "link" link
-        |> optional "linkText" text
+    Field.decode HighlightGroup
+        |> Field.required "title" structuredText
+        |> Field.required "headline" structuredText
+        |> Field.required "image" image
+        |> Field.optional "link" (Field.map Just link) Nothing
+        |> Field.optional "linkText" (Field.map Just text) Nothing
 
 
-decodeGalleryGroup : Decoder GalleryGroup
+decodeGalleryGroup : Field.GroupDecoder GalleryGroup
 decodeGalleryGroup =
-    decode GalleryGroup
-        |> required "description" structuredText
-        |> required "image" image
+    Field.decode GalleryGroup
+        |> Field.required "description" structuredText
+        |> Field.required "image" image

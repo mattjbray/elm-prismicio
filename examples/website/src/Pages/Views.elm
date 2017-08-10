@@ -1,25 +1,15 @@
-module Pages.Views exposing (linkAttrs, viewBodySlice, viewHeader)
+module Pages.Views exposing (viewBodySlice, viewHeader)
 
 import Documents.Homepage exposing (BodySlice(..), GalleryGroup, HighlightGroup, Homepage)
 import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
-import Prismic.Document as Prismic
+import Prismic.Document.Field as Prismic
 
 
 asHtml : Prismic.StructuredText -> List (Html msg)
 asHtml =
     Prismic.structuredTextAsHtml Prismic.defaultLinkResolver
-
-
-linkAttrs : Prismic.LinkResolver msg -> Prismic.Link -> List (Html.Attribute msg)
-linkAttrs linkResolver link =
-    case link of
-        Prismic.DocumentLink ref _ ->
-            linkResolver ref
-
-        Prismic.WebLink url ->
-            [ Html.href url ]
 
 
 viewHeader : Prismic.LinkResolver msg -> Menu -> Html msg
@@ -28,7 +18,7 @@ viewHeader linkResolver menu =
         viewLink link =
             Html.li []
                 [ Html.a
-                    (linkAttrs linkResolver link.link)
+                    (Prismic.resolveLink linkResolver link.link)
                     [ Html.text link.label ]
                 ]
     in

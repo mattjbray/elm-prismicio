@@ -1,0 +1,511 @@
+module Prismic.Document.Field exposing (..)
+
+import Date
+import Html exposing (Html)
+import Html.Attributes exposing (class, href, src)
+import Json.Encode
+import Prismic.Document.Internal as Internal exposing (..)
+import Result.Extra as Result
+
+
+-- TYPES
+
+
+type alias DocumentReference =
+    Internal.DocumentReference
+
+
+type alias Field =
+    Internal.Field
+
+
+type alias StructuredText =
+    Internal.StructuredText
+
+
+type alias StructuredTextBlock =
+    Internal.StructuredTextBlock
+
+
+type alias ImageViews =
+    Internal.ImageViews
+
+
+type alias ImageView =
+    Internal.ImageView
+
+
+type alias Embed =
+    Internal.Embed
+
+
+type alias Link =
+    Internal.Link
+
+
+
+-- VIEW HELPERS
+
+
+{-| A `LinkResolver` simply converts Html.a Prismic `DocumentReference` to Html.a list of
+`Html.Attribute`s. `structuredTextAsHtml` and friends add these attributes to
+links in the text.
+
+For example, you can use this to add `onClick` handlers to links:
+
+    type Msg
+        = NavigateTo DocumentReference
+
+    myLinkResolver : LinkResolver Msg
+    myLinkResolver docRef =
+        [ Html.Attributes.href ""
+        , Html.Events.onClick (NavigateTo docRef)
+        ]
+
+    view : StructuredText -> Html Msg
+    view myStructuredText =
+        structuredTextAsHtml myLinkResolver myStructuredText
+
+Your `update` function would handle the `NavigateTo` message and perform the
+appropriate routing.
+
+-}
+type alias LinkResolver msg =
+    { resolveDocumentReference :
+        DocumentReference -> List (Html.Attribute msg)
+    , resolveUrl :
+        String -> List (Html.Attribute msg)
+    }
+
+
+{-| Adds a default `href` attribute to links:
+[ href "documents/{doc.id}/{doc.slug}" ]
+-}
+defaultLinkResolver : LinkResolver msg
+defaultLinkResolver =
+    { resolveDocumentReference =
+        \linkedDoc ->
+            [ href (String.join "/" [ "documents", linkedDoc.id, linkedDoc.slug ]) ]
+    , resolveUrl =
+        \url ->
+            [ href url ]
+    }
+
+
+{-| Render some `StructuredText` as HTML.
+
+You must supply Html.a `LinkResolver` to resolve any links in the `StructuredText`.
+If you don't care about this, you can use the `defaultLinkResolver`.
+
+-}
+structuredTextAsHtml : LinkResolver msg -> StructuredText -> List (Html msg)
+structuredTextAsHtml linkResolver (StructuredText blocks) =
+    List.map (structuredTextBlockAsHtml linkResolver) blocks
+
+
+{-| Render Html.a single block of `StructuredText` as HTML.
+-}
+structuredTextBlockAsHtml : LinkResolver msg -> StructuredTextBlock -> Html msg
+structuredTextBlockAsHtml linkResolver field =
+    case field of
+        SImage image ->
+            imageAsHtml image
+
+        SEmbed embed ->
+            embedAsHtml embed
+
+        Heading1 block ->
+            blockAsHtml Html.h1 linkResolver block
+
+        Heading2 block ->
+            blockAsHtml Html.h2 linkResolver block
+
+        Heading3 block ->
+            blockAsHtml Html.h3 linkResolver block
+
+        Paragraph block ->
+            blockAsHtml Html.p linkResolver block
+
+        ListItem block ->
+            blockAsHtml
+                (\attrs childs ->
+                    Html.ul [] [ Html.li attrs childs ]
+                )
+                linkResolver
+                block
+
+
+blockAsHtml :
+    (List (Html.Attribute msg)
+     -> List (Html msg)
+     -> Html msg
+    )
+    -> LinkResolver msg
+    -> Block
+    -> Html msg
+blockAsHtml el linkResolver field =
+    let
+        spanEl span =
+            case span.spanElement of
+                Em ->
+                    Html.em []
+
+                Strong ->
+                    Html.strong []
+
+                Hyperlink link ->
+                    Html.a (resolveLink linkResolver link)
+
+        foldFn span ( childs, index ) =
+            let
+                beginning =
+                    String.slice index span.start field.text
+
+                middle =
+                    String.slice span.start span.end field.text
+            in
+            ( childs ++ [ Html.text beginning, spanEl span [ Html.text middle ] ]
+            , span.end
+            )
+    in
+    el
+        (field.label
+            |> Maybe.map (\label -> [ class label ])
+            |> Maybe.withDefault []
+        )
+        (field.spans
+            |> List.sortBy .start
+            |> List.foldl foldFn ( [], 0 )
+            |> (\( childs, index ) -> childs ++ [ Html.text (String.dropLeft index field.text) ])
+        )
+
+
+imageAsHtml : ImageView -> Html msg
+imageAsHtml image =
+    Html.img [ src image.url ] []
+
+
+embedAsHtml : Embed -> Html msg
+embedAsHtml embed =
+    case embed of
+        EVideo props ->
+            Html.div [ Html.Attributes.property "innerHTML" (Json.Encode.string props.html) ] []
+
+        ERich props ->
+            Html.div [ Html.Attributes.property "innerHTML" (Json.Encode.string props.html) ] []
+
+
+resolveLink : LinkResolver msg -> Link -> List (Html.Attribute msg)
+resolveLink linkResolver link =
+    case link of
+        DocumentLink linkedDoc isBroken ->
+            linkResolver.resolveDocumentReference linkedDoc
+
+        WebLink url ->
+            linkResolver.resolveUrl url
+
+
+linkAsHtml : LinkResolver msg -> Link -> Html msg
+linkAsHtml linkResolver link =
+    let
+        attrs =
+            resolveLink linkResolver link
+    in
+    case link of
+        DocumentLink linkedDoc isBroken ->
+            Html.a attrs [ Html.text (toString linkedDoc.slug) ]
+
+        WebLink url ->
+            Html.a attrs [ Html.text url ]
+
+
+{-| Get the first title out of some `StructuredText`, if there is one.
+-}
+getTitle : StructuredText -> Maybe StructuredTextBlock
+getTitle (StructuredText structuredText) =
+    let
+        isTitle field =
+            case field of
+                Heading1 _ ->
+                    True
+
+                Heading2 _ ->
+                    True
+
+                Heading3 _ ->
+                    True
+
+                _ ->
+                    False
+    in
+    List.head (List.filter isTitle structuredText)
+
+
+{-| Get the first paragraph out of some `StructuredText`, if there is one.
+-}
+getFirstParagraph : StructuredText -> Maybe StructuredTextBlock
+getFirstParagraph (StructuredText structuredText) =
+    let
+        isParagraph field =
+            case field of
+                Paragraph _ ->
+                    True
+
+                _ ->
+                    False
+    in
+    List.head (List.filter isParagraph structuredText)
+
+
+{-| Get the first image out of some `StructuredText`, if there is one.
+-}
+getFirstImage : StructuredText -> Maybe ImageView
+getFirstImage (StructuredText structuredText) =
+    let
+        getImage field =
+            case field of
+                SImage image ->
+                    Just image
+
+                _ ->
+                    Nothing
+    in
+    List.head (List.filterMap getImage structuredText)
+
+
+{-| Get the contents of Html.a single `StructuredText` element as Html.a `String`.
+-}
+getText : StructuredTextBlock -> String
+getText field =
+    case field of
+        Heading1 block ->
+            block.text
+
+        Heading2 block ->
+            block.text
+
+        Heading3 block ->
+            block.text
+
+        Paragraph block ->
+            block.text
+
+        ListItem block ->
+            block.text
+
+        SImage imageField ->
+            Maybe.withDefault "<image>" imageField.alt
+
+        SEmbed _ ->
+            ""
+
+
+{-| Get the contents of Html.a some `StructuredText` as Html.a `String`.
+-}
+getTexts : StructuredText -> String
+getTexts (StructuredText fields) =
+    fields
+        |> List.map getText
+        |> String.join " "
+
+
+
+-- DECODERS
+
+
+type Decoder a
+    = Decoder (Field -> Result String a)
+
+
+decodeField : Decoder a -> Field -> Result String a
+decodeField (Decoder f) field =
+    f field
+
+
+succeed : a -> Decoder a
+succeed x =
+    Decoder (\_ -> Ok x)
+
+
+fail : String -> Decoder a
+fail msg =
+    Decoder (\_ -> Err msg)
+
+
+{-| Decode Html.a Text field.
+-}
+text : Decoder String
+text =
+    Decoder
+        (\field ->
+            case field of
+                Text text ->
+                    Ok text
+
+                _ ->
+                    Err ("Expected Html.a Text field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode Html.a StructuredText field.
+-}
+structuredText : Decoder StructuredText
+structuredText =
+    Decoder
+        (\field ->
+            case field of
+                StructuredTextField x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected Html.a StructuredText field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode an Image field.
+-}
+image : Decoder ImageViews
+image =
+    Decoder
+        (\field ->
+            case field of
+                Image x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected an Image field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode Html.a Date field.
+-}
+date : Decoder Date.Date
+date =
+    Decoder
+        (\field ->
+            case field of
+                Date x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected Html.a Date field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode Html.a Link field.
+-}
+link : Decoder Link
+link =
+    Decoder
+        (\field ->
+            case field of
+                Link x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected Html.a Link field, but got '" ++ toString field ++ "'.")
+        )
+
+
+type GroupDecoder a
+    = GroupDecoder (Group -> Result String a)
+
+
+{-| Decode a group.
+
+Groups are essentially Documents, so you pass `group` a Document `Decoder`.
+
+Here is an example with a slice containing groups:
+
+    type alias MyDoc =
+        { slices : List Slice }
+
+    type Slice
+        = SAlbum Album
+        | SBook Book
+
+    type alias Album =
+        { title : String
+        , cover : ImageViews
+        }
+
+    type alias Book =
+        { title : String
+        , blurb : StructuredText
+        }
+
+    albumDecoder : Decoder Album
+    albumDecoder =
+        decode Album
+            |> required "title" text
+            |> required "cover" image
+
+    bookDecoder : Decoder Book
+    bookDecoder =
+        decode Book
+            |> required "title" text
+            |> required "blurb" structuredText
+
+    myDocDecoder : Decoder MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> required "slices"
+                (sliceZone
+                    [ slice "album" (group albumDecoder)
+                    , slice "book" (group bookDecoder)
+                    ]
+                )
+
+-}
+group : GroupDecoder a -> Decoder (List a)
+group (GroupDecoder decoder) =
+    Decoder
+        (\field ->
+            case field of
+                Groups groups ->
+                    groups
+                        |> List.map decoder
+                        |> Result.collect
+
+                _ ->
+                    Err ("Expected a Group field, but got '" ++ toString field ++ "'.")
+        )
+
+
+{-| Decode a field
+-}
+field : String -> Decoder a -> GroupDecoder a
+field =
+    Debug.crash "field"
+
+
+{-| Decode a field that might be missing.
+-}
+optionalField : String -> Decoder a -> a -> GroupDecoder a
+optionalField =
+    Debug.crash "optionalField"
+
+
+map : (a -> b) -> Decoder a -> Decoder b
+map =
+    Debug.crash "map"
+
+
+decode : a -> GroupDecoder a
+decode =
+    Debug.crash "decode"
+
+
+required : String -> Decoder a -> GroupDecoder (a -> b) -> GroupDecoder b
+required =
+    Debug.crash "required"
+
+
+optional : String -> Decoder a -> a -> GroupDecoder (a -> b) -> GroupDecoder b
+optional =
+    Debug.crash "optional"
+
+
+decodeGroup : GroupDecoder a -> Group -> Result String a
+decodeGroup (GroupDecoder f) group =
+    f group

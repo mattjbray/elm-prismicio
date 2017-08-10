@@ -4,8 +4,8 @@ import Documents.Homepage exposing (Homepage)
 import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
-import Pages.Views exposing (linkAttrs, viewBodySlice, viewHeader)
-import Prismic.Document as Prismic
+import Pages.Views exposing (viewBodySlice, viewHeader)
+import Prismic.Document.Field as Prismic
 
 
 view : Prismic.LinkResolver msg -> Menu -> Homepage -> Html msg
@@ -35,7 +35,7 @@ viewBanner linkResolver homepage =
                 [ Html.text (Prismic.getTexts homepage.title) ]
             , Html.p [ Html.class "banner-description" ]
                 [ Html.text (Prismic.getTexts homepage.tagline) ]
-            , Html.a (Html.class "banner-button" :: linkAttrs linkResolver homepage.buttonLink)
+            , Html.a (Html.class "banner-button" :: Prismic.resolveLink linkResolver homepage.buttonLink)
                 [ Html.text homepage.buttonText ]
             ]
         ]

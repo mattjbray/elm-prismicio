@@ -3,12 +3,15 @@ module Documents.Menu exposing (..)
 import Prismic.Document
     exposing
         ( Decoder
-        , Link
-        , StructuredText
         , decode
+        , required
+        )
+import Prismic.Document.Field as Field
+    exposing
+        ( Link
+        , StructuredText
         , group
         , link
-        , required
         , structuredText
         , text
         )
@@ -33,8 +36,8 @@ decodeMenu =
         |> required "menuLinks" (group decodeMenuLink)
 
 
-decodeMenuLink : Decoder MenuLink
+decodeMenuLink : Field.GroupDecoder MenuLink
 decodeMenuLink =
-    decode MenuLink
-        |> required "label" text
-        |> required "link" link
+    Field.decode MenuLink
+        |> Field.required "label" text
+        |> Field.required "link" link

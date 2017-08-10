@@ -35,7 +35,9 @@ module Prismic.Api
 import Dict exposing (Dict)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
-import Prismic.Document exposing (Document, DocumentReference, decodeDocumentJson, decodeDocumentReferenceJson)
+import Prismic.Document exposing (Document)
+import Prismic.Document.Field exposing (DocumentReference)
+import Prismic.Document.Internal exposing (decodeDocumentJson, decodeDocumentReferenceJson)
 
 
 -- Types: API

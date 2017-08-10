@@ -10,7 +10,7 @@ import Pages.Homepage
 import Pages.Page
 import Prismic
 import Prismic.Api as Prismic
-import Prismic.Document as Prismic
+import Prismic.Document.Field as Prismic exposing (defaultLinkResolver)
 import Task
 
 
@@ -64,9 +64,13 @@ type Msg
     | NavigateTo Prismic.DocumentReference
 
 
-linkResolver : Prismic.DocumentReference -> List (Html.Attribute Msg)
-linkResolver ref =
-    [ onClick (NavigateTo ref), href "#" ]
+linkResolver : Prismic.LinkResolver Msg
+linkResolver =
+    { defaultLinkResolver
+        | resolveDocumentReference =
+            \ref ->
+                [ onClick (NavigateTo ref), href "#" ]
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
