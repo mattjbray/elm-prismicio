@@ -2,6 +2,7 @@ module Prismic
     exposing
         ( Model
         , ModelWithApi
+        , Options
         , Predicate
         , PrismicError(..)
         , Request
@@ -11,10 +12,12 @@ module Prismic
         , atL
         , bookmark
         , cache
+        , defaultOptions
         , form
         , fulltext
         , getApi
         , init
+        , initWith
         , query
         , ref
         , submit
@@ -25,7 +28,7 @@ module Prismic
 
 # Initialisation
 
-@docs init
+@docs init, initWith, Options, defaultOptions
 
 
 # Initiating a request
@@ -104,6 +107,7 @@ type alias Model_ api =
     , url : String
     , nextRequestId : Int
     , cache : Dict String (Response Document.Document)
+    , options : Options
     }
 
 
@@ -112,6 +116,21 @@ type alias Model_ api =
 getApi : ModelWithApi -> Api
 getApi (ModelWithApi model) =
     model.api
+
+
+
+-- Types: Options
+
+
+{-| -}
+type alias Options =
+    { defaultRef : String }
+
+
+{-| -}
+defaultOptions : Options
+defaultOptions =
+    { defaultRef = "master" }
 
 
 
@@ -161,11 +180,19 @@ this in your application's Model somewhere.
 -}
 init : String -> Model
 init url =
+    initWith url defaultOptions
+
+
+{-| Initialise with custom options.
+-}
+initWith : String -> Options -> Model
+initWith url options =
     Model
         { api = Nothing
         , url = url
         , nextRequestId = 0
         , cache = Dict.empty
+        , options = options
         }
 
 
@@ -198,20 +225,16 @@ form formId apiTask =
                 mForm =
                     Dict.get formId cache.api.forms
 
-                defaultRefId =
-                    "master"
-
-                mRef =
-                    getRefById defaultRefId cache.api
+                ref =
+                    getRefById cache.options.defaultRef cache.api
+                        |> Maybe.map .ref
+                        |> Maybe.withDefault (Ref cache.options.defaultRef)
             in
-            case ( mForm, mRef ) of
-                ( Nothing, _ ) ->
+            case mForm of
+                Nothing ->
                     Task.fail (FormDoesNotExist formId)
 
-                ( _, Nothing ) ->
-                    Task.fail (RefDoesNotExist defaultRefId)
-
-                ( Just form, Just masterRef ) ->
+                Just form ->
                     let
                         q =
                             Maybe.withDefault ""
@@ -222,7 +245,7 @@ form formId apiTask =
                     Task.succeed
                         ( Request
                             { action = form.action
-                            , ref = masterRef.ref
+                            , ref = ref
                             , q = q
                             }
                         , ModelWithApi cache
