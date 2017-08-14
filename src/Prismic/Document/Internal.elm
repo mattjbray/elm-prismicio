@@ -1,39 +1,23 @@
 module Prismic.Document.Internal exposing (..)
 
-{-|
-
-
-## Documents
-
-@docs Document
-
-
-## Decoding documents
-
-@docs Decoder, decode, map
-@docs FieldDecoder, field, required, optional
-@docs Slice.Decoder, sliceZone, v1Slice, labelledV1Slice, slice, group
-
--}
-
 import Date
 import Dict exposing (Dict)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
 
 
-{-| Holds the Prismic document.
+type alias Document =
+    { data : Dict String DocumentField
+    , href : String
+    , id : String
+    , linkedDocuments : List DocumentReference
+    , slugs : List String
+    , tags : List String
+    , resultType : String
+    , uid : Maybe String
+    }
 
-You will decode this into your own document type by passing a `Decoder MyDoc` to
-`submit`.
 
--}
-type Document
-    = Document (Dict String DocumentField)
-
-
-{-| A field in the `Document`.
--}
 type DocumentField
     = Field Field
     | Groups (List Group)
@@ -329,16 +313,28 @@ optional getKey key fieldDecoder default decoder =
 -- JSON DECODERS
 
 
+decodeSearchResult : Json.Decoder Document
+decodeSearchResult =
+    Json.decode Document
+        |> Json.custom decodeDocumentJson
+        |> Json.required "href" Json.string
+        |> Json.required "id" Json.string
+        |> Json.required "linked_documents" (Json.list decodeDocumentReferenceJson)
+        |> Json.required "slugs" (Json.list Json.string)
+        |> Json.required "tags" (Json.list Json.string)
+        |> Json.required "type" Json.string
+        |> Json.required "uid" (Json.nullable Json.string)
+
+
 {-| Decode a `Document` from JSON.
 -}
-decodeDocumentJson : Json.Decoder Document
+decodeDocumentJson : Json.Decoder (Dict String DocumentField)
 decodeDocumentJson =
     Json.field "type" Json.string
         |> Json.andThen
             (\docType ->
                 Json.at [ "data", docType ] (Json.dict decodeDocumentField)
             )
-        |> Json.map Document
 
 
 decodeDocumentField : Json.Decoder DocumentField

@@ -85,9 +85,7 @@ update msg model =
                 | prismic =
                     newPrismic
                 , homepage =
-                    result.results
-                        |> List.head
-                        |> Maybe.map .data
+                    List.head result.results
               }
             , fetchMenu newPrismic
             )
@@ -106,7 +104,6 @@ update msg model =
                 , menu =
                     result.results
                         |> List.head
-                        |> Maybe.map .data
               }
             , Cmd.none
             )
@@ -123,9 +120,7 @@ update msg model =
                 | prismic =
                     Prismic.cache model.prismic prismic
                 , page =
-                    result.results
-                        |> List.head
-                        |> Maybe.map .data
+                    List.head result.results
               }
             , Cmd.none
             )

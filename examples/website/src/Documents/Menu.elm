@@ -1,7 +1,7 @@
 module Documents.Menu exposing (..)
 
 import Prismic.Decode exposing (custom, decode)
-import Prismic.Document
+import Prismic.Document as Document
     exposing
         ( Decoder
         , group
@@ -19,7 +19,8 @@ import Prismic.Document.Group as Group
 
 
 type alias Menu =
-    { title : StructuredText
+    { id : String
+    , title : StructuredText
     , links : List MenuLink
     }
 
@@ -33,6 +34,7 @@ type alias MenuLink =
 decodeMenu : Decoder Menu
 decodeMenu =
     decode Menu
+        |> custom Document.id
         |> required "title" structuredText
         |> custom (group "menuLinks" decodeMenuLink)
 

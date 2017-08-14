@@ -340,15 +340,11 @@ submit decodeDocType requestTask =
 
                 decodeResponseToUserDocType response =
                     response.results
-                        |> List.map
-                            (\result ->
-                                Internal.decodeValue decodeDocType result.data
-                                    |> Result.map (\doc -> { result | data = doc })
-                            )
+                        |> List.map (Internal.decodeValue decodeDocType)
                         |> Result.collect
                         |> Result.map (\docs -> { response | results = docs })
                         |> Task.fromResult
-                        |> Task.mapError (\msg -> DecodeDocumentError msg)
+                        |> Task.mapError DecodeDocumentError
             in
             case getFromCache request cache of
                 Just response ->

@@ -8,7 +8,6 @@ module Prismic.Api
         , Ref(Ref)
         , RefProperties
         , Response
-        , SearchResult
         , decodeApi
         , decodeResponse
         )
@@ -23,7 +22,7 @@ module Prismic.Api
 
 ## Response
 
-@docs Response, SearchResult
+@docs Response
 
 
 ## Internal
@@ -36,8 +35,7 @@ import Dict exposing (Dict)
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
 import Prismic.Document exposing (Document)
-import Prismic.Document.Field exposing (DocumentReference)
-import Prismic.Document.Internal exposing (decodeDocumentJson, decodeDocumentReferenceJson)
+import Prismic.Document.Internal exposing (decodeSearchResult)
 
 
 -- Types: API
@@ -140,7 +138,7 @@ type alias Response docType =
     , nextPage : Maybe String
     , page : Int
     , prevPage : Maybe String
-    , results : List (SearchResult docType)
+    , results : List docType
     , resultsPerPage : Int
     , resultsSize : Int
     , totalPages : Int
@@ -149,26 +147,9 @@ type alias Response docType =
     }
 
 
-{-| Represents a single document in a `Response`.
-
-This type is parameterized by `docType`, which is determined by the `Decoder`
-you pass to `submit`.
-
--}
-type alias SearchResult docType =
-    { data : docType
-    , href : String
-    , id : String
-    , linkedDocuments : List DocumentReference
-    , slugs : List String
-    , tags : List String
-    , resultType : String
-    , uid : Maybe String
-    }
-
-
 
 -- DECODERS
+-- TODO: Move these to an internal module.
 
 
 decodeRef : Json.Decoder Ref
@@ -260,16 +241,3 @@ decodeResponse =
         |> required "total_pages" Json.int
         |> required "total_results_size" Json.int
         |> required "version" Json.string
-
-
-decodeSearchResult : Json.Decoder (SearchResult Document)
-decodeSearchResult =
-    Json.decode SearchResult
-        |> custom decodeDocumentJson
-        |> required "href" Json.string
-        |> required "id" Json.string
-        |> required "linked_documents" (Json.list decodeDocumentReferenceJson)
-        |> required "slugs" (Json.list Json.string)
-        |> required "tags" (Json.list Json.string)
-        |> required "type" Json.string
-        |> required "uid" (Json.nullable Json.string)

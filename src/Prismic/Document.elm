@@ -4,10 +4,16 @@ module Prismic.Document
         , Document
         , field
         , group
+        , href
+        , id
+        , linkedDocuments
         , optional
         , optionalField
         , required
         , sliceZone
+        , slugs
+        , tags
+        , uid
         )
 
 {-|
@@ -18,11 +24,16 @@ module Prismic.Document
 ## Decoding documents
 
 @docs Decoder
+@docs id, href, linkedDocuments, slugs, tags, uid
+
+
+### Decoding custom fields
+
 @docs field, optionalField
 @docs group, sliceZone
 
 
-## Pipeline decoders
+### Pipeline decoders
 
 @docs required, optional
 
@@ -61,9 +72,51 @@ type alias Decoder a =
     Internal.Decoder Document a
 
 
+{-| The document's ID.
+-}
+id : Decoder String
+id =
+    Decoder (Ok << .id)
+
+
+{-| The document's href.
+-}
+href : Decoder String
+href =
+    Decoder (Ok << .href)
+
+
+{-| The document's linked documents.
+-}
+linkedDocuments : Decoder (List DocumentReference)
+linkedDocuments =
+    Decoder (Ok << .linkedDocuments)
+
+
+{-| The document's slugs.
+-}
+slugs : Decoder (List String)
+slugs =
+    Decoder (Ok << .slugs)
+
+
+{-| The document's tags.
+-}
+tags : Decoder (List String)
+tags =
+    Decoder (Ok << .tags)
+
+
+{-| The document's UID.
+-}
+uid : Decoder (Maybe String)
+uid =
+    Decoder (Ok << .uid)
+
+
 getKey : String -> Document -> Maybe (Result String Field)
-getKey key (Document doc) =
-    case Dict.get key doc of
+getKey key doc =
+    case Dict.get key doc.data of
         Just (Field field) ->
             Just (Ok field)
 
@@ -164,8 +217,8 @@ Pass this function a list of possible elements that can appear in the Slice.
 sliceZone : String -> Slice.Decoder a -> Decoder (List a)
 sliceZone key sliceDecoder =
     Decoder
-        (\(Document doc) ->
-            case Dict.get key doc of
+        (\doc ->
+            case Dict.get key doc.data of
                 Just (SliceZone slices) ->
                     slices
                         |> List.map (decodeValue sliceDecoder)
@@ -227,8 +280,8 @@ Here is an example with a slice containing groups:
 group : String -> Group.Decoder a -> Decoder (List a)
 group key decoder =
     Decoder
-        (\(Document doc) ->
-            case Dict.get key doc of
+        (\doc ->
+            case Dict.get key doc.data of
                 Just (Groups groups) ->
                     groups
                         |> List.map (decodeValue decoder)
