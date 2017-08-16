@@ -5,7 +5,7 @@ import Documents.Page exposing (Page)
 import Html exposing (Html)
 import Html.Attributes as Html
 import Pages.Views exposing (viewBodySlice, viewHeader)
-import Prismic.Document.Field as Prismic
+import Prismic.Field as Prismic
 
 
 view : Prismic.LinkResolver msg -> Menu -> Page -> Html msg

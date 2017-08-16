@@ -1,4 +1,4 @@
-module Prismic.Document.Slice
+module Prismic.Slice
     exposing
         ( FieldDecoder
         , Slice
@@ -23,7 +23,7 @@ module Prismic.Document.Slice
 
 -}
 
-import Prismic.Document.Internal as Internal exposing (..)
+import Prismic.Internal as Internal exposing (..)
 import Result.Extra as Result
 
 

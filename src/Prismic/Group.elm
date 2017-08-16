@@ -1,4 +1,4 @@
-module Prismic.Document.Group
+module Prismic.Group
     exposing
         ( Group
         , field
@@ -24,7 +24,7 @@ module Prismic.Document.Group
 -}
 
 import Dict exposing (Dict)
-import Prismic.Document.Internal as Internal exposing (..)
+import Prismic.Internal as Internal exposing (..)
 
 
 {-| A `Group` is a collection of basic `Fields`.

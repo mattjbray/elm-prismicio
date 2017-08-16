@@ -8,9 +8,9 @@
     ],
     "exposed-modules": [
         "Prismic",
-        "Prismic.Document.Field",
-        "Prismic.Document.Group",
-        "Prismic.Document.Slice"
+        "Prismic.Field",
+        "Prismic.Group",
+        "Prismic.Slice"
     ],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",

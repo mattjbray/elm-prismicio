@@ -139,10 +139,10 @@ import Dict exposing (Dict)
 import Http
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
-import Prismic.Document.Field as Field exposing (Field)
-import Prismic.Document.Group as Group exposing (Group)
-import Prismic.Document.Internal as Internal
-import Prismic.Document.Slice as Slice exposing (Slice)
+import Prismic.Field as Field exposing (Field)
+import Prismic.Group as Group exposing (Group)
+import Prismic.Internal as Internal
+import Prismic.Slice as Slice exposing (Slice)
 import Result.Extra as Result
 import String
 import Task exposing (Task)

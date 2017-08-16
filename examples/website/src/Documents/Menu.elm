@@ -9,7 +9,7 @@ import Prismic
         , group
         , required
         )
-import Prismic.Document.Field as Field
+import Prismic.Field as Field
     exposing
         ( Field
         , Link
@@ -18,7 +18,7 @@ import Prismic.Document.Field as Field
         , structuredText
         , text
         )
-import Prismic.Document.Group as Group exposing (Group)
+import Prismic.Group as Group exposing (Group)
 
 
 type alias Menu =

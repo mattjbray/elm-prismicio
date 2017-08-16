@@ -1,4 +1,4 @@
-module Prismic.Document.Internal exposing (..)
+module Prismic.Internal exposing (..)
 
 import Date
 import Dict exposing (Dict)

@@ -13,7 +13,7 @@ import Prismic
         , required
         , sliceZone
         )
-import Prismic.Document.Field as Field
+import Prismic.Field as Field
     exposing
         ( ImageViews
         , Link
@@ -23,8 +23,8 @@ import Prismic.Document.Field as Field
         , structuredText
         , text
         )
-import Prismic.Document.Group as Group exposing (Group)
-import Prismic.Document.Slice as Slice
+import Prismic.Group as Group exposing (Group)
+import Prismic.Slice as Slice
     exposing
         ( Slice
         , labelledV1Slice

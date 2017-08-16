@@ -4,7 +4,7 @@ import Documents.Homepage exposing (BodySlice(..), GalleryGroup, HighlightGroup,
 import Documents.Menu exposing (Menu)
 import Html exposing (Html)
 import Html.Attributes as Html
-import Prismic.Document.Field as Prismic
+import Prismic.Field as Prismic
 
 
 asHtml : Prismic.StructuredText -> List (Html msg)

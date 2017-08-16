@@ -1,4 +1,4 @@
-module Prismic.Document.Field
+module Prismic.Field
     exposing
         ( DocumentReference
         , Embed
@@ -82,7 +82,7 @@ import Date
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
 import Json.Encode
-import Prismic.Document.Internal as Internal exposing (..)
+import Prismic.Internal as Internal exposing (..)
 
 
 -- TYPES
