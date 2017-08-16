@@ -1,6 +1,6 @@
 module Documents.Menu exposing (..)
 
-import Prismic.Decode exposing (custom, decode)
+import Prismic exposing (custom, decode)
 import Prismic.Document as Document
     exposing
         ( Decoder

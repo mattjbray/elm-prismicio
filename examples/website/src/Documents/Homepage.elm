@@ -1,6 +1,6 @@
 module Documents.Homepage exposing (..)
 
-import Prismic.Decode exposing (custom, decode, map)
+import Prismic exposing (custom, decode, map)
 import Prismic.Document
     exposing
         ( Decoder

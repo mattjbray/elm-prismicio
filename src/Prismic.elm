@@ -1,6 +1,7 @@
 module Prismic
     exposing
         ( Api
+        , Decoder
         , Experiments
         , FieldType
         , Form
@@ -14,21 +15,28 @@ module Prismic
         , RefProperties
         , Request
         , Response
+        , andThen
         , any
         , api
+        , apply
         , at
         , atL
         , bookmark
         , cache
+        , custom
+        , decode
         , defaultOptions
+        , fail
         , form
         , fulltext
         , getApi
         , init
         , initWith
+        , map
         , query
         , ref
         , submit
+        , succeed
         )
 
 {-| An Elm SDK for [Prismic.io](https://prismic.io).
@@ -75,6 +83,21 @@ module Prismic
 ## Api
 
 @docs Api, RefProperties, Ref, Form, FormField, FieldType, Experiments
+
+
+# Decoders
+
+Helpers for decoding various parts of a Document.
+
+
+## Decoder combinators
+
+@docs Decoder, succeed, fail, map, apply, andThen
+
+
+## Pipeline decoders
+
+@docs decode, custom
 
 -}
 
@@ -758,3 +781,69 @@ setInCache request response prismic =
 requestToKey : Request -> String
 requestToKey =
     toString
+
+
+
+-- DECODERS
+
+
+{-| -}
+type alias Decoder val a =
+    Internal.Decoder val a
+
+
+{-| -}
+succeed : a -> Decoder val a
+succeed =
+    Internal.succeed
+
+
+{-| -}
+fail : String -> Decoder val a
+fail =
+    Internal.fail
+
+
+{-| Transform a decoder.
+-}
+map : (a -> b) -> Decoder val a -> Decoder val b
+map =
+    Internal.map
+
+
+{-| -}
+apply : Decoder val (a -> b) -> Decoder val a -> Decoder val b
+apply =
+    Internal.apply
+
+
+{-| -}
+andThen : (a -> Decoder val b) -> Decoder val a -> Decoder val b
+andThen =
+    Internal.andThen
+
+
+
+-- Decoding Pipelines
+
+
+{-| Begin a decoding pipeline.
+
+    type alias MyDoc =
+        { title : StructuredText }
+
+    myDocDecoder : Decoder MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> required "title" structuredText
+
+-}
+decode : a -> Decoder val a
+decode =
+    Internal.decode
+
+
+{-| -}
+custom : Decoder val a -> Decoder val (a -> b) -> Decoder val b
+custom =
+    Internal.custom

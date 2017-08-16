@@ -8,7 +8,6 @@
     ],
     "exposed-modules": [
         "Prismic",
-        "Prismic.Decode",
         "Prismic.Document.Field",
         "Prismic.Document.Group",
         "Prismic.Document.Slice",

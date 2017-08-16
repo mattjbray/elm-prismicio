@@ -1,7 +1,7 @@
 module Documents.Page exposing (..)
 
 import Documents.Homepage exposing (BodySlice, bodySliceZone)
-import Prismic.Decode exposing (map)
+import Prismic exposing (map)
 import Prismic.Document exposing (Decoder, sliceZone)
 
 
