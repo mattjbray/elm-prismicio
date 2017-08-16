@@ -871,7 +871,7 @@ andThen =
     type alias MyDoc =
         { title : StructuredText }
 
-    myDocDecoder : Decoder MyDoc
+    myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
         decode MyDoc
             |> required "title" structuredText
@@ -882,7 +882,16 @@ decode =
     Internal.decode
 
 
-{-| -}
+{-| Use a standard decoder in a pipeline.
+
+The following is equivalent to the example using `required` above:
+
+    myDocDecoder : Decoder Document MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> custom (field "title" structuredText)
+
+-}
 custom : Decoder val a -> Decoder val (a -> b) -> Decoder val b
 custom =
     Internal.custom
@@ -896,8 +905,8 @@ custom =
 
 `Documents` consist of basic `Fields`, `Groups` and `Slices`.
 
-You will decode this into your own document type by passing a `Decoder MyDoc` to
-`submit`.
+You will decode this into your own document type by passing a `Decoder Document
+MyDocType` to `submit`.
 
 -}
 type alias Document =
@@ -981,7 +990,10 @@ getKey key doc =
             Nothing
 
 
-{-| Decode a field
+{-| Decode a field.
+
+Pass this function a `Decoder Field a` from the `Prismic.Field` module.
+
 -}
 field : String -> Decoder Field a -> Decoder Document a
 field =
@@ -1009,113 +1021,32 @@ optional =
     Internal.optional getKey
 
 
-{-| Decode a SliceZone.
-
-TODO: Update this example.
-
-Pass this function a list of possible elements that can appear in the Slice.
-
-    type alias MyDoc =
-        { section : List Section }
-
-    type Section
-        = MyContent StructuredText
-        | MyImageGallery (List ImageViews)
-        | MyLinksSection LinksSection
-
-    type alias LinksSection =
-        { title : StructuredText
-        , links : List Link
-        }
-
-    myDocDecoder : Decode MyDoc
-    myDocDecoder =
-        decode MyDoc
-            |> sliceZone "section"
-                (Slice.oneOf
-                    [ -- The "my-content" slice type has a non-repeatable zone, but
-                      -- no repeatable zone.
-                      slice "my-content"
-                        (\content () -> MyContent content)
-                        structuredText
-                        (decode ())
-                    , -- The "my-image-gallery" slice type has a repeatable
-                      -- zone, but no non-repeatable zone.
-                      slice "my-image-gallery"
-                        (\() images -> MyImageGallery images)
-                        (decode ())
-                        image
-                    , -- The "my-links-section" slice type has both repeatable
-                      -- and non-repeatable zones.
-                      slice "my-links-section"
-                        (\title links -> MyLinksSection (LinksSection title links))
-                        (field "title" structuredText)
-                        (field "link" link)
-                    ]
-                )
-
--}
-sliceZone : String -> Decoder Slice a -> Decoder Document (List a)
-sliceZone key sliceDecoder =
-    Internal.Decoder
-        (\doc ->
-            case Dict.get key doc.data of
-                Just (Internal.SliceZone slices) ->
-                    slices
-                        |> List.map (Internal.decodeValue sliceDecoder)
-                        |> Result.collect
-
-                _ ->
-                    Err "Expected a SliceZone field."
-        )
-
-
 {-| Decode a group.
 
-TODO: Update this example.
+Pass this function a `Decoder Group a` from the `Prismic.Group` module.
 
-Groups are essentially Documents, so you pass `group` a Document `Decoder`.
+Groups can contain Fields, but not other Groups or Slices.
 
-Here is an example with a slice containing groups:
+Here is an example with a document containing a group:
 
     type alias MyDoc =
-        { slices : List Slice }
-
-    type Slice
-        = SAlbum Album
-        | SBook Book
+        { albums : List Album }
 
     type alias Album =
         { title : String
-        , cover : ImageViews
+        , cover : Field.ImageViews
         }
 
-    type alias Book =
-        { title : String
-        , blurb : StructuredText
-        }
-
-    albumDecoder : Decoder Album
+    albumDecoder : Decoder Group Album
     albumDecoder =
-        decode Album
-            |> required "title" text
-            |> required "cover" image
+        Prismic.decode Album
+            |> Group.required "title" Field.text
+            |> Group.required "cover" Field.image
 
-    bookDecoder : Decoder Book
-    bookDecoder =
-        decode Book
-            |> required "title" text
-            |> required "blurb" structuredText
-
-    myDocDecoder : Decoder MyDoc
+    myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
-        decode MyDoc
-            |> required "slices"
-                (sliceZone
-                    [ slice "album" (group albumDecoder)
-                    , slice "book" (group bookDecoder)
-                    ]
-                )
+        Prismic.decode MyDoc
+            |> Prismic.custom (Prismic.group "albums" albumDecoder)
 
 -}
 group : String -> Decoder Group a -> Decoder Document (List a)
@@ -1133,4 +1064,69 @@ group key decoder =
 
                 Nothing ->
                     Ok []
+        )
+
+
+{-| Decode a SliceZone.
+
+Pass this function a `Decoder Slice a` from the `Prismic.Slice` module.
+
+Slices can contain Fields and Groups, but not other Slices.
+
+    type alias MyDoc =
+        { sections : List Section }
+
+    type Section
+        = -- The "my-content" slice has a non-repeating zone.
+          MyContent Field.StructuredText
+        | -- The "my-image-gallery" slice has a repeating zone.
+          MyImageGallery (List Field.ImageViews)
+        | -- The "my-links-section" slice has both non-repeating and repeating
+          -- zones.
+          MyLinksSection LinksSection
+
+    type alias LinksSection =
+        { title : Field.StructuredText
+        , links : List Field.Link
+        }
+
+    myDocDecoder : Decoder Document MyDoc
+    myDocDecoder =
+        Prismic.decode MyDoc
+            |> Prismic.custom
+                (Prismic.sliceZone "sections" sectionDecoder)
+
+    sectionDecoder : Decoder Slice Section
+    sectionDecoder =
+        Slice.oneOf
+            [ Slice.slice "my-content"
+                -- Decode the non-repeating zone and ignore the repeating zone.
+                (\content _ -> MyContent content)
+                (Group.field "text" Field.structuredText)
+                (Prismic.succeed ())
+            , Slice.slice "my-image-gallery"
+                -- Ignore the non-repeating zone and decode the repeating zone.
+                (\_ images -> MyImageGallery images)
+                (Prismic.succeed ())
+                (Group.field "image" Field.image)
+            , Slice.slice "my-links-section"
+                -- Decode both the non-repeating and repeating zones.
+                (\title links -> MyLinksSection (LinksSection title links))
+                (Group.field "title" Field.structuredText)
+                (Group.field "link" Field.link)
+            ]
+
+-}
+sliceZone : String -> Decoder Slice a -> Decoder Document (List a)
+sliceZone key sliceDecoder =
+    Internal.Decoder
+        (\doc ->
+            case Dict.get key doc.data of
+                Just (Internal.SliceZone slices) ->
+                    slices
+                        |> List.map (Internal.decodeValue sliceDecoder)
+                        |> Result.collect
+
+                _ ->
+                    Err "Expected a SliceZone field."
         )

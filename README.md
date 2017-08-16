@@ -10,6 +10,8 @@ check out the `examples/` directory of this repo.
 
 First, you need to create your types and initialise the Prismic `Model`.
 
+TODO: Update me!
+
 ```elm
 import Prismic as P
 
