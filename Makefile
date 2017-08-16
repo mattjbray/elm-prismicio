@@ -2,7 +2,14 @@
 all: documentation.json examples
 
 .PHONY: examples
-examples: sample-website
+examples: docs-examples sample-website
+
+.PHONY: docs-examples
+docs-examples: examples/docs/index.html
+
+examples/docs/index.html: $(shell find . -type f -name '*.elm')
+	cd examples/docs && \
+	elm-make --warn src/Examples/Group.elm src/Examples/Slice.elm
 
 .PHONY: sample-website
 sample-website: examples/website/app.js
@@ -17,6 +24,8 @@ documentation.json: $(shell find ./src -type f -name '*.elm')
 .PHONY: clean
 clean:
 	rm -rf elm-stuff/build-artifacts \
+	       examples/docs/elm-stuff/build-artifacts \
+	       examples/docs/index.html \
 	       examples/website/elm-stuff/build-artifacts \
 	       examples/website/app.js \
 	       documentation.json
