@@ -1,7 +1,6 @@
 module Prismic.Document.Slice
     exposing
-        ( Decoder
-        , FieldDecoder
+        ( FieldDecoder
         , Slice
         , field
         , group
@@ -15,7 +14,7 @@ module Prismic.Document.Slice
 
 @docs Slice
 
-@docs Decoder, oneOf, slice
+@docs oneOf, slice
 
 
 ## Deprecated Slices
@@ -24,8 +23,6 @@ module Prismic.Document.Slice
 
 -}
 
-import Prismic.Document.Field as Field
-import Prismic.Document.Group as Group
 import Prismic.Document.Internal as Internal exposing (..)
 import Result.Extra as Result
 
@@ -42,14 +39,8 @@ type alias Slice =
 -- DECODERS
 
 
-{-| Decodes a `Slice` field.
--}
-type alias Decoder a =
-    Internal.Decoder Slice a
-
-
 {-| -}
-oneOf : List (Decoder a) -> Decoder a
+oneOf : List (Decoder Slice a) -> Decoder Slice a
 oneOf sliceDecoders =
     Decoder
         (\slice ->
@@ -88,7 +79,7 @@ type alias FieldDecoder a =
 TODO: custom label decoders?
 
 -}
-labelledV1Slice : String -> (Maybe String -> a -> b) -> FieldDecoder a -> Decoder b
+labelledV1Slice : String -> (Maybe String -> a -> b) -> FieldDecoder a -> Decoder Slice b
 labelledV1Slice sliceType tagger fieldDecoder =
     Decoder
         (\slice ->
@@ -109,13 +100,13 @@ labelledV1Slice sliceType tagger fieldDecoder =
 
 {-| Decode a (deprecated) old-style slice in a slice zone.
 -}
-v1Slice : String -> (a -> b) -> FieldDecoder a -> Decoder b
+v1Slice : String -> (a -> b) -> FieldDecoder a -> Decoder Slice b
 v1Slice sliceType tagger fieldDecoder =
     labelledV1Slice sliceType (\_ -> tagger) fieldDecoder
 
 
 {-| -}
-field : Field.Decoder a -> FieldDecoder a
+field : Decoder Field a -> FieldDecoder a
 field fieldDecoder =
     Decoder
         (\sliceContent ->
@@ -129,7 +120,7 @@ field fieldDecoder =
 
 
 {-| -}
-group : Group.Decoder a -> FieldDecoder (List a)
+group : Decoder Group a -> FieldDecoder (List a)
 group groupDecoder =
     Decoder
         (\sliceContent ->
@@ -150,7 +141,7 @@ group groupDecoder =
 
 {-| Decode a slice in a slice zone.
 -}
-slice : String -> (a -> List b -> c) -> Group.Decoder a -> Group.Decoder b -> Decoder c
+slice : String -> (a -> List b -> c) -> Decoder Group a -> Decoder Group b -> Decoder Slice c
 slice sliceType tagger nonRepeatDecoder repeatDecoder =
     Decoder
         (\slice ->

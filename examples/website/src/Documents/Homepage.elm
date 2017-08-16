@@ -1,11 +1,14 @@
 module Documents.Homepage exposing (..)
 
-import Prismic exposing (custom, decode, map)
-import Prismic.Document
+import Prismic
     exposing
         ( Decoder
+        , Document
+        , custom
+        , decode
         , field
         , group
+        , map
         , optional
         , required
         , sliceZone
@@ -20,10 +23,11 @@ import Prismic.Document.Field as Field
         , structuredText
         , text
         )
-import Prismic.Document.Group as Group
+import Prismic.Document.Group as Group exposing (Group)
 import Prismic.Document.Slice as Slice
     exposing
-        ( labelledV1Slice
+        ( Slice
+        , labelledV1Slice
         , slice
         , v1Slice
         )
@@ -70,7 +74,7 @@ type alias GalleryWithTitle =
     }
 
 
-decodeHomepage : Decoder Homepage
+decodeHomepage : Decoder Document Homepage
 decodeHomepage =
     decode Homepage
         |> required "title" structuredText
@@ -81,7 +85,7 @@ decodeHomepage =
         |> custom (sliceZone "body" bodySliceZone)
 
 
-bodySliceZone : Slice.Decoder BodySlice
+bodySliceZone : Decoder Slice BodySlice
 bodySliceZone =
     Slice.oneOf
         [ v1Slice "heading" Heading (Slice.field structuredText)
@@ -100,7 +104,7 @@ bodySliceZone =
         ]
 
 
-decodeHighlightGroup : Group.Decoder HighlightGroup
+decodeHighlightGroup : Decoder Group HighlightGroup
 decodeHighlightGroup =
     decode HighlightGroup
         |> Group.required "title" structuredText
@@ -110,7 +114,7 @@ decodeHighlightGroup =
         |> Group.optional "linkText" (map Just text) Nothing
 
 
-decodeGalleryGroup : Group.Decoder GalleryGroup
+decodeGalleryGroup : Decoder Group GalleryGroup
 decodeGalleryGroup =
     decode GalleryGroup
         |> Group.required "description" structuredText

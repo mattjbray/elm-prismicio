@@ -2,6 +2,7 @@ module Prismic
     exposing
         ( Api
         , Decoder
+        , Document
         , Experiments
         , FieldType
         , Form
@@ -27,16 +28,28 @@ module Prismic
         , decode
         , defaultOptions
         , fail
+        , field
         , form
         , fulltext
         , getApi
+        , group
+        , href
+        , id
         , init
         , initWith
+        , linkedDocuments
         , map
+        , optional
+        , optionalField
         , query
         , ref
+        , required
+        , sliceZone
+        , slugs
         , submit
         , succeed
+        , tags
+        , uid
         )
 
 {-| An Elm SDK for [Prismic.io](https://prismic.io).
@@ -89,24 +102,47 @@ module Prismic
 
 Helpers for decoding various parts of a Document.
 
+@docs Decoder
+
 
 ## Decoder combinators
 
-@docs Decoder, succeed, fail, map, apply, andThen
+The following combinators can be used with any `Decoder`.
+
+@docs succeed, fail, map, apply, andThen
 
 
 ## Pipeline decoders
 
 @docs decode, custom
 
+
+## Decoding documents
+
+@docs Document
+@docs id, href, linkedDocuments, slugs, tags, uid
+
+
+### Decoding custom fields
+
+@docs field, optionalField
+@docs group, sliceZone
+
+
+### Pipeline decoders
+
+@docs required, optional
+
 -}
 
 import Dict exposing (Dict)
 import Http
 import Json.Decode as Json
-import Json.Decode.Pipeline as Json exposing (custom, optional, required, requiredAt)
-import Prismic.Document as Document exposing (Document)
+import Json.Decode.Pipeline as Json
+import Prismic.Document.Field as Field exposing (Field)
+import Prismic.Document.Group as Group exposing (Group)
 import Prismic.Document.Internal as Internal
+import Prismic.Document.Slice as Slice exposing (Slice)
 import Result.Extra as Result
 import String
 import Task exposing (Task)
@@ -143,7 +179,7 @@ type alias Model_ api =
     { api : api
     , url : String
     , nextRequestId : Int
-    , cache : Dict String (Response Document.Document)
+    , cache : Dict String (Response Document)
     , options : Options
     }
 
@@ -309,44 +345,44 @@ decodeRef =
 decodeApi : Json.Decoder Api
 decodeApi =
     Json.decode Api
-        |> required "refs" (Json.list decodeRefProperties)
-        |> required "bookmarks" (Json.dict Json.string)
-        |> required "types" (Json.dict Json.string)
-        |> required "tags" (Json.list Json.string)
-        |> required "version" Json.string
-        |> required "forms" (Json.dict decodeForm)
-        |> required "oauth_initiate" Json.string
-        |> required "oauth_token" Json.string
-        |> required "license" Json.string
-        |> required "experiments" decodeExperiments
+        |> Json.required "refs" (Json.list decodeRefProperties)
+        |> Json.required "bookmarks" (Json.dict Json.string)
+        |> Json.required "types" (Json.dict Json.string)
+        |> Json.required "tags" (Json.list Json.string)
+        |> Json.required "version" Json.string
+        |> Json.required "forms" (Json.dict decodeForm)
+        |> Json.required "oauth_initiate" Json.string
+        |> Json.required "oauth_token" Json.string
+        |> Json.required "license" Json.string
+        |> Json.required "experiments" decodeExperiments
 
 
 decodeRefProperties : Json.Decoder RefProperties
 decodeRefProperties =
     Json.decode RefProperties
-        |> required "id" Json.string
-        |> required "ref" decodeRef
-        |> required "label" Json.string
-        |> optional "isMasterRef" Json.bool False
+        |> Json.required "id" Json.string
+        |> Json.required "ref" decodeRef
+        |> Json.required "label" Json.string
+        |> Json.optional "isMasterRef" Json.bool False
 
 
 decodeForm : Json.Decoder Form
 decodeForm =
     Json.decode Form
-        |> required "method" Json.string
-        |> required "enctype" Json.string
-        |> required "action" Json.string
-        |> required "fields" (Json.dict decodeFormField)
-        |> optional "rel" (Json.maybe Json.string) Nothing
-        |> optional "name" (Json.maybe Json.string) Nothing
+        |> Json.required "method" Json.string
+        |> Json.required "enctype" Json.string
+        |> Json.required "action" Json.string
+        |> Json.required "fields" (Json.dict decodeFormField)
+        |> Json.optional "rel" (Json.maybe Json.string) Nothing
+        |> Json.optional "name" (Json.maybe Json.string) Nothing
 
 
 decodeFormField : Json.Decoder FormField
 decodeFormField =
     Json.decode FormField
-        |> required "type" decodeFieldType
-        |> required "multiple" Json.bool
-        |> optional "default" (Json.maybe Json.string) Nothing
+        |> Json.required "type" decodeFieldType
+        |> Json.required "multiple" Json.bool
+        |> Json.optional "default" (Json.maybe Json.string) Nothing
 
 
 decodeFieldType : Json.Decoder FieldType
@@ -369,8 +405,8 @@ decodeFieldType =
 decodeExperiments : Json.Decoder Experiments
 decodeExperiments =
     Json.decode Experiments
-        |> required "draft" (Json.list Json.string)
-        |> required "running" (Json.list Json.string)
+        |> Json.required "draft" (Json.list Json.string)
+        |> Json.required "running" (Json.list Json.string)
 
 
 {-| Decode a `Response` from JSON.
@@ -378,16 +414,16 @@ decodeExperiments =
 decodeResponse : Json.Decoder (Response Document)
 decodeResponse =
     Json.decode Response
-        |> required "license" Json.string
-        |> required "next_page" (Json.nullable Json.string)
-        |> required "page" Json.int
-        |> required "prev_page" (Json.nullable Json.string)
-        |> required "results" (Json.list Internal.decodeSearchResult)
-        |> required "results_per_page" Json.int
-        |> required "results_size" Json.int
-        |> required "total_pages" Json.int
-        |> required "total_results_size" Json.int
-        |> required "version" Json.string
+        |> Json.required "license" Json.string
+        |> Json.required "next_page" (Json.nullable Json.string)
+        |> Json.required "page" Json.int
+        |> Json.required "prev_page" (Json.nullable Json.string)
+        |> Json.required "results" (Json.list Internal.decodeSearchResult)
+        |> Json.required "results_per_page" Json.int
+        |> Json.required "results_size" Json.int
+        |> Json.required "total_pages" Json.int
+        |> Json.required "total_results_size" Json.int
+        |> Json.required "version" Json.string
 
 
 
@@ -570,7 +606,7 @@ own Elm document type.
 
 -}
 submit :
-    Document.Decoder docType
+    Decoder Document docType
     -> Task PrismicError ( Request, ModelWithApi )
     -> Task PrismicError ( Response docType, Model )
 submit decodeDocType requestTask =
@@ -787,7 +823,10 @@ requestToKey =
 -- DECODERS
 
 
-{-| -}
+{-| Decoders are parameterized by the input type `val` (`Document`, `Field`,
+`Group` or `Slice`) and the result type `a` -- your type representing your
+custom Prismic document type.
+-}
 type alias Decoder val a =
     Internal.Decoder val a
 
@@ -847,3 +886,251 @@ decode =
 custom : Decoder val a -> Decoder val (a -> b) -> Decoder val b
 custom =
     Internal.custom
+
+
+
+-- Documents
+
+
+{-| Holds the Prismic document.
+
+`Documents` consist of basic `Fields`, `Groups` and `Slices`.
+
+You will decode this into your own document type by passing a `Decoder MyDoc` to
+`submit`.
+
+-}
+type alias Document =
+    Internal.Document
+
+
+
+--  DOCUMENT DECODERS
+-- {-| A value that knows how to decode Documents.
+-- Construct a `Decoder` to pass to `submit`.
+-- -}
+-- type alias Decoder a =
+--     Internal.Decoder Document a
+
+
+{-| The document's ID.
+-}
+id : Decoder Document String
+id =
+    Internal.Decoder (Ok << .id)
+
+
+{-| The document's href.
+-}
+href : Decoder Document String
+href =
+    Internal.Decoder (Ok << .href)
+
+
+{-| The document's linked documents.
+-}
+linkedDocuments : Decoder Document (List Field.DocumentReference)
+linkedDocuments =
+    Internal.Decoder (Ok << .linkedDocuments)
+
+
+{-| The document's slugs.
+-}
+slugs : Decoder Document (List String)
+slugs =
+    Internal.Decoder (Ok << .slugs)
+
+
+{-| The document's tags.
+-}
+tags : Decoder Document (List String)
+tags =
+    Internal.Decoder (Ok << .tags)
+
+
+{-| The document's UID.
+-}
+uid : Decoder Document (Maybe String)
+uid =
+    Internal.Decoder (Ok << .uid)
+
+
+getKey : String -> Document -> Maybe (Result String Field)
+getKey key doc =
+    case Dict.get key doc.data of
+        Just (Internal.Field field) ->
+            Just (Ok field)
+
+        Just (Internal.SliceZone _) ->
+            [ "Expected a Field but got a SliceZone."
+            , "(Hint: use sliceZone to decode this.)"
+            ]
+                |> String.join " "
+                |> Err
+                |> Just
+
+        Just (Internal.Groups _) ->
+            [ "Expected a Field but got a Group."
+            , "(Hint: use group to decode this.)"
+            ]
+                |> String.join " "
+                |> Err
+                |> Just
+
+        Nothing ->
+            Nothing
+
+
+{-| Decode a field
+-}
+field : String -> Decoder Field a -> Decoder Document a
+field =
+    Internal.field getKey
+
+
+{-| Decode a field that might be missing.
+-}
+optionalField : String -> Decoder Field a -> a -> Decoder Document a
+optionalField =
+    Internal.optionalField getKey
+
+
+{-| Decode a required field.
+-}
+required : String -> Decoder Field a -> Decoder Document (a -> b) -> Decoder Document b
+required =
+    Internal.required getKey
+
+
+{-| Decode a field that might be missing.
+-}
+optional : String -> Decoder Field a -> a -> Decoder Document (a -> b) -> Decoder Document b
+optional =
+    Internal.optional getKey
+
+
+{-| Decode a SliceZone.
+
+TODO: Update this example.
+
+Pass this function a list of possible elements that can appear in the Slice.
+
+    type alias MyDoc =
+        { section : List Section }
+
+    type Section
+        = MyContent StructuredText
+        | MyImageGallery (List ImageViews)
+        | MyLinksSection LinksSection
+
+    type alias LinksSection =
+        { title : StructuredText
+        , links : List Link
+        }
+
+    myDocDecoder : Decode MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> sliceZone "section"
+                (Slice.oneOf
+                    [ -- The "my-content" slice type has a non-repeatable zone, but
+                      -- no repeatable zone.
+                      slice "my-content"
+                        (\content () -> MyContent content)
+                        structuredText
+                        (decode ())
+                    , -- The "my-image-gallery" slice type has a repeatable
+                      -- zone, but no non-repeatable zone.
+                      slice "my-image-gallery"
+                        (\() images -> MyImageGallery images)
+                        (decode ())
+                        image
+                    , -- The "my-links-section" slice type has both repeatable
+                      -- and non-repeatable zones.
+                      slice "my-links-section"
+                        (\title links -> MyLinksSection (LinksSection title links))
+                        (field "title" structuredText)
+                        (field "link" link)
+                    ]
+                )
+
+-}
+sliceZone : String -> Decoder Slice a -> Decoder Document (List a)
+sliceZone key sliceDecoder =
+    Internal.Decoder
+        (\doc ->
+            case Dict.get key doc.data of
+                Just (Internal.SliceZone slices) ->
+                    slices
+                        |> List.map (Internal.decodeValue sliceDecoder)
+                        |> Result.collect
+
+                _ ->
+                    Err "Expected a SliceZone field."
+        )
+
+
+{-| Decode a group.
+
+TODO: Update this example.
+
+Groups are essentially Documents, so you pass `group` a Document `Decoder`.
+
+Here is an example with a slice containing groups:
+
+    type alias MyDoc =
+        { slices : List Slice }
+
+    type Slice
+        = SAlbum Album
+        | SBook Book
+
+    type alias Album =
+        { title : String
+        , cover : ImageViews
+        }
+
+    type alias Book =
+        { title : String
+        , blurb : StructuredText
+        }
+
+    albumDecoder : Decoder Album
+    albumDecoder =
+        decode Album
+            |> required "title" text
+            |> required "cover" image
+
+    bookDecoder : Decoder Book
+    bookDecoder =
+        decode Book
+            |> required "title" text
+            |> required "blurb" structuredText
+
+    myDocDecoder : Decoder MyDoc
+    myDocDecoder =
+        decode MyDoc
+            |> required "slices"
+                (sliceZone
+                    [ slice "album" (group albumDecoder)
+                    , slice "book" (group bookDecoder)
+                    ]
+                )
+
+-}
+group : String -> Decoder Group a -> Decoder Document (List a)
+group key decoder =
+    Internal.Decoder
+        (\doc ->
+            case Dict.get key doc.data of
+                Just (Internal.Groups groups) ->
+                    groups
+                        |> List.map (Internal.decodeValue decoder)
+                        |> Result.collect
+
+                Just field ->
+                    Err ("Expected a Group field, but got '" ++ toString field ++ "'.")
+
+                Nothing ->
+                    Ok []
+        )

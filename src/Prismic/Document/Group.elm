@@ -1,7 +1,6 @@
 module Prismic.Document.Group
     exposing
-        ( Decoder
-        , Group
+        ( Group
         , field
         , optional
         , optionalField
@@ -15,7 +14,7 @@ module Prismic.Document.Group
 
 ## Decoders
 
-@docs Decoder, field, optionalField
+@docs field, optionalField
 
 
 ## Pipeline decoders
@@ -25,7 +24,6 @@ module Prismic.Document.Group
 -}
 
 import Dict exposing (Dict)
-import Prismic.Document.Field as Field
 import Prismic.Document.Internal as Internal exposing (..)
 
 
@@ -38,11 +36,6 @@ type alias Group =
     Internal.Group
 
 
-{-| -}
-type alias Decoder a =
-    Internal.Decoder Group a
-
-
 getKey : String -> Dict String v -> Maybe (Result String v)
 getKey key =
     Maybe.map Ok << Dict.get key
@@ -50,14 +43,14 @@ getKey key =
 
 {-| Decode a field
 -}
-field : String -> Field.Decoder a -> Decoder a
+field : String -> Decoder Field a -> Decoder Group a
 field =
     Internal.field getKey
 
 
 {-| Decode a field that might be missing.
 -}
-optionalField : String -> Field.Decoder a -> a -> Decoder a
+optionalField : String -> Decoder Field a -> a -> Decoder Group a
 optionalField =
     Internal.optionalField getKey
 
@@ -67,12 +60,12 @@ optionalField =
 
 
 {-| -}
-required : String -> Field.Decoder a -> Decoder (a -> b) -> Decoder b
+required : String -> Decoder Field a -> Decoder Group (a -> b) -> Decoder Group b
 required =
     Internal.required getKey
 
 
 {-| -}
-optional : String -> Field.Decoder a -> a -> Decoder (a -> b) -> Decoder b
+optional : String -> Decoder Field a -> a -> Decoder Group (a -> b) -> Decoder Group b
 optional =
     Internal.optional getKey

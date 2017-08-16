@@ -1,8 +1,13 @@
 module Documents.Page exposing (..)
 
 import Documents.Homepage exposing (BodySlice, bodySliceZone)
-import Prismic exposing (map)
-import Prismic.Document exposing (Decoder, sliceZone)
+import Prismic
+    exposing
+        ( Decoder
+        , Document
+        , map
+        , sliceZone
+        )
 
 
 type alias Page =
@@ -10,7 +15,7 @@ type alias Page =
     }
 
 
-decodePage : Decoder Page
+decodePage : Decoder Document Page
 decodePage =
     sliceZone "body" bodySliceZone
         |> map Page

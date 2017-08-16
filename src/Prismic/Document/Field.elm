@@ -1,7 +1,6 @@
 module Prismic.Document.Field
     exposing
-        ( Decoder
-        , DocumentReference
+        ( DocumentReference
         , Embed
         , Field
         , ImageDimensions
@@ -63,7 +62,6 @@ following components.
 
 ## Decoding fields
 
-@docs Decoder
 @docs text, structuredText, image, date, link
 
 
@@ -418,14 +416,9 @@ getTexts (StructuredText fields) =
 -- DECODERS
 
 
-{-| -}
-type alias Decoder a =
-    Internal.Decoder Field a
-
-
 {-| Decode a Text field.
 -}
-text : Decoder String
+text : Decoder Field String
 text =
     Decoder
         (\field ->
@@ -440,7 +433,7 @@ text =
 
 {-| Decode a StructuredText field.
 -}
-structuredText : Decoder StructuredText
+structuredText : Decoder Field StructuredText
 structuredText =
     Decoder
         (\field ->
@@ -455,7 +448,7 @@ structuredText =
 
 {-| Decode an Image field.
 -}
-image : Decoder ImageViews
+image : Decoder Field ImageViews
 image =
     Decoder
         (\field ->
@@ -470,7 +463,7 @@ image =
 
 {-| Decode a Date field.
 -}
-date : Decoder Date.Date
+date : Decoder Field Date.Date
 date =
     Decoder
         (\field ->
@@ -485,7 +478,7 @@ date =
 
 {-| Decode a Link field.
 -}
-link : Decoder Link
+link : Decoder Field Link
 link =
     Decoder
         (\field ->
