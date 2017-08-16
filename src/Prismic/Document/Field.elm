@@ -114,7 +114,7 @@ type alias ImageViews =
     Internal.ImageViews
 
 
-{-| Properties for Html.a single image view.
+{-| Properties for a single image view.
 -}
 type alias ImageView =
     Internal.ImageView
@@ -138,7 +138,7 @@ type alias Link =
     Internal.Link
 
 
-{-| A reference to Html.a Prismic document.
+{-| A reference to a Prismic document.
 -}
 type alias DocumentReference =
     Internal.DocumentReference
@@ -148,7 +148,7 @@ type alias DocumentReference =
 -- VIEW HELPERS
 
 
-{-| A `LinkResolver` simply converts Html.a Prismic `DocumentReference` to Html.a list of
+{-| A `LinkResolver` simply converts a Prismic `DocumentReference` to a list of
 `Html.Attribute`s. `structuredTextAsHtml` and friends add these attributes to
 links in the text.
 
@@ -195,7 +195,7 @@ defaultLinkResolver =
 
 {-| Render some `StructuredText` as HTML.
 
-You must supply Html.a `LinkResolver` to resolve any links in the `StructuredText`.
+You must supply a `LinkResolver` to resolve any links in the `StructuredText`.
 If you don't care about this, you can use the `defaultLinkResolver`.
 
 -}
@@ -204,7 +204,7 @@ structuredTextAsHtml linkResolver (StructuredText blocks) =
     List.map (structuredTextBlockAsHtml linkResolver) blocks
 
 
-{-| Render Html.a single block of `StructuredText` as HTML.
+{-| Render a single block of `StructuredText` as HTML.
 -}
 structuredTextBlockAsHtml : LinkResolver msg -> StructuredTextBlock -> Html msg
 structuredTextBlockAsHtml linkResolver field =
@@ -378,7 +378,7 @@ getFirstImage (StructuredText structuredText) =
     List.head (List.filterMap getImage structuredText)
 
 
-{-| Get the contents of Html.a single `StructuredText` element as Html.a `String`.
+{-| Get the contents of a single `StructuredText` element as a `String`.
 -}
 getText : StructuredTextBlock -> String
 getText field =
@@ -405,7 +405,7 @@ getText field =
             ""
 
 
-{-| Get the contents of Html.a some `StructuredText` as Html.a `String`.
+{-| Get the contents of a some `StructuredText` as a `String`.
 -}
 getTexts : StructuredText -> String
 getTexts (StructuredText fields) =
@@ -423,7 +423,7 @@ type alias Decoder a =
     Internal.Decoder Field a
 
 
-{-| Decode Html.a Text field.
+{-| Decode a Text field.
 -}
 text : Decoder String
 text =
@@ -434,11 +434,11 @@ text =
                     Ok text
 
                 _ ->
-                    Err ("Expected Html.a Text field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Text field, but got '" ++ toString field ++ "'.")
         )
 
 
-{-| Decode Html.a StructuredText field.
+{-| Decode a StructuredText field.
 -}
 structuredText : Decoder StructuredText
 structuredText =
@@ -449,7 +449,7 @@ structuredText =
                     Ok x
 
                 _ ->
-                    Err ("Expected Html.a StructuredText field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a StructuredText field, but got '" ++ toString field ++ "'.")
         )
 
 
@@ -468,7 +468,7 @@ image =
         )
 
 
-{-| Decode Html.a Date field.
+{-| Decode a Date field.
 -}
 date : Decoder Date.Date
 date =
@@ -479,11 +479,11 @@ date =
                     Ok x
 
                 _ ->
-                    Err ("Expected Html.a Date field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Date field, but got '" ++ toString field ++ "'.")
         )
 
 
-{-| Decode Html.a Link field.
+{-| Decode a Link field.
 -}
 link : Decoder Link
 link =
@@ -494,5 +494,5 @@ link =
                     Ok x
 
                 _ ->
-                    Err ("Expected Html.a Link field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Link field, but got '" ++ toString field ++ "'.")
         )
