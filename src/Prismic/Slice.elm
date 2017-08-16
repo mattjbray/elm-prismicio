@@ -140,15 +140,23 @@ group groupDecoder =
 
 
 {-| Decode a slice in a slice zone.
+
+Slices contain a non-repeating zone and a repeating zone. To decode a Slice, you
+pass a `Decoder Group a` (for the non-repeating zone) and a `Decoder Group b`
+(for the repeating zone), and you'll get back a `Decoder Slice (a, List b)`.
+
+If your slice doesn't have one of the zones, you can just ignore it by passing a
+decoder that always succeeds: `succeed ()`.
+
 -}
-slice : String -> (a -> List b -> c) -> Decoder Group a -> Decoder Group b -> Decoder Slice c
-slice sliceType tagger nonRepeatDecoder repeatDecoder =
+slice : String -> Decoder Group a -> Decoder Group b -> Decoder Slice ( a, List b )
+slice sliceType nonRepeatDecoder repeatDecoder =
     Decoder
         (\slice ->
             if sliceType == slice.sliceType then
                 case slice.sliceContent of
                     SliceContentV2 doc docs ->
-                        Result.map2 tagger
+                        Result.map2 (,)
                             (decodeValue nonRepeatDecoder doc
                                 |> Result.mapError
                                     (\msg -> "While decoding non-repeating part: " ++ msg)

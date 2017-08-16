@@ -94,13 +94,14 @@ bodySliceZone =
         , v1Slice "fullWidthImage" FullWidthImage (Slice.field image)
         , v1Slice "gallery" Gallery (Slice.group decodeGalleryGroup)
         , slice "new_image_gallery"
-            (\title groups -> GalleryV2 (GalleryWithTitle title groups))
             (Group.field "title" structuredText)
             decodeGalleryGroup
+            |> Prismic.map
+                (\( title, groups ) -> GalleryV2 (GalleryWithTitle title groups))
         , slice "single_repeat"
-            (\() texts -> SingleRepeat texts)
             (decode ())
             (Group.field "title" structuredText)
+            |> Prismic.map (\( _, texts ) -> SingleRepeat texts)
         ]
 
 

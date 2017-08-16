@@ -1092,28 +1092,28 @@ Slices can contain Fields and Groups, but not other Slices.
 
     myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
-        Prismic.decode MyDoc
-            |> Prismic.custom
-                (Prismic.sliceZone "sections" sectionDecoder)
+        decode MyDoc
+            |> custom (sliceZone "sections" sectionDecoder)
 
     sectionDecoder : Decoder Slice Section
     sectionDecoder =
         Slice.oneOf
             [ Slice.slice "my-content"
                 -- Decode the non-repeating zone and ignore the repeating zone.
-                (\content _ -> MyContent content)
                 (Group.field "text" Field.structuredText)
-                (Prismic.succeed ())
+                (succeed ())
+                |> map (\( content, _ ) -> MyContent content)
             , Slice.slice "my-image-gallery"
                 -- Ignore the non-repeating zone and decode the repeating zone.
-                (\_ images -> MyImageGallery images)
-                (Prismic.succeed ())
+                (succeed ())
                 (Group.field "image" Field.image)
+                |> map (\( _, images ) -> MyImageGallery images)
             , Slice.slice "my-links-section"
                 -- Decode both the non-repeating and repeating zones.
-                (\title links -> MyLinksSection (LinksSection title links))
                 (Group.field "title" Field.structuredText)
                 (Group.field "link" Field.link)
+                |> map
+                    (\( title, links ) -> MyLinksSection (LinksSection title links))
             ]
 
 -}
