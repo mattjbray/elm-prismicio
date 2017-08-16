@@ -9,7 +9,6 @@ import Html.Events exposing (onClick)
 import Pages.Homepage
 import Pages.Page
 import Prismic
-import Prismic.Api as Prismic
 import Prismic.Document.Field as Prismic exposing (defaultLinkResolver)
 import Task
 
