@@ -691,28 +691,28 @@ type Predicate
     | FullText String String
 
 
-{-| Match documents having `value` at `fragment`.
+{-| `at fragment value` matches documents having `value` at `fragment`.
 -}
 at : String -> String -> Predicate
 at fragment value =
     At fragment value
 
 
-{-| Match documents having a list of `values` at `fragment`.
+{-| `atL fragment values` matches documents having a list of `values` at `fragment`.
 -}
 atL : String -> List String -> Predicate
 atL fragment values =
     AtL fragment values
 
 
-{-| Match documents having any of `values` at `fragment`.
+{-| `any fragment values` matches documents having any of `values` at `fragment`.
 -}
 any : String -> List String -> Predicate
 any fragment values =
     Any fragment values
 
 
-{-| Match documents with a full text search at `fragment`.
+{-| `fulltext fragment value` matches documents with a full text search at `fragment`.
 -}
 fulltext : String -> String -> Predicate
 fulltext fragment value =
