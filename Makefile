@@ -9,7 +9,10 @@ docs-examples: examples/docs/index.html
 
 examples/docs/index.html: $(shell find . -type f -name '*.elm')
 	cd examples/docs && \
-	elm-make --warn src/Examples/Group.elm src/Examples/Slice.elm
+	elm-make --warn \
+	    src/Examples/Group.elm \
+	    src/Examples/Slice.elm \
+	    src/Examples/Readme.elm
 
 .PHONY: sample-website
 sample-website: examples/website/app.js
