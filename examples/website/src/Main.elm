@@ -53,7 +53,7 @@ init =
 
 
 type alias PrismicResult a =
-    Result Prismic.PrismicError ( Prismic.Response a, Prismic.Model )
+    Result Prismic.PrismicError ( Prismic.Model, Prismic.Response a )
 
 
 type Msg
@@ -75,7 +75,7 @@ linkResolver =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        HomepageResponse (Ok ( result, prismic )) ->
+        HomepageResponse (Ok ( prismic, result )) ->
             let
                 newPrismic =
                     Prismic.cache model.prismic prismic
@@ -96,7 +96,7 @@ update msg model =
             in
             model ! []
 
-        MenuResponse (Ok ( result, prismic )) ->
+        MenuResponse (Ok ( prismic, result )) ->
             ( { model
                 | prismic =
                     Prismic.cache model.prismic prismic
@@ -114,7 +114,7 @@ update msg model =
             in
             model ! []
 
-        PageResponse (Ok ( result, prismic )) ->
+        PageResponse (Ok ( prismic, result )) ->
             ( { model
                 | prismic =
                     Prismic.cache model.prismic prismic

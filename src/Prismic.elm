@@ -8,7 +8,6 @@ module Prismic
         , Form
         , FormField
         , Model
-        , ModelWithApi
         , Options
         , Predicate
         , PrismicError(..)
@@ -31,7 +30,6 @@ module Prismic
         , field
         , form
         , fulltext
-        , getApi
         , group
         , href
         , id
@@ -72,7 +70,12 @@ module Prismic
 
 # Sending the request
 
-@docs submit, Response, cache
+@docs submit
+
+
+# Handle the response
+
+@docs Response, cache
 
 
 # Predicates
@@ -85,7 +88,7 @@ module Prismic
 
 ## Models
 
-@docs Model, ModelWithApi, getApi
+@docs Model
 
 
 ## Errors
@@ -149,46 +152,16 @@ import Task exposing (Task)
 import Task.Extra as Task
 
 
--- Types: Models
-
-
-{-| This is the main user-facing type for elm-prismicio's internal state.
-
-The `Api` is represented as `Maybe Api`, because we may not have fetched it yet.
-
+{-| The Prismic Model keeps track of configuration and holds the response cache.
 -}
 type Model
-    = Model (Model_ (Maybe Api))
-
-
-{-| This variation of the Model type is returned by `api`, when we know we have successfully retreived the `Api`.
-
-It is used internally by elm-prismicio.
-
--}
-type ModelWithApi
-    = ModelWithApi (Model_ Api)
-
-
-{-| The generic `Model'` type, where the `Api` is represented by a type parameter.
-
-You will be using the specialised `Model` type in user code.
-
--}
-type alias Model_ api =
-    { api : api
-    , url : String
-    , nextRequestId : Int
-    , cache : Dict String (Response Document)
-    , options : Options
-    }
-
-
-{-| Get the `Api` information from the `Model`.
--}
-getApi : ModelWithApi -> Api
-getApi (ModelWithApi model) =
-    model.api
+    = Model
+        { api : Maybe Api
+        , url : String
+        , nextRequestId : Int
+        , cache : Dict String (Response Document)
+        , options : Options
+        }
 
 
 
@@ -434,10 +407,17 @@ decodeResponse =
 -}
 type Request
     = Request
-        { action : String
-        , ref : Ref
-        , q : String
+        { model : Model
+        , api : Api
+        , config : RequestConfig
         }
+
+
+type alias RequestConfig =
+    { action : String
+    , ref : Ref
+    , q : String
+    }
 
 
 
@@ -474,39 +454,49 @@ initWith url options =
         }
 
 
-{-| Go and fetch the Prismic API, if it has not already been fetched. You must
-start every Prismic request with this function.
+{-| Go and fetch the Prismic `Api` metadata, if it has not already been fetched.
+
+The `Api` is cached in the returned `Model`, so we don't have to fetch it next
+time.
+
+You start every Prismic request with this function.
+
 -}
-api : Model -> Task PrismicError ModelWithApi
-api (Model cache) =
-    case cache.api of
+api : Model -> Task PrismicError ( Model, Api )
+api (Model model) =
+    case model.api of
         Just api ->
-            Task.succeed (ModelWithApi { cache | api = api })
+            Task.succeed ( Model model, api )
 
         Nothing ->
-            Task.map (\api -> ModelWithApi { cache | api = api })
-                (Task.mapError FetchApiError
-                    (Http.get cache.url decodeApi |> Http.toTask)
-                )
+            Http.get model.url decodeApi
+                |> Http.toTask
+                |> Task.mapError FetchApiError
+                |> Task.map
+                    (\api ->
+                        ( Model { model | api = Just api }
+                        , api
+                        )
+                    )
 
 
 {-| Choose a form on which to base the rest of the Prismic request.
 -}
 form :
     String
-    -> Task PrismicError ModelWithApi
-    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError ( Model, Api )
+    -> Task PrismicError Request
 form formId apiTask =
     let
-        addForm (ModelWithApi cache) =
+        addForm ( Model model, api ) =
             let
                 mForm =
-                    Dict.get formId cache.api.forms
+                    Dict.get formId api.forms
 
                 ref =
-                    getRefById cache.options.defaultRef cache.api
+                    getRefById model.options.defaultRef api
                         |> Maybe.map .ref
-                        |> Maybe.withDefault (Ref cache.options.defaultRef)
+                        |> Maybe.withDefault (Ref model.options.defaultRef)
             in
             case mForm of
                 Nothing ->
@@ -521,12 +511,15 @@ form formId apiTask =
                                 )
                     in
                     Task.succeed
-                        ( Request
-                            { action = form.action
-                            , ref = ref
-                            , q = q
+                        (Request
+                            { api = api
+                            , model = Model model
+                            , config =
+                                { action = form.action
+                                , ref = ref
+                                , q = q
+                                }
                             }
-                        , ModelWithApi cache
                         )
     in
     apiTask |> Task.andThen addForm
@@ -536,22 +529,22 @@ form formId apiTask =
 -}
 bookmark :
     String
-    -> Task PrismicError ModelWithApi
-    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError ( Model, Api )
+    -> Task PrismicError Request
 bookmark bookmarkId cacheTask =
     cacheTask
         |> Task.andThen
-            (\(ModelWithApi cacheWithApi) ->
+            (\( model, api ) ->
                 let
                     mDocId =
-                        Dict.get bookmarkId cacheWithApi.api.bookmarks
+                        Dict.get bookmarkId api.bookmarks
                 in
                 case mDocId of
                     Nothing ->
                         Task.fail (BookmarkDoesNotExist bookmarkId)
 
                     Just docId ->
-                        Task.succeed (ModelWithApi cacheWithApi)
+                        Task.succeed ( model, api )
                             |> form "everything"
                             |> query [ at "document.id" docId ]
             )
@@ -561,20 +554,29 @@ bookmark bookmarkId cacheTask =
 -}
 ref :
     String
-    -> Task PrismicError ( Request, ModelWithApi )
-    -> Task PrismicError ( Request, ModelWithApi )
+    -> Task PrismicError Request
+    -> Task PrismicError Request
 ref refId requestTask =
     let
-        addRef ( Request request, ModelWithApi cache ) =
-            case getRefById refId cache.api of
+        setRef ref (Request request) =
+            let
+                config =
+                    request.config
+            in
+            Request
+                { request
+                    | config = { config | ref = ref.ref }
+                }
+
+        addRef (Request request) =
+            case getRefById refId request.api of
                 Nothing ->
                     Task.fail (RefDoesNotExist refId)
 
                 Just r ->
-                    Task.succeed
-                        ( Request { request | ref = r.ref }
-                        , ModelWithApi cache
-                        )
+                    Request request
+                        |> setRef r
+                        |> Task.succeed
     in
     requestTask |> Task.andThen addRef
 
@@ -586,15 +588,24 @@ See the section on `Predicate`s below for how to construct a `Predicate`.
 -}
 query :
     List Predicate
-    -> Task PrismicError ( Request, api )
-    -> Task PrismicError ( Request, api )
+    -> Task PrismicError Request
+    -> Task PrismicError Request
 query predicates requestTask =
     let
-        addQuery ( Request request, cache ) =
-            Task.succeed
-                ( Request { request | q = predicatesToStr predicates }
-                , cache
-                )
+        setQuery query (Request request) =
+            let
+                config =
+                    request.config
+            in
+            Request
+                { request
+                    | config = { config | q = query }
+                }
+
+        addQuery request =
+            request
+                |> setQuery (predicatesToStr predicates)
+                |> Task.succeed
     in
     requestTask |> Task.andThen addQuery
 
@@ -607,15 +618,12 @@ own Elm document type.
 -}
 submit :
     Decoder Document docType
-    -> Task PrismicError ( Request, ModelWithApi )
-    -> Task PrismicError ( Response docType, Model )
+    -> Task PrismicError Request
+    -> Task PrismicError ( Model, Response docType )
 submit decodeDocType requestTask =
     let
-        doSubmit ( request, ModelWithApi cache ) =
+        doSubmit (Request request) =
             let
-                cacheWithApi =
-                    { cache | api = Just cache.api }
-
                 decodeResponseToUserDocType response =
                     response.results
                         |> List.map (Internal.decodeValue decodeDocType)
@@ -624,13 +632,13 @@ submit decodeDocType requestTask =
                         |> Task.fromResult
                         |> Task.mapError DecodeDocumentError
             in
-            case getFromCache request cache of
+            case getFromCache request.config request.model of
                 Just response ->
                     decodeResponseToUserDocType response
-                        |> Task.map (\response -> ( response, Model cacheWithApi ))
+                        |> Task.map (\response -> ( request.model, response ))
 
                 Nothing ->
-                    Http.get (requestToUrl request) decodeResponse
+                    Http.get (requestToUrl request.config) decodeResponse
                         |> Http.toTask
                         |> Task.mapError SubmitRequestError
                         |> Task.andThen
@@ -638,8 +646,8 @@ submit decodeDocType requestTask =
                                 decodeResponseToUserDocType origResponse
                                     |> Task.map
                                         (\response ->
-                                            ( response
-                                            , Model (setInCache request origResponse cacheWithApi)
+                                            ( setInCache request.config origResponse request.model
+                                            , response
                                             )
                                         )
                             )
@@ -655,7 +663,7 @@ using `cache`.
 
     update msg model =
         case msg of
-            MyPrismicMsg (Ok ( response, prismic )) ->
+            MyPrismicMsg (Ok ( prismic, response )) ->
                 { model
                     | prismic =
                         cache model.prismic prismic
@@ -735,19 +743,19 @@ withQuery params base =
     base ++ sep ++ paramsPart
 
 
-requestToUrl : Request -> String
-requestToUrl (Request request) =
+requestToUrl : RequestConfig -> String
+requestToUrl config =
     let
         (Ref refStr) =
-            request.ref
+            config.ref
     in
-    request.action
+    config.action
         |> withQuery
             (( "ref", refStr )
-                :: (if String.isEmpty request.q then
+                :: (if String.isEmpty config.q then
                         []
                     else
-                        [ ( "q", request.q ) ]
+                        [ ( "q", config.q ) ]
                    )
             )
 
@@ -796,25 +804,27 @@ predicatesToStr predicates =
 
 
 getFromCache :
-    Request
-    -> Model_ api
+    RequestConfig
+    -> Model
     -> Maybe (Response Document)
-getFromCache request prismic =
-    Dict.get (requestToKey request) prismic.cache
+getFromCache request (Model model) =
+    Dict.get (requestToKey request) model.cache
 
 
 setInCache :
-    Request
+    RequestConfig
     -> Response Document
-    -> Model_ api
-    -> Model_ api
-setInCache request response prismic =
-    { prismic
-        | cache = Dict.insert (requestToKey request) response prismic.cache
-    }
+    -> Model
+    -> Model
+setInCache request response (Model model) =
+    Model
+        { model
+            | cache =
+                Dict.insert (requestToKey request) response model.cache
+        }
 
 
-requestToKey : Request -> String
+requestToKey : RequestConfig -> String
 requestToKey =
     toString
 
