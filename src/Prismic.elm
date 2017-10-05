@@ -897,7 +897,7 @@ decode =
 
 {-| Use a standard decoder in a pipeline.
 
-The following is equivalent to the example using `required` above:
+The following is equivalent to the example using `required`:
 
     myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
