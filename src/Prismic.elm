@@ -27,7 +27,6 @@ module Prismic
         , decode
         , defaultOptions
         , fail
-        , field
         , form
         , fulltext
         , group
@@ -43,6 +42,7 @@ module Prismic
         , query
         , ref
         , required
+        , requiredField
         , sliceZone
         , sliceZoneField
         , slugs
@@ -130,7 +130,7 @@ The following combinators can be used with any `Decoder`.
 
 ### Decoding custom fields
 
-@docs field, optionalField
+@docs requiredField, optionalField
 @docs groupField, sliceZoneField
 
 
@@ -902,7 +902,7 @@ The following is equivalent to the example using `required` above:
     myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
         decode MyDoc
-            |> custom (field "title" structuredText)
+            |> custom (requiredField "title" structuredText)
 
 -}
 custom : Decoder val a -> Decoder val (a -> b) -> Decoder val b
@@ -1008,9 +1008,9 @@ getKey key doc =
 Pass this function a `Decoder Field a` from the `Prismic.Field` module.
 
 -}
-field : String -> Decoder Field a -> Decoder Document a
-field =
-    Internal.field getKey
+requiredField : String -> Decoder Field a -> Decoder Document a
+requiredField =
+    Internal.requiredField getKey
 
 
 {-| Decode a field that might be missing.

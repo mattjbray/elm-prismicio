@@ -256,8 +256,8 @@ type alias GetKey doc field =
     String -> doc -> Maybe (Result String field)
 
 
-field : GetKey doc field -> String -> Decoder field a -> Decoder doc a
-field getKey key fieldDecoder =
+requiredField : GetKey doc field -> String -> Decoder field a -> Decoder doc a
+requiredField getKey key fieldDecoder =
     optionalField getKey key (fieldDecoder |> map Just) Nothing
         |> andThen (Maybe.withDefault (fail ("No field at " ++ key)) << Maybe.map succeed)
 
@@ -301,7 +301,7 @@ custom a f =
 
 required : GetKey doc field -> String -> Decoder field a -> Decoder doc (a -> b) -> Decoder doc b
 required getKey key fieldDecoder decoder =
-    apply decoder (field getKey key fieldDecoder)
+    apply decoder (requiredField getKey key fieldDecoder)
 
 
 optional : GetKey doc field -> String -> Decoder field a -> a -> Decoder doc (a -> b) -> Decoder doc b

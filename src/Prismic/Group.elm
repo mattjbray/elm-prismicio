@@ -45,7 +45,7 @@ getKey key =
 -}
 field : String -> Decoder Field a -> Decoder Group a
 field =
-    Internal.field getKey
+    Internal.requiredField getKey
 
 
 {-| Decode a field that might be missing.

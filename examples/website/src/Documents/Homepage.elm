@@ -6,7 +6,6 @@ import Prismic
         , Document
         , custom
         , decode
-        , field
         , group
         , map
         , optional
