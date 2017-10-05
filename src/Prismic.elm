@@ -31,6 +31,7 @@ module Prismic
         , form
         , fulltext
         , group
+        , groupField
         , href
         , id
         , init
@@ -43,6 +44,7 @@ module Prismic
         , ref
         , required
         , sliceZone
+        , sliceZoneField
         , slugs
         , submit
         , succeed
@@ -129,12 +131,13 @@ The following combinators can be used with any `Decoder`.
 ### Decoding custom fields
 
 @docs field, optionalField
-@docs group, sliceZone
+@docs groupField, sliceZoneField
 
 
 ### Pipeline decoders
 
 @docs required, optional
+@docs group, sliceZone
 
 -}
 
@@ -1055,12 +1058,12 @@ Here is an example with a document containing a group:
 
     myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
-        Prismic.decode MyDoc
-            |> Prismic.custom (Prismic.group "albums" albumDecoder)
+        Prismic.map MyDoc
+            (Prismic.groupField "albums" albumDecoder)
 
 -}
-group : String -> Decoder Group a -> Decoder Document (List a)
-group key decoder =
+groupField : String -> Decoder Group a -> Decoder Document (List a)
+groupField key decoder =
     Internal.Decoder
         (\doc ->
             case Dict.get key doc.data of
@@ -1075,6 +1078,13 @@ group key decoder =
                 Nothing ->
                     Ok []
         )
+
+
+{-| Pipeline version of `groupField`.
+-}
+group : String -> Decoder Group a -> Decoder Document (List a -> b) -> Decoder Document b
+group key decoder =
+    custom (groupField key decoder)
 
 
 {-| Decode a SliceZone.
@@ -1102,8 +1112,8 @@ Slices can contain Fields and Groups, but not other Slices.
 
     myDocDecoder : Decoder Document MyDoc
     myDocDecoder =
-        decode MyDoc
-            |> custom (sliceZone "sections" sectionDecoder)
+        Prismic.map MyDoc
+            (Prismic.sliceZoneField "sections" sectionDecoder)
 
     sectionDecoder : Decoder Slice Section
     sectionDecoder =
@@ -1111,24 +1121,24 @@ Slices can contain Fields and Groups, but not other Slices.
             [ Slice.slice "my-content"
                 -- Decode the non-repeating zone and ignore the repeating zone.
                 (Group.field "text" Field.structuredText)
-                (succeed ())
-                |> map (\( content, _ ) -> MyContent content)
+                (Prismic.succeed ())
+                |> Prismic.map (\( content, _ ) -> MyContent content)
             , Slice.slice "my-image-gallery"
                 -- Ignore the non-repeating zone and decode the repeating zone.
-                (succeed ())
+                (Prismic.succeed ())
                 (Group.field "image" Field.image)
-                |> map (\( _, images ) -> MyImageGallery images)
+                |> Prismic.map (\( _, images ) -> MyImageGallery images)
             , Slice.slice "my-links-section"
                 -- Decode both the non-repeating and repeating zones.
                 (Group.field "title" Field.structuredText)
                 (Group.field "link" Field.link)
-                |> map
+                |> Prismic.map
                     (\( title, links ) -> MyLinksSection (LinksSection title links))
             ]
 
 -}
-sliceZone : String -> Decoder Slice a -> Decoder Document (List a)
-sliceZone key sliceDecoder =
+sliceZoneField : String -> Decoder Slice a -> Decoder Document (List a)
+sliceZoneField key sliceDecoder =
     Internal.Decoder
         (\doc ->
             case Dict.get key doc.data of
@@ -1140,3 +1150,10 @@ sliceZone key sliceDecoder =
                 _ ->
                     Err "Expected a SliceZone field."
         )
+
+
+{-| Pipeline version of `sliceZoneField`.
+-}
+sliceZone : String -> Decoder Slice a -> Decoder Document (List a -> b) -> Decoder Document b
+sliceZone key sliceDecoder =
+    custom (sliceZoneField key sliceDecoder)

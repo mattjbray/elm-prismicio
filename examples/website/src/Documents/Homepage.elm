@@ -82,7 +82,7 @@ decodeHomepage =
         |> required "buttonText" text
         |> required "buttonLink" link
         |> required "backgroundImage" image
-        |> custom (sliceZone "body" bodySliceZone)
+        |> sliceZone "body" bodySliceZone
 
 
 bodySliceZone : Decoder Slice BodySlice

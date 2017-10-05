@@ -49,6 +49,7 @@ type alias Model =
 -- our home page from Prismic.
 
 
+init : ( { prismic : Prismic.Model, response : Maybe a }, Cmd Msg )
 init =
     let
         model =

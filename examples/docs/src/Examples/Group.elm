@@ -24,5 +24,5 @@ albumDecoder =
 
 myDocDecoder : Decoder Document MyDoc
 myDocDecoder =
-    Prismic.decode MyDoc
-        |> Prismic.custom (Prismic.group "albums" albumDecoder)
+    Prismic.map MyDoc
+        (Prismic.groupField "albums" albumDecoder)

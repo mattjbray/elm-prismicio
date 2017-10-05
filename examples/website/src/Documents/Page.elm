@@ -5,7 +5,6 @@ import Prismic
     exposing
         ( Decoder
         , Document
-        , map
         , sliceZone
         )
 
@@ -17,5 +16,5 @@ type alias Page =
 
 decodePage : Decoder Document Page
 decodePage =
-    sliceZone "body" bodySliceZone
-        |> map Page
+    Prismic.decode Page
+        |> sliceZone "body" bodySliceZone

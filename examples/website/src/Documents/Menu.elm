@@ -39,7 +39,7 @@ decodeMenu =
     decode Menu
         |> custom Prismic.id
         |> required "title" structuredText
-        |> custom (group "menuLinks" decodeMenuLink)
+        |> group "menuLinks" decodeMenuLink
 
 
 decodeMenuLink : Decoder Group MenuLink

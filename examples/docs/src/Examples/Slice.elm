@@ -1,6 +1,6 @@
 module Examples.Slice exposing (..)
 
-import Prismic exposing (Decoder, Document, custom, decode, map, sliceZone, succeed)
+import Prismic exposing (Decoder, Document)
 import Prismic.Field as Field
 import Prismic.Group as Group
 import Prismic.Slice as Slice exposing (Slice)
@@ -28,8 +28,8 @@ type alias LinksSection =
 
 myDocDecoder : Decoder Document MyDoc
 myDocDecoder =
-    decode MyDoc
-        |> custom (sliceZone "sections" sectionDecoder)
+    Prismic.map MyDoc
+        (Prismic.sliceZoneField "sections" sectionDecoder)
 
 
 sectionDecoder : Decoder Slice Section
@@ -38,17 +38,17 @@ sectionDecoder =
         [ Slice.slice "my-content"
             -- Decode the non-repeating zone and ignore the repeating zone.
             (Group.field "text" Field.structuredText)
-            (succeed ())
-            |> map (\( content, _ ) -> MyContent content)
+            (Prismic.succeed ())
+            |> Prismic.map (\( content, _ ) -> MyContent content)
         , Slice.slice "my-image-gallery"
             -- Ignore the non-repeating zone and decode the repeating zone.
-            (succeed ())
+            (Prismic.succeed ())
             (Group.field "image" Field.image)
-            |> map (\( _, images ) -> MyImageGallery images)
+            |> Prismic.map (\( _, images ) -> MyImageGallery images)
         , Slice.slice "my-links-section"
             -- Decode both the non-repeating and repeating zones.
             (Group.field "title" Field.structuredText)
             (Group.field "link" Field.link)
-            |> map
+            |> Prismic.map
                 (\( title, links ) -> MyLinksSection (LinksSection title links))
         ]
