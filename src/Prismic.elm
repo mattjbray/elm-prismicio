@@ -35,6 +35,7 @@ module Prismic
         , id
         , init
         , initWith
+        , lang
         , linkedDocuments
         , map
         , optional
@@ -67,7 +68,7 @@ module Prismic
 
 # Customising the request
 
-@docs ref, query
+@docs ref, lang, query
 
 
 # Sending the request
@@ -420,6 +421,7 @@ type alias RequestConfig =
     { action : String
     , ref : Ref
     , q : String
+    , lang : String
     }
 
 
@@ -521,6 +523,7 @@ form formId apiTask =
                                 { action = form.action
                                 , ref = ref
                                 , q = q
+                                , lang = ""
                                 }
                             }
                         )
@@ -582,6 +585,32 @@ ref refId requestTask =
                         |> Task.succeed
     in
     requestTask |> Task.andThen addRef
+
+
+{-| Override a Form's default lang.
+-}
+lang :
+    String
+    -> Task PrismicError Request
+    -> Task PrismicError Request
+lang lang requestTask =
+    let
+        setLang lang (Request request) =
+            let
+                config =
+                    request.config
+            in
+            Request
+                { request
+                    | config = { config | lang = lang }
+                }
+
+        addLang request =
+            request
+                |> setLang lang
+                |> Task.succeed
+    in
+    requestTask |> Task.andThen addLang
 
 
 {-| Override a Form's default query.
@@ -751,15 +780,20 @@ requestToUrl config =
     let
         (Ref refStr) =
             config.ref
+
+        ifNotEmpty key val =
+            if String.isEmpty val then
+                []
+            else
+                [ ( key, val ) ]
     in
     config.action
         |> withQuery
-            (( "ref", refStr )
-                :: (if String.isEmpty config.q then
-                        []
-                    else
-                        [ ( "q", config.q ) ]
-                   )
+            (List.concat
+                [ [( "ref", refStr )]
+                , ifNotEmpty "q" config.q
+                , ifNotEmpty "lang" config.lang
+                ]
             )
 
 
