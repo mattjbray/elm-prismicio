@@ -9,7 +9,7 @@ docs-examples: examples/docs/index.html
 
 examples/docs/index.html: $(shell find . -type f -name '*.elm')
 	cd examples/docs && \
-	elm-make --warn \
+	elm make \
 	    src/Examples/Group.elm \
 	    src/Examples/Slice.elm \
 	    src/Examples/Readme.elm
@@ -19,10 +19,10 @@ sample-website: examples/website/app.js
 
 examples/website/app.js: $(shell find . -type f -name '*.elm')
 	cd examples/website && \
-	elm-make --warn src/Main.elm --output app.js
+	elm make src/Main.elm --output app.js
 
 documentation.json: $(shell find ./src -type f -name '*.elm')
-	elm-make --docs=documentation.json
+	elm make --docs=documentation.json
 
 .PHONY: clean
 clean:

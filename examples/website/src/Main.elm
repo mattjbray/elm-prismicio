@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Browser
 import Documents.Homepage
 import Documents.Menu
 import Documents.Page
@@ -13,10 +14,11 @@ import Prismic.Field as Prismic exposing (defaultLinkResolver)
 import Task
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.fullscreen
         { init = init
+        , onNavigation = Nothing
         , update = update
         , view = view
         , subscriptions = always Sub.none
@@ -37,8 +39,8 @@ type Page
     | Page
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Browser.Env flags -> ( Model, Cmd Msg )
+init _ =
     let
         model =
             { prismic =
@@ -94,7 +96,9 @@ update msg model =
                 _ =
                     Debug.log "err" err
             in
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         MenuResponse (Ok ( prismic, result )) ->
             ( { model
@@ -112,7 +116,9 @@ update msg model =
                 _ =
                     Debug.log "err" err
             in
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         PageResponse (Ok ( prismic, result )) ->
             ( { model
@@ -129,7 +135,9 @@ update msg model =
                 _ =
                     Debug.log "err" err
             in
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         NavigateTo ref ->
             case ( ref.linkedDocumentType, ref.uid ) of
@@ -172,9 +180,10 @@ fetchPage prismic uid =
         |> Task.attempt PageResponse
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Page Msg
 view model =
-    Html.div []
+    { title = "Sample Elm Primic.io website"
+    , body =
         [ case model.currentPage of
             Homepage ->
                 Maybe.map2 (Pages.Homepage.view linkResolver)
@@ -189,6 +198,7 @@ view model =
                     |> Maybe.withDefault loading
         , viewFooter
         ]
+    }
 
 
 loading : Html msg

@@ -1,5 +1,6 @@
 module Result.Extra exposing (collect)
 
+
 collect : List (Result x a) -> Result x (List a)
 collect results =
     let
@@ -14,4 +15,4 @@ collect results =
                 [] ->
                     Ok acc
     in
-        go results []
+    go results []

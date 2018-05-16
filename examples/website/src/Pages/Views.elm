@@ -102,7 +102,7 @@ viewHighlights groups =
                             (\link linkText ->
                                 [ Html.p []
                                     [ Html.a
-                                        [ Html.href (toString link) ]
+                                        (Prismic.resolveLink Prismic.defaultLinkResolver link)
                                         [ Html.text linkText ]
                                     ]
                                 ]

@@ -78,11 +78,12 @@ following components.
 
 -}
 
-import Date
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
 import Json.Encode
 import Prismic.Internal as Internal exposing (..)
+import Time
+
 
 
 -- TYPES
@@ -207,8 +208,8 @@ structuredTextAsHtml linkResolver (StructuredText blocks) =
 structuredTextBlockAsHtml : LinkResolver msg -> StructuredTextBlock -> Html msg
 structuredTextBlockAsHtml linkResolver field =
     case field of
-        SImage image ->
-            imageAsHtml image
+        SImage simage ->
+            imageAsHtml simage
 
         SEmbed embed ->
             embedAsHtml embed
@@ -252,8 +253,8 @@ blockAsHtml el linkResolver field =
                 Strong ->
                     Html.strong []
 
-                Hyperlink link ->
-                    Html.a (resolveLink linkResolver link)
+                Hyperlink hlink ->
+                    Html.a (resolveLink linkResolver hlink)
 
         foldFn span ( childs, index ) =
             let
@@ -281,8 +282,8 @@ blockAsHtml el linkResolver field =
 
 {-| -}
 imageAsHtml : ImageView -> Html msg
-imageAsHtml image =
-    Html.img [ src image.url ] []
+imageAsHtml imageView =
+    Html.img [ src imageView.url ] []
 
 
 {-| -}
@@ -298,8 +299,8 @@ embedAsHtml embed =
 
 {-| -}
 resolveLink : LinkResolver msg -> Link -> List (Html.Attribute msg)
-resolveLink linkResolver link =
-    case link of
+resolveLink linkResolver l =
+    case l of
         DocumentLink linkedDoc isBroken ->
             linkResolver.resolveDocumentReference linkedDoc
 
@@ -309,14 +310,14 @@ resolveLink linkResolver link =
 
 {-| -}
 linkAsHtml : LinkResolver msg -> Link -> Html msg
-linkAsHtml linkResolver link =
+linkAsHtml linkResolver l =
     let
         attrs =
-            resolveLink linkResolver link
+            resolveLink linkResolver l
     in
-    case link of
+    case l of
         DocumentLink linkedDoc isBroken ->
-            Html.a attrs [ Html.text (toString linkedDoc.slug) ]
+            Html.a attrs [ Html.text linkedDoc.slug ]
 
         WebLink url ->
             Html.a attrs [ Html.text url ]
@@ -325,7 +326,7 @@ linkAsHtml linkResolver link =
 {-| Get the first title out of some `StructuredText`, if there is one.
 -}
 getTitle : StructuredText -> Maybe StructuredTextBlock
-getTitle (StructuredText structuredText) =
+getTitle (StructuredText st) =
     let
         isTitle field =
             case field of
@@ -341,13 +342,13 @@ getTitle (StructuredText structuredText) =
                 _ ->
                     False
     in
-    List.head (List.filter isTitle structuredText)
+    List.head (List.filter isTitle st)
 
 
 {-| Get the first paragraph out of some `StructuredText`, if there is one.
 -}
 getFirstParagraph : StructuredText -> Maybe StructuredTextBlock
-getFirstParagraph (StructuredText structuredText) =
+getFirstParagraph (StructuredText st) =
     let
         isParagraph field =
             case field of
@@ -357,23 +358,23 @@ getFirstParagraph (StructuredText structuredText) =
                 _ ->
                     False
     in
-    List.head (List.filter isParagraph structuredText)
+    List.head (List.filter isParagraph st)
 
 
 {-| Get the first image out of some `StructuredText`, if there is one.
 -}
 getFirstImage : StructuredText -> Maybe ImageView
-getFirstImage (StructuredText structuredText) =
+getFirstImage (StructuredText st) =
     let
         getImage field =
             case field of
-                SImage image ->
-                    Just image
+                SImage simage ->
+                    Just simage
 
                 _ ->
                     Nothing
     in
-    List.head (List.filterMap getImage structuredText)
+    List.head (List.filterMap getImage st)
 
 
 {-| Get the contents of a single `StructuredText` element as a `String`.
@@ -423,11 +424,11 @@ text =
     Decoder
         (\field ->
             case field of
-                Text text ->
-                    Ok text
+                Text ftext ->
+                    Ok ftext
 
                 _ ->
-                    Err ("Expected a Text field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Text field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
 
 
@@ -442,7 +443,7 @@ structuredText =
                     Ok x
 
                 _ ->
-                    Err ("Expected a StructuredText field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a StructuredText field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
 
 
@@ -457,13 +458,13 @@ image =
                     Ok x
 
                 _ ->
-                    Err ("Expected an Image field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected an Image field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
 
 
 {-| Decode a Date field.
 -}
-date : Decoder Field Date.Date
+date : Decoder Field Time.Posix
 date =
     Decoder
         (\field ->
@@ -472,7 +473,7 @@ date =
                     Ok x
 
                 _ ->
-                    Err ("Expected a Date field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Date field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
 
 
@@ -487,5 +488,5 @@ link =
                     Ok x
 
                 _ ->
-                    Err ("Expected a Link field, but got '" ++ toString field ++ "'.")
+                    Err ("Expected a Link field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
