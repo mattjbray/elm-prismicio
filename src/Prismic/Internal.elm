@@ -1,6 +1,71 @@
-module Prismic.Internal exposing (..)
+module Prismic.Internal exposing
+    ( Block
+    , Decoder(..)
+    , Document
+    , DocumentField(..)
+    , DocumentReference
+    , Embed(..)
+    , EmbedRich
+    , EmbedVideo
+    , Field(..)
+    , GetKey
+    , Group
+    , ImageDimensions
+    , ImageView
+    , ImageViews
+    , Link(..)
+    , Point
+    , Slice
+    , SliceContentV1(..)
+    , SliceContentVersion(..)
+    , SliceZone
+    , Span
+    , SpanElement(..)
+    , StructuredText(..)
+    , StructuredTextBlock(..)
+    , andThen
+    , apply
+    , custom
+    , decode
+    , decodeBlock
+    , decodeDate
+    , decodeDocumentField
+    , decodeDocumentJson
+    , decodeDocumentReferenceJson
+    , decodeEmbed
+    , decodeEmbedRich
+    , decodeEmbedVideo
+    , decodeField
+    , decodeGroups
+    , decodeImageDimensions
+    , decodeImageView
+    , decodeImageViews
+    , decodeIsoString
+    , decodeLink
+    , decodeSearchResult
+    , decodeSlice
+    , decodeSliceContent
+    , decodeSliceContentField
+    , decodeSliceZone
+    , decodeSpan
+    , decodeSpanType
+    , decodeStructuredText
+    , decodeStructuredTextBlock
+    , decodeTimestamp
+    , decodeValue
+    , documentFieldTypeToString
+    , fail
+    , fieldTypeToString
+    , map
+    , optional
+    , optionalField
+    , required
+    , requiredField
+    , succeed
+    )
 
 import Dict exposing (Dict)
+import Iso8601
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
 import Time
@@ -45,7 +110,10 @@ type Field
     | Image ImageViews
     | Number Float
     | Date Time.Posix
+    | Timestamp Time.Posix
+    | Geo Point
     | Link Link
+    | Boolean Bool
 
 
 fieldTypeToString : Field -> String
@@ -72,6 +140,15 @@ fieldTypeToString field =
         Date _ ->
             "Date"
 
+        Timestamp _ ->
+            "Timestamp"
+
+        Geo _ ->
+            "Geo"
+
+        Boolean _ ->
+            "Boolean"
+
         Link _ ->
             "Link"
 
@@ -92,6 +169,8 @@ type StructuredTextBlock
     | ListItem Block
     | SImage ImageView
     | SEmbed Embed
+    | Preformatted Block
+    | OListItem Block
 
 
 {-| Contents of `StructuredText` blocks, such as headings and paragraphs.
@@ -198,6 +277,14 @@ type alias EmbedRich =
 type Link
     = DocumentLink DocumentReference Bool
     | WebLink String
+
+
+{-| A reference to Prismic GeoPoint.
+-}
+type alias Point =
+    { latitude : Float
+    , longitude : Float
+    }
 
 
 {-| A reference to Html.a Prismic document.
@@ -421,8 +508,14 @@ decodeField =
                 "Date" ->
                     Json.map Date (Json.field "value" decodeDate)
 
+                "Timestamp" ->
+                    Json.map Timestamp (Json.field "value" decodeTimestamp)
+
                 "Image" ->
                     Json.map Image (Json.field "value" decodeImageViews)
+
+                "Boolean" ->
+                    Json.map Boolean (Json.field "value" Json.bool)
 
                 "StructuredText" ->
                     Json.map StructuredTextField (Json.field "value" decodeStructuredText)
@@ -433,6 +526,15 @@ decodeField =
                 "Link.web" ->
                     Json.map Link decodeLink
 
+                "GeoPoint" ->
+                    Json.map Geo
+                        (Json.field "value"
+                            (Json.map2 Point
+                                (Json.field "latitude" Json.float)
+                                (Json.field "longitude" Json.float)
+                            )
+                        )
+
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
     in
@@ -442,15 +544,23 @@ decodeField =
 decodeDate : Json.Decoder Time.Posix
 decodeDate =
     Json.string
-        |> Json.andThen
-            (\str ->
-                case String.toInt str of
-                    Just millis ->
-                        Json.succeed (Time.millisToPosix millis)
+        |> Json.andThen (decodeIsoString "T00:00:00.000Z")
 
-                    Nothing ->
-                        Json.fail ("Could not parse date: " ++ str)
-            )
+
+decodeTimestamp : Json.Decoder Time.Posix
+decodeTimestamp =
+    Json.string
+        |> Json.andThen (decodeIsoString "")
+
+
+decodeIsoString : String -> String -> Json.Decoder Time.Posix
+decodeIsoString time str =
+    case time |> (++) str |> Iso8601.toTime of
+        Result.Ok posix ->
+            Json.succeed posix
+
+        Result.Err _ ->
+            Json.fail <| "Invalid date: " ++ str
 
 
 {-| Decode Html.a `DocumentReference` from JSON.
@@ -517,11 +627,17 @@ decodeStructuredTextBlock =
                 "list-item" ->
                     Json.map ListItem decodeBlock
 
+                "o-list-item" ->
+                    Json.map OListItem decodeBlock
+
                 "image" ->
                     Json.map SImage decodeImageView
 
                 "embed" ->
                     Json.map SEmbed (Json.field "oembed" decodeEmbed)
+
+                "preformatted" ->
+                    Json.map Preformatted decodeBlock
 
                 _ ->
                     Json.fail ("Unknown structured field type: " ++ typeStr)

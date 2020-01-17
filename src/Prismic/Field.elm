@@ -1,33 +1,16 @@
-module Prismic.Field
-    exposing
-        ( DocumentReference
-        , Embed
-        , Field
-        , ImageDimensions
-        , ImageView
-        , ImageViews
-        , Link
-        , LinkResolver
-        , StructuredText
-        , StructuredTextBlock
-        , date
-        , defaultLinkResolver
-        , embedAsHtml
-        , getFirstImage
-        , getFirstParagraph
-        , getText
-        , getTexts
-        , getTitle
-        , image
-        , imageAsHtml
-        , link
-        , linkAsHtml
-        , resolveLink
-        , structuredText
-        , structuredTextAsHtml
-        , structuredTextBlockAsHtml
-        , text
-        )
+module Prismic.Field exposing
+    ( Field
+    , StructuredText, StructuredTextBlock
+    , ImageViews, ImageView, ImageDimensions
+    , Embed
+    , Link, DocumentReference
+    , GeoPoint
+    , text, structuredText, image, date, timestamp, link, select, color, boolean
+    , structuredTextAsHtml, structuredTextBlockAsHtml
+    , imageAsHtml, embedAsHtml, linkAsHtml
+    , LinkResolver, defaultLinkResolver, resolveLink
+    , getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+    )
 
 {-|
 
@@ -60,9 +43,14 @@ following components.
 @docs Link, DocumentReference
 
 
+### Misc
+
+@docs GeoPoint
+
+
 ## Decoding fields
 
-@docs text, structuredText, image, date, link
+@docs text, structuredText, image, date, timestamp, link, geoPoint, select, color, boolean
 
 
 ## Viewing fields
@@ -141,6 +129,12 @@ type alias Link =
 -}
 type alias DocumentReference =
     Internal.DocumentReference
+
+
+{-| A reference to a Prismic GeoPoint.
+-}
+type alias GeoPoint =
+    Internal.Point
 
 
 
@@ -233,6 +227,17 @@ structuredTextBlockAsHtml linkResolver field =
                 )
                 linkResolver
                 block
+
+        OListItem block ->
+            blockAsHtml
+                (\attrs childs ->
+                    Html.ol [] [ Html.li attrs childs ]
+                )
+                linkResolver
+                block
+
+        Preformatted block ->
+            blockAsHtml Html.pre linkResolver block
 
 
 blockAsHtml :
@@ -403,6 +408,12 @@ getText field =
         SEmbed _ ->
             ""
 
+        OListItem block ->
+            block.text
+
+        Preformatted block ->
+            block.text
+
 
 {-| Get the contents of a some `StructuredText` as a `String`.
 -}
@@ -489,4 +500,79 @@ link =
 
                 _ ->
                     Err ("Expected a Link field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode an Select field.
+-}
+select : Decoder Field String
+select =
+    Decoder
+        (\field ->
+            case field of
+                Select x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Link field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a Timestamp field.
+-}
+timestamp : Decoder Field Time.Posix
+timestamp =
+    Decoder
+        (\field ->
+            case field of
+                Timestamp x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Timestamp field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a Color field.
+-}
+color : Decoder Field String
+color =
+    Decoder
+        (\field ->
+            case field of
+                Color x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Color field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a GeoPoint field.
+-}
+geoPoint : Decoder Field GeoPoint
+geoPoint =
+    Decoder
+        (\field ->
+            case field of
+                Geo point ->
+                    Ok point
+
+                _ ->
+                    Err ("Expected a GeoPoint field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a GeoPoint field.
+-}
+boolean : Decoder Field Bool
+boolean =
+    Decoder
+        (\field ->
+            case field of
+                Boolean x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Boolean field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )

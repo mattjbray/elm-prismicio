@@ -16,9 +16,8 @@ import Task
 
 main : Program () Model Msg
 main =
-    Browser.fullscreen
-        { init = init
-        , onNavigation = Nothing
+    Browser.document
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none
@@ -39,8 +38,8 @@ type Page
     | Page
 
 
-init : Browser.Env flags -> ( Model, Cmd Msg )
-init _ =
+init : ( Model, Cmd Msg )
+init =
     let
         model =
             { prismic =
@@ -180,7 +179,7 @@ fetchPage prismic uid =
         |> Task.attempt PageResponse
 
 
-view : Model -> Browser.Page Msg
+view : Model -> Browser.Document Msg
 view model =
     { title = "Sample Elm Primic.io website"
     , body =

@@ -1,57 +1,23 @@
-module Prismic
-    exposing
-        ( Api
-        , Decoder
-        , Document
-        , Experiments
-        , FieldType
-        , Form
-        , FormField
-        , Model
-        , Options
-        , Predicate
-        , PrismicError(..)
-        , Ref
-        , RefProperties
-        , Request
-        , Response
-        , andThen
-        , any
-        , api
-        , apply
-        , at
-        , atL
-        , bookmark
-        , cache
-        , custom
-        , decode
-        , defaultOptions
-        , fail
-        , form
-        , fulltext
-        , group
-        , groupField
-        , href
-        , id
-        , init
-        , initWith
-        , lang
-        , linkedDocuments
-        , map
-        , optional
-        , optionalField
-        , query
-        , ref
-        , required
-        , requiredField
-        , sliceZone
-        , sliceZoneField
-        , slugs
-        , submit
-        , succeed
-        , tags
-        , uid
-        )
+module Prismic exposing
+    ( init, initWith, Options, defaultOptions
+    , Request, api, form, bookmark
+    , ref, lang, query
+    , submit
+    , Response, cache
+    , Predicate, at, atL, any, fulltext
+    , Model
+    , PrismicError(..)
+    , Api, RefProperties, Ref, Form, FormField, FieldType, Experiments
+    , Decoder
+    , succeed, fail, map, apply, andThen
+    , decode, custom
+    , Document
+    , id, href, linkedDocuments, slugs, tags, uid
+    , requiredField, optionalField
+    , groupField, sliceZoneField
+    , required, optional
+    , group, sliceZone
+    )
 
 {-| An Elm SDK for [Prismic.io](https://prismic.io).
 
@@ -490,8 +456,14 @@ api (Model model) =
             Task.succeed ( Model model, api_ )
 
         Nothing ->
-            Http.get model.url decodeApi
-                |> Http.toTask
+            { method = "GET"
+            , headers = []
+            , url = model.url
+            , body = Http.emptyBody
+            , resolver = Http.stringResolver <| handleJsonResponse <| decodeApi
+            , timeout = Nothing
+            }
+                |> Http.task
                 |> Task.mapError FetchApiError
                 |> Task.map
                     (\api_ ->
@@ -658,6 +630,30 @@ query predicates requestTask =
     requestTask |> Task.andThen addQuery
 
 
+handleJsonResponse : Json.Decoder doc -> Http.Response String -> Result Http.Error doc
+handleJsonResponse decoder response =
+    case response of
+        Http.BadUrl_ url ->
+            Err (Http.BadUrl url)
+
+        Http.Timeout_ ->
+            Err Http.Timeout
+
+        Http.BadStatus_ { statusCode } _ ->
+            Err (Http.BadStatus statusCode)
+
+        Http.NetworkError_ ->
+            Err Http.NetworkError
+
+        Http.GoodStatus_ _ body ->
+            case Json.decodeString decoder body of
+                Err _ ->
+                    Err (Http.BadBody body)
+
+                Ok result ->
+                    Ok result
+
+
 {-| Submit the request.
 
 Pass this function a `Decoder` to decode each document in the response into your
@@ -686,8 +682,14 @@ submit decodeDocType requestTask =
                         |> Task.map (Tuple.pair request.model)
 
                 Nothing ->
-                    Http.get (requestToUrl request.config) decodeResponse
-                        |> Http.toTask
+                    { method = "GET"
+                    , headers = []
+                    , url = requestToUrl request.config
+                    , body = Http.emptyBody
+                    , resolver = Http.stringResolver <| handleJsonResponse <| decodeResponse
+                    , timeout = Nothing
+                    }
+                        |> Http.task
                         |> Task.mapError SubmitRequestError
                         |> Task.andThen
                             (\origResponse ->
@@ -771,6 +773,27 @@ fulltext fragment value =
 -- INTERNAL: State
 
 
+withQuery : List ( String, String ) -> String -> String
+withQuery params base =
+    let
+        sep =
+            if List.isEmpty params then
+                ""
+
+            else
+                "?"
+
+        joinParamPair ( key, val ) =
+            Url.percentEncode key ++ "=" ++ Url.percentEncode val
+
+        paramsPart =
+            params
+                |> List.map joinParamPair
+                |> String.join "&"
+    in
+    base ++ sep ++ paramsPart
+
+
 requestToUrl : RequestConfig -> String
 requestToUrl config =
     let
@@ -782,16 +805,16 @@ requestToUrl config =
                 []
 
             else
-                [ Url.string key val ]
+                [ ( key, val ) ]
     in
     config.action
-        ++ (List.concat
-                [ [ Url.string "ref" refStr ]
+        |> withQuery
+            (List.concat
+                [ [ ( "ref", refStr ) ]
                 , ifNotEmpty "q" config.q
                 , ifNotEmpty "lang" config.lang
                 ]
-                |> Url.toQuery
-           )
+            )
 
 
 getRefById : String -> Api -> Maybe RefProperties
