@@ -50,7 +50,7 @@ following components.
 
 ## Decoding fields
 
-@docs text, structuredText, image, date, timestamp, link, geoPoint, select, color, boolean
+@docs text, structuredText, image, date, timestamp, link, geoPoint, select, color, boolean, number
 
 
 ## Viewing fields
@@ -563,7 +563,7 @@ geoPoint =
         )
 
 
-{-| Decode a GeoPoint field.
+{-| Decode a Boolean field.
 -}
 boolean : Decoder Field Bool
 boolean =
@@ -575,4 +575,19 @@ boolean =
 
                 _ ->
                     Err ("Expected a Boolean field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a Number field.
+-}
+number : Decoder Field Float
+number =
+    Decoder
+        (\field ->
+            case field of
+                Boolean x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a Float field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )
