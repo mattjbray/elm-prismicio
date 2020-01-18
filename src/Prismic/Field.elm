@@ -68,6 +68,8 @@ following components.
 
 import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
+import Html.Parser
+import Html.Parser.Util
 import Json.Encode
 import Prismic.Internal as Internal exposing (..)
 import Time
@@ -294,12 +296,21 @@ imageAsHtml imageView =
 {-| -}
 embedAsHtml : Embed -> Html msg
 embedAsHtml embed =
-    case embed of
-        EVideo props ->
-            Html.div [ Html.Attributes.property "innerHTML" (Json.Encode.string props.html) ] []
+    parseHtml <|
+        case embed of
+            EVideo props ->
+                props.html
 
-        ERich props ->
-            Html.div [ Html.Attributes.property "innerHTML" (Json.Encode.string props.html) ] []
+            ERich props ->
+                props.html
+
+
+parseHtml : String -> Html msg
+parseHtml code =
+    code
+        |> Html.Parser.run
+        |> Result.map (Html.Parser.Util.toVirtualDom >> Html.div [])
+        |> Result.withDefault (Html.div [] [ Html.text code ])
 
 
 {-| -}
@@ -585,7 +596,7 @@ number =
     Decoder
         (\field ->
             case field of
-                Boolean x ->
+                Number x ->
                     Ok x
 
                 _ ->
