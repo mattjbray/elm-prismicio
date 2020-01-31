@@ -9,7 +9,7 @@ collect results =
                 (Ok x) :: rest ->
                     go rest (acc ++ [ x ])
 
-                (Err err) :: rest ->
+                (Err err) :: _ ->
                     Err err
 
                 [] ->

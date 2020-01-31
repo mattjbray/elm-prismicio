@@ -5,7 +5,7 @@ module Prismic.Field exposing
     , Embed
     , Link, DocumentReference
     , GeoPoint
-    , text, structuredText, image, date, timestamp, link, select, color, boolean
+    , text, structuredText, image, date, timestamp, link, geoPoint, select, color, boolean, number
     , structuredTextAsHtml, structuredTextBlockAsHtml
     , imageAsHtml, embedAsHtml, linkAsHtml
     , LinkResolver, defaultLinkResolver, resolveLink
@@ -70,7 +70,6 @@ import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
 import Html.Parser
 import Html.Parser.Util
-import Json.Encode
 import Prismic.Internal as Internal exposing (..)
 import Time
 

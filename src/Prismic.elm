@@ -113,9 +113,9 @@ import Http
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
 import Prismic.Field as Field exposing (Field)
-import Prismic.Group as Group exposing (Group)
+import Prismic.Group exposing (Group)
 import Prismic.Internal as Internal
-import Prismic.Slice as Slice exposing (Slice)
+import Prismic.Slice exposing (Slice)
 import Result.Extra as Result
 import String
 import Task exposing (Task)
@@ -1062,7 +1062,7 @@ getKey key doc =
                 |> Err
                 |> Just
 
-        Nothing ->
+        _ ->
             Nothing
 
 
