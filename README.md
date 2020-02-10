@@ -1,4 +1,3 @@
-
 # elm-prismicio
 
 An Elm SDK for [Prismic.io](https://prismic.io).
