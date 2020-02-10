@@ -791,7 +791,18 @@ withQuery params base =
                 |> List.map joinParamPair
                 |> String.join "&"
     in
-    base ++ sep ++ paramsPart
+    case base |> Url.fromString |> Maybe.andThen .query of
+        Just query_ ->
+            base
+                ++ (if sep == "" then
+                        ""
+
+                    else
+                        "&" ++ paramsPart
+                   )
+
+        _ ->
+            base ++ sep ++ paramsPart
 
 
 requestToUrl : RequestConfig -> String
