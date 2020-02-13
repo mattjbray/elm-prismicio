@@ -10,6 +10,7 @@ module Prismic.Field exposing
     , imageAsHtml, embedAsHtml, linkAsHtml
     , LinkResolver, defaultLinkResolver, resolveLink
     , getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+    , IntegrationFields
     )
 
 {-|
@@ -136,6 +137,12 @@ type alias DocumentReference =
 -}
 type alias GeoPoint =
     Internal.Point
+
+
+{-| Prismic Integration Fields.
+-}
+type alias IntegrationFields =
+    Internal.IntegrationFields
 
 
 

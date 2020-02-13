@@ -13,6 +13,7 @@ module Prismic.Internal exposing
     , ImageDimensions
     , ImageView
     , ImageViews
+    , IntegrationFields
     , Link(..)
     , Point
     , Slice
@@ -114,6 +115,7 @@ type Field
     | Geo Point
     | Link Link
     | Boolean Bool
+    | IntegrationFields Json.Value
 
 
 fieldTypeToString : Field -> String
@@ -151,6 +153,9 @@ fieldTypeToString field =
 
         Link _ ->
             "Link"
+
+        IntegrationFields _ ->
+            "IntegrationFields"
 
 
 {-| `StructuredText` can be rendered to HTML using `structuredTextAsHtml`.
@@ -285,6 +290,10 @@ type alias Point =
     { latitude : Float
     , longitude : Float
     }
+
+
+type alias IntegrationFields =
+    Json.Value
 
 
 {-| A reference to Html.a Prismic document.
@@ -534,6 +543,10 @@ decodeField =
                                 (Json.field "longitude" Json.float)
                             )
                         )
+
+                "IntegrationFields" ->
+                    Json.map IntegrationFields
+                        (Json.field "value" Json.value)
 
                 _ ->
                     Json.fail ("Unknown document field type: " ++ typeStr)
