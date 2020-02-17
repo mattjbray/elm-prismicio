@@ -10,7 +10,7 @@ module Prismic.Field exposing
     , imageAsHtml, embedAsHtml, linkAsHtml
     , LinkResolver, defaultLinkResolver, resolveLink
     , getTitle, getFirstImage, getFirstParagraph, getText, getTexts
-    , IntegrationFields
+    , IntegrationFields, integrationFields
     )
 
 {-|
@@ -71,6 +71,7 @@ import Html exposing (Html)
 import Html.Attributes exposing (class, href, src)
 import Html.Parser
 import Html.Parser.Util
+import Json.Encode as Json
 import Prismic.Internal as Internal exposing (..)
 import Time
 
@@ -607,4 +608,19 @@ number =
 
                 _ ->
                     Err ("Expected a Float field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
+        )
+
+
+{-| Decode a Boolean field.
+-}
+integrationFields : Decoder Field Json.Value
+integrationFields =
+    Decoder
+        (\field ->
+            case field of
+                IntegrationFields x ->
+                    Ok x
+
+                _ ->
+                    Err ("Expected a IntegrationFields field, but got '" ++ Internal.fieldTypeToString field ++ "'.")
         )

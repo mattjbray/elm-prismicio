@@ -1,11 +1,8 @@
-module Prismic.Group
-    exposing
-        ( Group
-        , field
-        , optional
-        , optionalField
-        , required
-        )
+module Prismic.Group exposing
+    ( Group
+    , field, optionalField
+    , optional, required
+    )
 
 {-|
 
