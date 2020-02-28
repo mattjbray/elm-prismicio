@@ -9,7 +9,7 @@ module Prismic.Field exposing
     , structuredTextAsHtml, structuredTextBlockAsHtml
     , imageAsHtml, embedAsHtml, linkAsHtml
     , LinkResolver, defaultLinkResolver, resolveLink
-    , getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+    , getTitle, getFirstImage, getFirstParagraph, getText, getTexts, getWebLink
     , IntegrationFields, integrationFields
     )
 
@@ -63,7 +63,7 @@ following components.
 
 ## `StructuredText` helpers
 
-@docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts
+@docs getTitle, getFirstImage, getFirstParagraph, getText, getTexts, getWebLink
 
 -}
 
@@ -440,6 +440,18 @@ getTexts (StructuredText fields) =
     fields
         |> List.map getText
         |> String.join " "
+
+
+{-| Get the WebLink url from a generic Prismic link.
+-}
+getWebLink : Link -> Maybe String
+getWebLink weblink =
+    case weblink of
+        WebLink url ->
+            Just url
+
+        _ ->
+            Nothing
 
 
 
