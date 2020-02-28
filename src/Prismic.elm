@@ -275,6 +275,13 @@ type alias Response docType =
     }
 
 
+type alias ResultDoc docType =
+    { id : String
+    , uid : Maybe String
+    , result : docType
+    }
+
+
 updateResults : Response a -> List b -> Response b
 updateResults response results =
     { license = response.license
@@ -1053,28 +1060,49 @@ uid =
 
 getKey : String -> Document -> Maybe (Result String Field)
 getKey key doc =
-    case Dict.get key doc.data of
-        Just (Internal.Field field) ->
-            Just (Ok field)
-
-        Just (Internal.SliceZone _) ->
-            [ "Expected a Field but got a SliceZone."
-            , "(Hint: use sliceZone to decode this.)"
-            ]
-                |> String.join " "
-                |> Err
+    case key of
+        "__id" ->
+            doc.id
+                |> Internal.Text
+                |> Ok
                 |> Just
 
-        Just (Internal.Groups _) ->
-            [ "Expected a Field but got a Group."
-            , "(Hint: use group to decode this.)"
-            ]
-                |> String.join " "
-                |> Err
-                |> Just
+        "__uid" ->
+            case doc.uid of
+                Just uid_ ->
+                    uid_
+                        |> Internal.Text
+                        |> Ok
+                        |> Just
+
+                Nothing ->
+                    "No uid"
+                        |> Err
+                        |> Just
 
         _ ->
-            Nothing
+            case Dict.get key doc.data of
+                Just (Internal.Field field) ->
+                    Just (Ok field)
+
+                Just (Internal.SliceZone _) ->
+                    [ "Expected a Field but got a SliceZone."
+                    , "(Hint: use sliceZone to decode this.)"
+                    ]
+                        |> String.join " "
+                        |> Err
+                        |> Just
+
+                Just (Internal.Groups _) ->
+                    [ "Expected a Field but got a Group."
+                    , "(Hint: use group to decode this.)"
+                    ]
+                        |> String.join " "
+                        |> Err
+                        |> Just
+
+                _ ->
+                    Nothing
 
 
 {-| Decode a field.
