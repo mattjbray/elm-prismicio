@@ -1080,6 +1080,12 @@ getKey key doc =
                         |> Err
                         |> Just
 
+        "__first_publication_date" ->
+            doc.first_publication_date
+                |> Internal.Timestamp
+                |> Ok
+                |> Just
+
         _ ->
             case Dict.get key doc.data of
                 Just (Internal.Field field) ->

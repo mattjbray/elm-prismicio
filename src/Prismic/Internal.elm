@@ -81,6 +81,8 @@ type alias Document =
     , tags : List String
     , resultType : String
     , uid : Maybe String
+    , first_publication_date : Time.Posix
+    , last_publication_date : Time.Posix
     }
 
 
@@ -461,6 +463,8 @@ decodeSearchResult =
         |> Json.required "tags" (Json.list Json.string)
         |> Json.required "type" Json.string
         |> Json.required "uid" (Json.nullable Json.string)
+        |> Json.required "first_publication_date" decodeTimestamp
+        |> Json.required "last_publication_date" decodeTimestamp
 
 
 {-| Decode a `Document` from JSON.
