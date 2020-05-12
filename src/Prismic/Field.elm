@@ -134,6 +134,12 @@ type alias DocumentReference =
     Internal.DocumentReference
 
 
+{-| A reference to a Prismic file upload.
+-}
+type alias FileReference =
+    Internal.FileReference
+
+
 {-| A reference to a Prismic GeoPoint.
 -}
 type alias GeoPoint =
@@ -178,6 +184,8 @@ type alias LinkResolver msg =
         DocumentReference -> List (Html.Attribute msg)
     , resolveUrl :
         String -> List (Html.Attribute msg)
+    , resolveFileReference :
+        FileReference -> List (Html.Attribute msg)
     }
 
 
@@ -192,6 +200,9 @@ defaultLinkResolver =
     , resolveUrl =
         \url ->
             [ href url ]
+    , resolveFileReference =
+        \file ->
+            [ href file.url, Html.Attributes.download file.name ]
     }
 
 
@@ -330,6 +341,9 @@ resolveLink linkResolver l =
         WebLink url ->
             linkResolver.resolveUrl url
 
+        FileLink file ->
+            linkResolver.resolveFileReference file
+
 
 {-| -}
 linkAsHtml : LinkResolver msg -> Link -> Html msg
@@ -344,6 +358,9 @@ linkAsHtml linkResolver l =
 
         WebLink url ->
             Html.a attrs [ Html.text url ]
+
+        FileLink file ->
+            Html.a attrs [ Html.text file.name ]
 
 
 {-| Get the first title out of some `StructuredText`, if there is one.

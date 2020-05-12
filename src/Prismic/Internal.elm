@@ -8,6 +8,7 @@ module Prismic.Internal exposing
     , EmbedRich
     , EmbedVideo
     , Field(..)
+    , FileReference
     , GetKey
     , Group
     , ImageDimensions
@@ -284,6 +285,7 @@ type alias EmbedRich =
 type Link
     = DocumentLink DocumentReference Bool
     | WebLink String
+    | FileLink FileReference
 
 
 {-| A reference to Prismic GeoPoint.
@@ -306,6 +308,16 @@ type alias DocumentReference =
     , slug : String
     , tags : List String
     , linkedDocumentType : String
+    }
+
+
+{-| A document file Html.a Prismic document.
+-}
+type alias FileReference =
+    { name : String
+    , kind : String
+    , url : String
+    , size : Maybe Int
     }
 
 
@@ -539,6 +551,9 @@ decodeField =
                 "Link.web" ->
                     Json.map Link decodeLink
 
+                "Link.file" ->
+                    Json.map Link decodeLink
+
                 "GeoPoint" ->
                     Json.map Geo
                         (Json.field "value"
@@ -590,6 +605,17 @@ decodeDocumentReferenceJson =
         |> Json.required "slug" Json.string
         |> Json.required "tags" (Json.list Json.string)
         |> Json.required "type" Json.string
+
+
+{-| Decode Html.a `FileReference` from JSON.
+-}
+decodeFileReferenceJson : Json.Decoder FileReference
+decodeFileReferenceJson =
+    Json.succeed FileReference
+        |> Json.required "name" Json.string
+        |> Json.required "kind" Json.string
+        |> Json.required "url" Json.string
+        |> Json.required "size" (Json.string |> Json.map String.toInt)
 
 
 {-| Decode some `StructuredText`.
@@ -767,6 +793,10 @@ decodeLink =
                 "Link.web" ->
                     Json.succeed WebLink
                         |> Json.requiredAt [ "value", "url" ] Json.string
+
+                "Link.file" ->
+                    Json.succeed FileLink
+                        |> Json.requiredAt [ "value", "file" ] decodeFileReferenceJson
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)
