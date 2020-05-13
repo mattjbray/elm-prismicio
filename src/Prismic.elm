@@ -654,11 +654,7 @@ handleJsonResponse decoder response =
 
         Http.GoodStatus_ _ body ->
             case Json.decodeString decoder body of
-                Err info ->
-                    let
-                        xxx =
-                            Debug.log "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" info
-                    in
+                Err _ ->
                     Err (Http.BadBody body)
 
                 Ok result ->
