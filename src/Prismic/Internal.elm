@@ -284,7 +284,7 @@ type alias EmbedRich =
 -}
 type Link
     = DocumentLink DocumentReference Bool
-    | WebLink String
+    | WebLink (Maybe String) String
     | FileLink FileReference
 
 
@@ -792,11 +792,13 @@ decodeLink =
 
                 "Link.web" ->
                     Json.succeed WebLink
+                        |> JsonP.optionalAt [ "value", "target" ] Json.string
                         |> Json.requiredAt [ "value", "url" ] Json.string
 
                 "Link.file" ->
                     Json.succeed FileLink
                         |> Json.requiredAt [ "value", "file" ] decodeFileReferenceJson
+                        |> JsonP.requiredAt [ "value", "url" ] Json.string
 
                 _ ->
                     Json.fail ("Unknown link type: " ++ typeStr)

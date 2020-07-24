@@ -2,3 +2,5 @@ elm-stuff
 documentation.json
 examples/website/app.js
 examples/docs/index.html
+.direnv
+.envrc

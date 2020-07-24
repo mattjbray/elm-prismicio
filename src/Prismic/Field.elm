@@ -338,7 +338,7 @@ resolveLink linkResolver l =
         DocumentLink linkedDoc isBroken ->
             linkResolver.resolveDocumentReference linkedDoc
 
-        WebLink url ->
+        WebLink _ url ->
             linkResolver.resolveUrl url
 
         FileLink file ->
@@ -356,8 +356,13 @@ linkAsHtml linkResolver l =
         DocumentLink linkedDoc isBroken ->
             Html.a attrs [ Html.text linkedDoc.slug ]
 
-        WebLink url ->
-            Html.a attrs [ Html.text url ]
+        WebLink target url ->
+            let
+                -- if target is present, add to attrs, else leave it unchanged
+                attrs_ =
+                    Maybe.map (\t -> Html.target t :: attrs) target |> Maybe.withDefault attrs
+            in
+            Html.a attrs_ [ Html.text url ]
 
         FileLink file ->
             Html.a attrs [ Html.text file.name ]
@@ -464,7 +469,7 @@ getTexts (StructuredText fields) =
 getWebLink : Link -> Maybe String
 getWebLink weblink =
     case weblink of
-        WebLink url ->
+        WebLink _ url ->
             Just url
 
         _ ->
