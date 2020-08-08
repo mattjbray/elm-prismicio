@@ -173,6 +173,9 @@ type StructuredTextBlock
     = Heading1 Block
     | Heading2 Block
     | Heading3 Block
+    | Heading4 Block
+    | Heading5 Block
+    | Heading6 Block
     | Paragraph Block
     | ListItem Block
     | SImage ImageView
@@ -663,6 +666,15 @@ decodeStructuredTextBlock =
 
                 "heading3" ->
                     Json.map Heading3 decodeBlock
+
+                "heading4" ->
+                    Json.map Heading4 decodeBlock
+
+                "heading5" ->
+                    Json.map Heading5 decodeBlock
+
+                "heading6" ->
+                    Json.map Heading6 decodeBlock
 
                 "paragraph" ->
                     Json.map Paragraph decodeBlock
