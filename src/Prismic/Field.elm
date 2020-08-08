@@ -237,6 +237,15 @@ structuredTextBlockAsHtml linkResolver field =
         Heading3 block ->
             blockAsHtml Html.h3 linkResolver block
 
+        Heading4 block ->
+            blockAsHtml Html.h4 linkResolver block
+
+        Heading5 block ->
+            blockAsHtml Html.h5 linkResolver block
+
+        Heading6 block ->
+            blockAsHtml Html.h6 linkResolver block
+
         Paragraph block ->
             blockAsHtml Html.p linkResolver block
 
@@ -384,6 +393,15 @@ getTitle (StructuredText st) =
                 Heading3 _ ->
                     True
 
+                Heading4 _ ->
+                    True
+
+                Heading5 _ ->
+                    True
+
+                Heading6 _ ->
+                    True
+
                 _ ->
                     False
     in
@@ -434,6 +452,15 @@ getText field =
             block.text
 
         Heading3 block ->
+            block.text
+
+        Heading4 block ->
+            block.text
+
+        Heading5 block ->
+            block.text
+
+        Heading6 block ->
             block.text
 
         Paragraph block ->
