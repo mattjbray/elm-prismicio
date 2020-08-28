@@ -249,21 +249,15 @@ structuredTextBlockAsHtml linkResolver field =
         Paragraph block ->
             blockAsHtml Html.p linkResolver block
 
-        ListItem block ->
-            blockAsHtml
-                (\attrs childs ->
-                    Html.ul [] [ Html.li attrs childs ]
-                )
-                linkResolver
-                block
+        ListItem blocks ->
+            blocks
+                |> List.map (blockAsHtml Html.li linkResolver)
+                |> Html.ul []
 
-        OListItem block ->
-            blockAsHtml
-                (\attrs childs ->
-                    Html.ol [] [ Html.li attrs childs ]
-                )
-                linkResolver
-                block
+        OListItem blocks ->
+            blocks
+                |> List.map (blockAsHtml Html.li linkResolver)
+                |> Html.ol []
 
         Preformatted block ->
             blockAsHtml Html.pre linkResolver block
@@ -466,8 +460,11 @@ getText field =
         Paragraph block ->
             block.text
 
-        ListItem block ->
-            block.text
+        ListItem blocks ->
+            blocks
+                |> List.map .text
+                |> List.intersperse " "
+                |> String.concat
 
         SImage imageField ->
             Maybe.withDefault "<image>" imageField.alt
@@ -475,8 +472,11 @@ getText field =
         SEmbed _ ->
             ""
 
-        OListItem block ->
-            block.text
+        OListItem blocks ->
+            blocks
+                |> List.map .text
+                |> List.intersperse " "
+                |> String.concat
 
         Preformatted block ->
             block.text

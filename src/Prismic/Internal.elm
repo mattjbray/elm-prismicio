@@ -177,11 +177,11 @@ type StructuredTextBlock
     | Heading5 Block
     | Heading6 Block
     | Paragraph Block
-    | ListItem Block
+    | ListItem (List Block)
     | SImage ImageView
     | SEmbed Embed
     | Preformatted Block
-    | OListItem Block
+    | OListItem (List Block)
 
 
 {-| Contents of `StructuredText` blocks, such as headings and paragraphs.
@@ -625,7 +625,63 @@ decodeFileReferenceJson =
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
-    Json.map StructuredText (Json.list decodeStructuredTextBlock)
+    Json.list decodeStructuredTextBlock
+        |> Json.map
+            (List.foldl
+                (\a ( ol, rest ) ->
+                    case a of
+                        ListItem [ e ] ->
+                            if List.isEmpty ol then
+                                ( [ e ], rest )
+
+                            else
+                                ( e :: ol, rest )
+
+                        _ ->
+                            if List.isEmpty ol then
+                                ( [], a :: rest )
+
+                            else
+                                ( [], ListItem ol :: a :: rest )
+                )
+                ( [], [] )
+            )
+        |> Json.map Tuple.second
+        |> Json.map
+            (List.foldl
+                (\a ( ol, rest ) ->
+                    case a of
+                        OListItem [ e ] ->
+                            if List.isEmpty ol then
+                                ( [ e ], rest )
+
+                            else
+                                ( e :: ol, rest )
+
+                        _ ->
+                            if List.isEmpty ol then
+                                ( [], a :: rest )
+
+                            else
+                                ( [], OListItem ol :: a :: rest )
+                )
+                ( [], [] )
+            )
+        |> Json.map Tuple.second
+        |> Json.map StructuredText
+
+
+decodeStructuredLists : String -> Json.Decoder Block
+decodeStructuredLists str =
+    let
+        decodeOnType typeStr =
+            if typeStr == str then
+                decodeBlock
+
+            else
+                Json.fail ""
+    in
+    Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
 {-| Decode an `ImageField`.
@@ -680,10 +736,10 @@ decodeStructuredTextBlock =
                     Json.map Paragraph decodeBlock
 
                 "list-item" ->
-                    Json.map ListItem decodeBlock
+                    Json.map (List.singleton >> ListItem) decodeBlock
 
                 "o-list-item" ->
-                    Json.map OListItem decodeBlock
+                    Json.map (List.singleton >> OListItem) decodeBlock
 
                 "image" ->
                     Json.map SImage decodeImageView
