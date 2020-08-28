@@ -828,7 +828,7 @@ requestToUrl config =
     config.action
         |> withQuery
             (List.concat
-                [ [ ( "ref", refStr ) ]
+                [ [ ( "ref", refStr ), ("pageSize", "100") ]
                 , ifNotEmpty "q" config.q
                 , ifNotEmpty "lang" config.lang
                 ]
