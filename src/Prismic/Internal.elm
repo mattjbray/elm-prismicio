@@ -70,6 +70,7 @@ import Dict exposing (Dict)
 import Iso8601
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
+import List.Extra
 import Time
 
 
@@ -621,54 +622,63 @@ decodeFileReferenceJson =
         |> Json.required "size" (Json.string |> Json.map String.toInt)
 
 
+collateListItems : List StructuredTextBlock -> List StructuredTextBlock
+collateListItems =
+    let
+        filterListItems =
+            List.concatMap <|
+                \block ->
+                    case block of
+                        ListItem x ->
+                            x
+
+                        _ ->
+                            []
+
+        filterOListItems =
+            List.concatMap <|
+                \block ->
+                    case block of
+                        OListItem x ->
+                            x
+
+                        _ ->
+                            []
+    in
+    List.Extra.groupWhile
+        (\x y ->
+            case ( x, y ) of
+                ( ListItem _, ListItem _ ) ->
+                    True
+
+                ( OListItem _, OListItem _ ) ->
+                    True
+
+                _ ->
+                    False
+        )
+        >> List.concatMap
+            (\( first, rest ) ->
+                case first of
+                    ListItem [ x ] ->
+                        -- we know that `rest` only consists of ListItems because we grouped them before
+                        [ ListItem (x :: filterListItems rest) ]
+
+                    OListItem [ x ] ->
+                        -- we know that `rest` only consists of OListItems because we grouped them before
+                        [ OListItem (x :: filterOListItems rest) ]
+
+                    _ ->
+                        first :: rest
+            )
+
+
 {-| Decode some `StructuredText`.
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
     Json.list decodeStructuredTextBlock
-        |> Json.map
-            (List.foldl
-                (\a ( ol, rest ) ->
-                    case a of
-                        ListItem [ e ] ->
-                            if List.isEmpty ol then
-                                ( [ e ], rest )
-
-                            else
-                                ( e :: ol, rest )
-
-                        _ ->
-                            if List.isEmpty ol then
-                                ( [], a :: rest )
-
-                            else
-                                ( [], ListItem ol :: a :: rest )
-                )
-                ( [], [] )
-            )
-        |> Json.map Tuple.second
-        |> Json.map
-            (List.foldl
-                (\a ( ol, rest ) ->
-                    case a of
-                        OListItem [ e ] ->
-                            if List.isEmpty ol then
-                                ( [ e ], rest )
-
-                            else
-                                ( e :: ol, rest )
-
-                        _ ->
-                            if List.isEmpty ol then
-                                ( [], a :: rest )
-
-                            else
-                                ( [], OListItem ol :: a :: rest )
-                )
-                ( [], [] )
-            )
-        |> Json.map Tuple.second
-        |> Json.map StructuredText
+        |> Json.map (collateListItems >> StructuredText)
 
 
 decodeStructuredLists : String -> Json.Decoder Block
@@ -713,6 +723,10 @@ decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
 decodeStructuredTextBlock =
     let
         decodeOnType typeStr =
+            let
+                _ =
+                    Debug.log typeStr
+            in
             case typeStr of
                 "heading1" ->
                     Json.map Heading1 decodeBlock
