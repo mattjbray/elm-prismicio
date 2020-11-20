@@ -723,10 +723,6 @@ decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
 decodeStructuredTextBlock =
     let
         decodeOnType typeStr =
-            let
-                _ =
-                    Debug.log typeStr
-            in
             case typeStr of
                 "heading1" ->
                     Json.map Heading1 decodeBlock
