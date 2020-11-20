@@ -1,14 +1,8 @@
-module Prismic.Slice
-    exposing
-        ( FieldDecoder
-        , Slice
-        , field
-        , group
-        , labelledV1Slice
-        , oneOf
-        , slice
-        , v1Slice
-        )
+module Prismic.Slice exposing
+    ( Slice
+    , oneOf, slice
+    , FieldDecoder, field, group, labelledV1Slice, v1Slice
+    )
 
 {-|
 
