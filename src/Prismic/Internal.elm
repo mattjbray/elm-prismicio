@@ -56,6 +56,17 @@ module Prismic.Internal exposing
     , decodeTimestamp
     , decodeValue
     , documentFieldTypeToString
+    , encodeBlock
+    , encodeDocumentReferenceJson
+    , encodeEmbed
+    , encodeEmbedRich
+    , encodeEmbedVideo
+    , encodeFileReferenceJson
+    , encodeImageDimensions
+    , encodeLink
+    , encodeSpan
+    , encodeStructuredText
+    , encodeStructuredTextBlock
     , fail
     , fieldTypeToString
     , map
@@ -70,6 +81,7 @@ import Dict exposing (Dict)
 import Iso8601
 import Json.Decode as Json
 import Json.Decode.Pipeline as Json
+import Json.Encode
 import List.Extra
 import Time
 
@@ -611,6 +623,18 @@ decodeDocumentReferenceJson =
         |> Json.required "type" Json.string
 
 
+encodeDocumentReferenceJson : DocumentReference -> Json.Encode.Value
+encodeDocumentReferenceJson document =
+    Json.Encode.object <|
+        List.filterMap identity
+            [ Just ( "id", Json.Encode.string document.id )
+            , Maybe.map (Tuple.pair "uid" << Json.Encode.string) document.uid
+            , Just ( "slug", Json.Encode.string document.slug )
+            , Just ( "tags", Json.Encode.list Json.Encode.string document.tags )
+            , Just ( "types", Json.Encode.string document.linkedDocumentType )
+            ]
+
+
 {-| Decode Html.a `FileReference` from JSON.
 -}
 decodeFileReferenceJson : Json.Decoder FileReference
@@ -620,6 +644,17 @@ decodeFileReferenceJson =
         |> Json.required "kind" Json.string
         |> Json.required "url" Json.string
         |> Json.required "size" (Json.string |> Json.map String.toInt)
+
+
+encodeFileReferenceJson : FileReference -> Json.Encode.Value
+encodeFileReferenceJson file =
+    Json.Encode.object <|
+        List.filterMap identity
+            [ Just ( "name", Json.Encode.string file.name )
+            , Just ( "kind", Json.Encode.string file.kind )
+            , Just ( "url", Json.Encode.string file.url )
+            , Maybe.map (Tuple.pair "size" << Json.Encode.string << String.fromInt) file.size
+            ]
 
 
 collateListItems : List StructuredTextBlock -> List StructuredTextBlock
@@ -673,12 +708,34 @@ collateListItems =
             )
 
 
+decollateListItems : List StructuredTextBlock -> List StructuredTextBlock
+decollateListItems =
+    List.concatMap <|
+        \block ->
+            case block of
+                ListItem blocks_ ->
+                    List.map (ListItem << List.singleton) blocks_
+
+                OListItem blocks_ ->
+                    List.map (OListItem << List.singleton) blocks_
+
+                _ ->
+                    List.singleton block
+
+
 {-| Decode some `StructuredText`.
 -}
 decodeStructuredText : Json.Decoder StructuredText
 decodeStructuredText =
     Json.list decodeStructuredTextBlock
         |> Json.map (collateListItems >> StructuredText)
+
+
+encodeStructuredText : StructuredText -> Json.Encode.Value
+encodeStructuredText (StructuredText blocks) =
+    blocks
+        |> decollateListItems
+        |> Json.Encode.list encodeStructuredTextBlock
 
 
 decodeStructuredLists : String -> Json.Decoder Block
@@ -717,6 +774,14 @@ decodeImageDimensions =
     Json.succeed ImageDimensions
         |> Json.required "width" Json.int
         |> Json.required "height" Json.int
+
+
+encodeImageDimensions : ImageDimensions -> Json.Encode.Value
+encodeImageDimensions dimensions =
+    Json.Encode.object
+        [ ( "width", Json.Encode.int dimensions.width )
+        , ( "height", Json.Encode.int dimensions.height )
+        ]
 
 
 decodeStructuredTextBlock : Json.Decoder StructuredTextBlock
@@ -766,6 +831,61 @@ decodeStructuredTextBlock =
     Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
+encodeStructuredTextBlock : StructuredTextBlock -> Json.Encode.Value
+encodeStructuredTextBlock block =
+    case block of
+        Heading1 block_ ->
+            encodeBlock "heading1" block_
+
+        Heading2 block_ ->
+            encodeBlock "heading2" block_
+
+        Heading3 block_ ->
+            encodeBlock "heading3" block_
+
+        Heading4 block_ ->
+            encodeBlock "heading4" block_
+
+        Heading5 block_ ->
+            encodeBlock "heading5" block_
+
+        Heading6 block_ ->
+            encodeBlock "heading6" block_
+
+        Paragraph block_ ->
+            encodeBlock "paragraph" block_
+
+        ListItem [ block_ ] ->
+            encodeBlock "list-item" block_
+
+        ListItem _ ->
+            Json.Encode.null
+
+        OListItem [ block_ ] ->
+            encodeBlock "o-list-item" block_
+
+        OListItem _ ->
+            Json.Encode.null
+
+        SImage imageView ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "image" )
+                , ( "alt", Maybe.withDefault Json.Encode.null <| Maybe.map Json.Encode.string imageView.alt )
+                , ( "copyright", Maybe.withDefault Json.Encode.null <| Maybe.map Json.Encode.string imageView.copyright )
+                , ( "url", Json.Encode.string imageView.url )
+                , ( "dimensions", encodeImageDimensions imageView.dimensions )
+                ]
+
+        SEmbed embed ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "embed" )
+                , ( "oembed", encodeEmbed embed )
+                ]
+
+        Preformatted block_ ->
+            encodeBlock "preformatted" block_
+
+
 decodeBlock : Json.Decoder Block
 decodeBlock =
     Json.succeed Block
@@ -774,12 +894,47 @@ decodeBlock =
         |> Json.optional "label" (Json.maybe Json.string) Nothing
 
 
+encodeBlock : String -> Block -> Json.Encode.Value
+encodeBlock typeStr block =
+    Json.Encode.object
+        [ ( "type", Json.Encode.string typeStr )
+        , ( "text", Json.Encode.string block.text )
+        , ( "spans", Json.Encode.list encodeSpan block.spans )
+        ]
+
+
 decodeSpan : Json.Decoder Span
 decodeSpan =
     Json.succeed Span
         |> Json.required "start" Json.int
         |> Json.required "end" Json.int
         |> Json.custom decodeSpanType
+
+
+encodeSpan : Span -> Json.Encode.Value
+encodeSpan span =
+    case span.spanElement of
+        Em ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "em" )
+                , ( "start", Json.Encode.int span.start )
+                , ( "end", Json.Encode.int span.end )
+                ]
+
+        Strong ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "strong" )
+                , ( "start", Json.Encode.int span.start )
+                , ( "end", Json.Encode.int span.end )
+                ]
+
+        Hyperlink link ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "hyperlink" )
+                , ( "start", Json.Encode.int span.start )
+                , ( "end", Json.Encode.int span.end )
+                , ( "data", encodeLink link )
+                ]
 
 
 decodeSpanType : Json.Decoder SpanElement
@@ -821,6 +976,16 @@ decodeEmbed =
     Json.field "type" Json.string |> Json.andThen decodeOnType
 
 
+encodeEmbed : Embed -> Json.Encode.Value
+encodeEmbed embed =
+    case embed of
+        EVideo video ->
+            encodeEmbedVideo video
+
+        ERich rich ->
+            encodeEmbedRich rich
+
+
 decodeEmbedVideo : Json.Decoder EmbedVideo
 decodeEmbedVideo =
     Json.succeed EmbedVideo
@@ -839,6 +1004,26 @@ decodeEmbedVideo =
         |> Json.required "width" Json.int
 
 
+encodeEmbedVideo : EmbedVideo -> Json.Encode.Value
+encodeEmbedVideo video =
+    Json.Encode.object
+        [ ( "type", Json.Encode.string "video" )
+        , ( "author_name", Json.Encode.string video.authorName )
+        , ( "author_url", Json.Encode.string video.authorUrl )
+        , ( "embed_url", Json.Encode.string video.embedUrl )
+        , ( "height", Json.Encode.int video.height )
+        , ( "html", Json.Encode.string video.html )
+        , ( "provider_name", Json.Encode.string video.providerName )
+        , ( "provider_url", Json.Encode.string video.providerUrl )
+        , ( "thumbnail_height", Json.Encode.int video.thumbnailHeight )
+        , ( "thumbnail_url", Json.Encode.string video.thumbnailUrl )
+        , ( "thumbnail_width", Json.Encode.int video.thumbnailWidth )
+        , ( "title", Json.Encode.string video.title )
+        , ( "version", Json.Encode.string video.version )
+        , ( "width", Json.Encode.int video.width )
+        ]
+
+
 decodeEmbedRich : Json.Decoder EmbedRich
 decodeEmbedRich =
     Json.succeed EmbedRich
@@ -854,6 +1039,26 @@ decodeEmbedRich =
         |> Json.required "url" Json.string
         |> Json.required "version" Json.string
         |> Json.required "width" Json.int
+
+
+encodeEmbedRich : EmbedRich -> Json.Encode.Value
+encodeEmbedRich rich =
+    Json.Encode.object <|
+        List.filterMap identity
+            [ Just ( "type", Json.Encode.string "rich" )
+            , Just ( "author_name", Json.Encode.string rich.authorName )
+            , Just ( "author_url", Json.Encode.string rich.authorUrl )
+            , Just ( "cache_age", Json.Encode.string rich.cacheAge )
+            , Just ( "embed_url", Json.Encode.string rich.embedUrl )
+            , Maybe.map (Tuple.pair "height" << Json.Encode.int) rich.height
+            , Just ( "html", Json.Encode.string rich.html )
+            , Just ( "provider_name", Json.Encode.string rich.providerName )
+            , Just ( "provider_url", Json.Encode.string rich.providerUrl )
+            , Just ( "title", Json.Encode.string rich.title )
+            , Just ( "url", Json.Encode.string rich.url )
+            , Just ( "version", Json.Encode.string rich.version )
+            , Just ( "width", Json.Encode.int rich.width )
+            ]
 
 
 {-| Decode Html.a `Link`.
@@ -881,6 +1086,43 @@ decodeLink =
                     Json.fail ("Unknown link type: " ++ typeStr)
     in
     Json.field "type" Json.string |> Json.andThen decodeOnType
+
+
+encodeLink : Link -> Json.Encode.Value
+encodeLink link =
+    case link of
+        DocumentLink document isBroken ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "Link.document" )
+                , ( "value"
+                  , Json.Encode.object
+                        [ ( "document", encodeDocumentReferenceJson document )
+                        , ( "isBroken", Json.Encode.bool isBroken )
+                        ]
+                  )
+                ]
+
+        WebLink target url ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "Link.web" )
+                , ( "value"
+                  , Json.Encode.object <|
+                        List.filterMap identity
+                            [ Maybe.map (Tuple.pair "target" << Json.Encode.string) target
+                            , Just ( "url", Json.Encode.string url )
+                            ]
+                  )
+                ]
+
+        FileLink file ->
+            Json.Encode.object
+                [ ( "type", Json.Encode.string "Link.file" )
+                , ( "value"
+                  , Json.Encode.object
+                        [ ( "file", encodeFileReferenceJson file )
+                        ]
+                  )
+                ]
 
 
 decodeSliceZone : Json.Decoder SliceZone
