@@ -63,6 +63,8 @@ module Prismic.Internal exposing
     , encodeEmbedVideo
     , encodeFileReferenceJson
     , encodeImageDimensions
+    , encodeImageView
+    , encodeImageViews
     , encodeLink
     , encodeSpan
     , encodeStructuredText
@@ -760,6 +762,14 @@ decodeImageViews =
         |> Json.required "views" (Json.dict decodeImageView)
 
 
+encodeImageViews : ImageViews -> Json.Encode.Value
+encodeImageViews imageViews =
+    Json.Encode.object
+        [ ( "main", encodeImageView imageViews.main )
+        , ( "views", Json.Encode.dict identity encodeImageView imageViews.views )
+        ]
+
+
 decodeImageView : Json.Decoder ImageView
 decodeImageView =
     Json.succeed ImageView
@@ -767,6 +777,16 @@ decodeImageView =
         |> Json.required "copyright" (Json.nullable Json.string)
         |> Json.required "url" Json.string
         |> Json.required "dimensions" decodeImageDimensions
+
+
+encodeImageView : ImageView -> Json.Encode.Value
+encodeImageView imageView =
+    Json.Encode.object
+        [ ( "alt", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.string imageView.alt) )
+        , ( "copyright", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.string imageView.copyright) )
+        , ( "url", Json.Encode.string imageView.url )
+        , ( "dimensions", encodeImageDimensions imageView.dimensions )
+        ]
 
 
 decodeImageDimensions : Json.Decoder ImageDimensions
