@@ -633,7 +633,7 @@ encodeDocumentReferenceJson document =
             , Maybe.map (Tuple.pair "uid" << Json.Encode.string) document.uid
             , Just ( "slug", Json.Encode.string document.slug )
             , Just ( "tags", Json.Encode.list Json.Encode.string document.tags )
-            , Just ( "types", Json.Encode.string document.linkedDocumentType )
+            , Just ( "type", Json.Encode.string document.linkedDocumentType )
             ]
 
 
